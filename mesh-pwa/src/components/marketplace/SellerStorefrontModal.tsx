@@ -333,9 +333,11 @@ export function SellerStorefrontModal({
               </h2>
               <ShieldCheck size={14} className="text-blue-500 shrink-0" />
             </div>
-            <p className="text-[11px] text-gray-500 dark:text-zinc-400 truncate">
-              {isStandaloneView ? `${sellerListings.length} Listed · ${savedCount} Saved` : sellerTypeInfo.label}
-            </p>
+            {!isStandaloneView && (
+              <p className="text-[11px] text-gray-500 dark:text-zinc-400 truncate">
+                {sellerTypeInfo.label}
+              </p>
+            )}
           </div>
         </div>
 
@@ -481,7 +483,6 @@ export function SellerStorefrontModal({
 
             {/* Features / Fulfillment options */}
             <div className="flex flex-wrap items-center gap-1.5 pt-2 text-[10px] text-gray-500 dark:text-zinc-400">
-              <span className="font-semibold text-gray-700 dark:text-zinc-300">Fulfillment:</span>
               <span className="bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-md font-bold">
                 ✓ Local Delivery Available
               </span>
