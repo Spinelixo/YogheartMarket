@@ -1970,7 +1970,7 @@ export default function ProfileView({ userId: propUserId, onClose }: { userId?: 
                 <div className="flex-1 min-w-0 flex flex-col justify-center">
                     <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4 mb-2">
                         <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white truncate">
-                            {isGroupProfile ? (groupThread?.groupName || user.name) : `${user.name}, ${user.age}`}
+                            {isGroupProfile ? (groupThread?.groupName || user.name) : user.name}
                         </h2>
 
                         {isGroupProfile && isGroupAdmin && (
@@ -1998,36 +1998,12 @@ export default function ProfileView({ userId: propUserId, onClose }: { userId?: 
                         </p>
                     )}
 
-                    {/* Premium Dating & Lifestyle Badges */}
-                    {(canSeeDatingDetails || isGroupProfile) ? (
-                        (user.relationshipGoal || user.kids || user.location) && (
-                            <div className="flex flex-wrap gap-1.5 mt-2 mb-1 max-w-xl">
-                                {/* Location */}
-                                {user.location && (
-                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-cyan-50 dark:bg-cyan-950/20 text-cyan-600 dark:text-cyan-400 border border-cyan-100/50 dark:border-cyan-900/30 rounded-full text-xs font-medium shadow-sm">
-                                        <span className="text-xs">📍</span> {user.location}
-                                    </span>
-                                )}
-
-                                {/* Relationship Goal */}
-                                {user.relationshipGoal && (
-                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-violet-50 dark:bg-violet-950/20 text-violet-600 dark:text-violet-400 border border-violet-100/50 dark:border-violet-900/30 rounded-full text-xs font-medium shadow-sm">
-                                        <span className="text-xs">{RELATIONSHIP_GOALS.find(g => g.label === user.relationshipGoal)?.emoji || "💍"}</span> {user.relationshipGoal}
-                                    </span>
-                                )}
-
-                                {/* Kids */}
-                                {user.kids && (
-                                    <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border border-emerald-100/50 dark:border-emerald-900/30 rounded-full text-xs font-medium shadow-sm">
-                                        <span className="text-xs">👶</span> {user.kids}
-                                    </span>
-                                )}
-                            </div>
-                        )
-                    ) : (
-                        <div className="flex items-center gap-1.5 px-3 py-1 bg-gray-50/50 dark:bg-zinc-800/40 text-gray-400 dark:text-zinc-500 rounded-full text-xs font-semibold w-fit mt-2 border border-gray-100 dark:border-zinc-800 shadow-sm animate-fade-in">
-                            <Lock size={12} className="text-gray-400 dark:text-zinc-500" />
-                            <span>Private dating info</span>
+                    {/* Location Badge */}
+                    {user.location && (
+                        <div className="flex flex-wrap gap-1.5 mt-2 mb-1 max-w-xl">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-cyan-50 dark:bg-cyan-950/20 text-cyan-600 dark:text-cyan-400 border border-cyan-100/50 dark:border-cyan-900/30 rounded-full text-xs font-medium shadow-sm">
+                                <span className="text-xs">📍</span> {user.location}
+                            </span>
                         </div>
                     )}
 

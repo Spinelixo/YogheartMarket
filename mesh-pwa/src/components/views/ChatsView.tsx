@@ -1040,7 +1040,7 @@ export default function ChatsView() {
                       )}
                       <div className="flex-1 min-w-0">
                         <h4 className="font-semibold text-[15px] text-gray-900 dark:text-white">
-                          {discoveryResult.name}{(discoveryResult.settings?.privacy?.showAge !== false) ? `, ${discoveryResult.age}` : ""}
+                          {discoveryResult.name}
                         </h4>
                         <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{discoveryResult.bio}</p>
                       </div>
@@ -1868,7 +1868,7 @@ export default function ChatsView() {
                         <div className="flex-1 min-w-0">
                           <div className="flex justify-between items-baseline mb-1">
                             <h3 className="font-semibold text-[15px] truncate dark:text-white">
-                              {profile.name}{(profile.settings?.privacy?.showAge !== false) ? `, ${profile.age}` : ""}
+                              {profile.name}
                             </h3>
                             <span className="text-xs text-[var(--primary)] font-semibold">Start Chat</span>
                           </div>
@@ -1903,7 +1903,7 @@ export default function ChatsView() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2 text-xs font-extrabold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
                 <Sparkles size={15} />
-                <span>Connect with New Single</span>
+                <span>Message Member</span>
               </div>
               <button
                 onClick={() => setSelectedProfile(null)}
@@ -1924,7 +1924,7 @@ export default function ChatsView() {
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-white truncate">
-                  {selectedProfile.name}{(selectedProfile.settings?.privacy?.showAge !== false) ? `, ${selectedProfile.age}` : ""}
+                  {selectedProfile.name}
                 </h3>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 line-clamp-2 leading-relaxed">{selectedProfile.bio || "Active on Yogheart"}</p>
                 <div className="flex items-center gap-2 mt-1.5">
