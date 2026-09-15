@@ -18,8 +18,7 @@ const navItems = [
   { name: "Market", href: "/marketplace", icon: ShoppingBag },
   { name: "Chats", href: "/chats", icon: MessageCircle },
   { name: "Calls", href: "/calls", icon: Phone },
-  { name: "Store", href: "/store", icon: Store },
-  { name: "Menu", href: "/profile", icon: User },
+  { name: "Menu", href: "/profile", icon: Store },
   { name: "Settings", href: "/me", icon: Settings },
 ];
 
@@ -27,7 +26,7 @@ const desktopSidebarNavItems = [
   { name: "Marketplace", href: "/marketplace", icon: ShoppingBag, id: "marketplace" },
   { name: "Chats", href: "/chats", icon: MessageCircle, id: "chats" },
   { name: "Calls", href: "/calls", icon: Phone, id: "calls" },
-  { name: "Store", href: "/store", icon: Store, id: "store" },
+  { name: "Store / Profile", href: "/profile", icon: Store, id: "profile" },
 ];
 
 const mainPaths = ["/", "/marketplace", "/chats", "/calls", "/store", "/profile", "/me", "/inbox"];
@@ -36,8 +35,7 @@ function getTabName(name: string) {
   if (name === "Market" || name === "Marketplace") return "marketplace";
   if (name === "Chats") return "chats";
   if (name === "Calls") return "calls";
-  if (name === "Store") return "store";
-  if (name === "Menu") return "profile";
+  if (name === "Menu" || name === "Store / Profile") return "profile";
   return "me";
 }
 
@@ -83,9 +81,9 @@ export function Sidebar() {
     } else if (item.id === "calls") {
       setActiveTab("calls");
       window.history.pushState(null, "", "/calls");
-    } else if (item.id === "store") {
-      setActiveTab("store");
-      window.history.pushState(null, "", "/store");
+    } else if (item.id === "profile") {
+      setActiveTab("profile");
+      window.history.pushState(null, "", "/profile?userId=me");
     }
     window.dispatchEvent(new CustomEvent("closeMarketplaceOverlays"));
     window.dispatchEvent(new Event("locationchange"));
@@ -138,8 +136,8 @@ export function Sidebar() {
               isActive = (activeTab === "chats" || pathname === "/chats") && !pathname.startsWith("/profile") && !pathname.startsWith("/marketplace") && !pathname.startsWith("/calls");
             } else if (item.id === "calls") {
               isActive = activeTab === "calls" || pathname.startsWith("/calls");
-            } else if (item.id === "store") {
-              isActive = activeTab === "store" || pathname.startsWith("/store");
+            } else if (item.id === "profile") {
+              isActive = (activeTab === "profile" || activeTab === "store" || pathname.startsWith("/profile") || pathname.startsWith("/store"));
             }
           }
 
@@ -197,52 +195,28 @@ export function Sidebar() {
         })}
       </nav>
       <div className="p-2 border-t border-[var(--border)] mt-auto">
-        {(() => {
-          let isMenuActive = false;
-          let isViewingOther = false;
-          const fromParam = searchParams?.get("from");
-          if (currentUser) {
-            const userIdParam = searchParams?.get("userId");
-            const groupIdParam = searchParams?.get("groupId");
-            isViewingOther = (userIdParam && userIdParam !== "me" && userIdParam !== currentUser.id) || !!groupIdParam || !!fromParam;
-          } else if (fromParam) {
-            isViewingOther = true;
-          }
-
-          if (!isViewingOther) {
-            const isSettingsOverlay = searchParams?.get("settings") === "overlay";
-            if (isCurrentlyOnMainPath) {
-              isMenuActive = activeTab === "profile" || activeTab === "me" || isSettingsOverlay;
-            } else {
-              isMenuActive = pathname.startsWith("/profile") || pathname.startsWith("/me") || isSettingsOverlay;
-            }
-          }
-
-          return (
-            <Link
-              href="/profile"
-              scroll={false}
-              onPointerDown={handleTabPointerDown}
-              onClick={(e) => {
-                e.preventDefault();
-                setActiveThreadId(null);
-                setActiveTab("profile");
-                window.history.pushState(null, "", "/profile?userId=me");
-                window.dispatchEvent(new CustomEvent("closeMarketplaceOverlays"));
-                window.dispatchEvent(new Event("locationchange"));
-              }}
-              className={clsx(
-                "flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all select-none relative overflow-hidden touch-manipulation cursor-pointer",
-                isMenuActive
-                  ? "bg-[var(--primary)] text-white shadow-md shadow-emerald-600/20 font-bold"
-                  : "text-gray-800 hover:bg-gray-100 dark:text-zinc-200 dark:hover:bg-zinc-800/60 font-medium"
-              )}
-            >
-              <User size={19} className="relative z-10 pointer-events-none" />
-              <span className="text-sm relative z-10 pointer-events-none">Menu & Profile</span>
-            </Link>
-          );
-        })()}
+        <Link
+          href="/me"
+          scroll={false}
+          onPointerDown={handleTabPointerDown}
+          onClick={(e) => {
+            e.preventDefault();
+            setActiveThreadId(null);
+            setActiveTab("me");
+            window.history.pushState(null, "", "/me");
+            window.dispatchEvent(new CustomEvent("closeMarketplaceOverlays"));
+            window.dispatchEvent(new Event("locationchange"));
+          }}
+          className={clsx(
+            "flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all select-none relative overflow-hidden touch-manipulation cursor-pointer",
+            (activeTab === "me" || pathname.startsWith("/me") || searchParams?.get("settings") === "overlay")
+              ? "bg-[var(--primary)] text-white shadow-md shadow-emerald-600/20 font-bold"
+              : "text-gray-800 hover:bg-gray-100 dark:text-zinc-200 dark:hover:bg-zinc-800/60 font-medium"
+          )}
+        >
+          <Settings size={19} className="relative z-10 pointer-events-none" />
+          <span className="text-sm relative z-10 pointer-events-none">Settings</span>
+        </Link>
       </div>
     </div>
   );
@@ -340,8 +314,7 @@ export function BottomNav() {
     { name: "Market", href: "/marketplace", icon: ShoppingBag, id: "marketplace" },
     { name: "Chats", href: "/chats", icon: MessageCircle, id: "chats" },
     { name: "Calls", href: "/calls", icon: Phone, id: "calls" },
-    { name: "Store", href: "/store", icon: Store, id: "store" },
-    { name: "Menu", href: "/profile", icon: User, id: "profile" },
+    { name: "Menu", href: "/profile", icon: Store, id: "profile" },
   ];
 
   const handleMobileTabClick = (e: React.MouseEvent, item: typeof mobileBottomNavItems[0]) => {
@@ -351,9 +324,6 @@ export function BottomNav() {
     if (item.id === "calls") {
       setActiveTab("calls");
       window.history.pushState(null, "", "/calls");
-    } else if (item.id === "store") {
-      setActiveTab("store");
-      window.history.pushState(null, "", "/store");
     } else if (item.id === "marketplace") {
       setActiveTab("marketplace");
       window.history.pushState(null, "", "/marketplace");
@@ -401,14 +371,12 @@ export function BottomNav() {
             isActive = (activeTab === "chats" || pathname === "/chats") && !pathname.startsWith("/marketplace") && !pathname.startsWith("/profile") && !pathname.startsWith("/calls");
           } else if (item.id === "calls") {
             isActive = (activeTab === "calls" || pathname.startsWith("/calls")) && !pathname.startsWith("/profile");
-          } else if (item.id === "store") {
-            isActive = (activeTab === "store" || pathname.startsWith("/store")) && !pathname.startsWith("/profile");
           } else if (item.id === "profile") {
             const userIdParam = searchParams?.get("userId");
             const groupIdParam = searchParams?.get("groupId");
             const isViewingOther = (userIdParam && userIdParam !== "me" && currentUser && userIdParam !== currentUser.id) || !!groupIdParam;
             const isSettingsOverlay = searchParams?.get("settings") === "overlay";
-            isActive = (activeTab === "profile" || pathname.startsWith("/profile")) && !isViewingOther && !isSettingsOverlay && !fromParam;
+            isActive = (activeTab === "profile" || activeTab === "store" || pathname.startsWith("/profile") || pathname.startsWith("/store")) && !isViewingOther && !isSettingsOverlay && !fromParam;
           }
 
           const Icon = item.icon;

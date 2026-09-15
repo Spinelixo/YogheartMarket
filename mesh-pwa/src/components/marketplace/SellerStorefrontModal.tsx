@@ -28,7 +28,11 @@ import {
   MessageSquarePlus,
   Calendar,
   Users,
-  Bookmark
+  Bookmark,
+  Plus,
+  Film,
+  MessageSquare,
+  Settings
 } from "lucide-react";
 import { clsx } from "clsx";
 import { useModalHistory } from "@/hooks/useModalHistory";
@@ -36,6 +40,14 @@ import { shareContent } from "@/utils/nativeShare";
 import { ItemDetailModal } from "./ItemDetailModal";
 import { EditMarketplaceProfileModal } from "./EditMarketplaceProfileModal";
 import { StoreReviewsModal } from "./StoreReviewsModal";
+import {
+  StatusStoriesRow,
+  StatusViewerModal,
+  UnifiedPostModal,
+  StoreFeedView,
+  StoreGlimpsesView
+} from "./StorefrontSocialFeed";
+import { Status } from "@/context/MockContext";
 
 interface SellerStorefrontModalProps {
   sellerId: string;
@@ -64,7 +76,10 @@ export function SellerStorefrontModal({
     marketplaceItems,
     sendMarketplaceInquiry,
     addNotification,
-    setActiveThreadId
+    setActiveThreadId,
+    getStatusesForUser,
+    getMoodsForUser,
+    drafts
   } = useMockData();
 
   const isMe = sellerId === "me" || sellerId === currentUser?.id;
@@ -154,7 +169,31 @@ export function SellerStorefrontModal({
   }, [isMe, currentUser, marketplaceItems]);
   const savedCount = savedItems.length;
 
-  const [statusTab, setStatusTab] = useState<"all" | "active" | "sold" | "free" | "saved">("all");
+  const [statusTab, setStatusTab] = useState<"all" | "active" | "sold" | "free" | "saved" | "feed" | "glimpses">("all");
+  const [viewingStatus, setViewingStatus] = useState<Status | null>(null);
+  const [showPostModal, setShowPostModal] = useState(false);
+  const [postModalType, setPostModalType] = useState<"status" | "feed" | "glimpse">("status");
+
+  const userStatuses = useMemo(() => {
+    return getStatusesForUser ? getStatusesForUser(sellerUser.id) : [];
+  }, [getStatusesForUser, sellerUser.id]);
+
+  const activeStatuses = useMemo(() => {
+    return userStatuses.filter(
+      (s) => Date.now() - new Date(s.timestamp).getTime() <= 24 * 60 * 60 * 1000
+    );
+  }, [userStatuses]);
+
+  const hasActiveStatus = activeStatuses.length > 0;
+
+  const userFeedCount = useMemo(() => {
+    return getMoodsForUser ? (getMoodsForUser(sellerUser.id) || []).length : 0;
+  }, [getMoodsForUser, sellerUser.id]);
+
+  const userGlimpsesCount = useMemo(() => {
+    return (drafts || []).filter((d) => d.userId === sellerUser.id).length;
+  }, [drafts, sellerUser.id]);
+
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedItem, setSelectedItem] = useState<MarketplaceItem | null>(null);
@@ -350,6 +389,19 @@ export function SellerStorefrontModal({
           >
             <Share2 size={17} />
           </button>
+          {isMe && (
+            <button
+              type="button"
+              onClick={() => {
+                window.history.pushState(null, "", "?settings=overlay");
+                window.dispatchEvent(new Event("locationchange"));
+              }}
+              title="Settings & Menu"
+              className="w-9 h-9 rounded-full bg-gray-100 dark:bg-zinc-800 flex items-center justify-center text-gray-700 dark:text-zinc-200 hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
+            >
+              <Settings size={17} />
+            </button>
+          )}
         </div>
       </header>
 
@@ -374,22 +426,48 @@ export function SellerStorefrontModal({
           {/* Store Profile Info Card */}
           <div className="px-5 pb-5 -mt-14 sm:-mt-16 relative z-10">
             <div className="flex items-end justify-between gap-3 mb-3">
-              {/* Avatar */}
+              {/* Avatar (Square with rounded corners + gradient ring when status active) */}
               <div className="relative">
-                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl overflow-hidden border-4 border-white dark:border-zinc-950 shadow-xl bg-zinc-200 dark:bg-zinc-800 shrink-0">
-                  {sellerUser.avatar ? (
-                    <img
-                      src={sellerUser.avatar}
-                      alt={displayName}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center font-black text-3xl text-gray-700 dark:text-zinc-200">
-                      {displayName.charAt(0)}
-                    </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (hasActiveStatus) {
+                      setViewingStatus(activeStatuses[0]);
+                    } else if (isMe) {
+                      setPostModalType("status");
+                      setShowPostModal(true);
+                    }
+                  }}
+                  className={clsx(
+                    "rounded-3xl transition-all cursor-pointer block text-left",
+                    hasActiveStatus
+                      ? "p-[3px] bg-gradient-to-tr from-amber-400 via-rose-500 to-purple-600 shadow-xl hover:scale-105 active:scale-95"
+                      : "hover:scale-105 active:scale-95"
                   )}
-                </div>
-                <div className="absolute -bottom-1 -right-1 p-1.5 bg-blue-600 text-white rounded-full border-2 border-white dark:border-zinc-950 shadow-sm" title="Verified Seller">
+                  title={hasActiveStatus ? "View status story" : isMe ? "Post status" : undefined}
+                >
+                  <div
+                    className={clsx(
+                      "w-24 h-24 sm:w-28 sm:h-28 rounded-3xl overflow-hidden bg-zinc-200 dark:bg-zinc-800 shrink-0 relative flex items-center justify-center",
+                      hasActiveStatus
+                        ? "border-2 border-white dark:border-zinc-950 p-[1px]"
+                        : "border-4 border-white dark:border-zinc-950 shadow-xl"
+                    )}
+                  >
+                    {sellerUser.avatar ? (
+                      <img
+                        src={sellerUser.avatar}
+                        alt={displayName}
+                        className="w-full h-full object-cover rounded-2xl"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center font-black text-3xl text-gray-700 dark:text-zinc-200">
+                        {displayName.charAt(0)}
+                      </div>
+                    )}
+                  </div>
+                </button>
+                <div className="absolute -bottom-1 -right-1 p-1.5 bg-blue-600 text-white rounded-full border-2 border-white dark:border-zinc-950 shadow-sm pointer-events-none" title="Verified Seller">
                   <ShieldCheck size={15} />
                 </div>
               </div>
@@ -462,13 +540,6 @@ export function SellerStorefrontModal({
                 <span>{storeProfile.responseRate || "Fast Replies (~10m)"}</span>
               </span>
 
-              <span className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 font-medium">
-                <Package size={12} className="text-blue-500" />
-                <span>
-                  {`${sellerListings.length} Total Listed · ${soldCount} Sold`}
-                </span>
-              </span>
-
               <button
                 type="button"
                 onClick={() => setShowReviewsModal(true)}
@@ -490,6 +561,17 @@ export function SellerStorefrontModal({
                 ✓ Doorstep Pickup
               </span>
             </div>
+
+            {/* Status Stories Row (Below fulfillment buttons, above store catalogue) */}
+            <StatusStoriesRow
+              sellerUser={sellerUser}
+              isMe={isMe}
+              onOpenCreateStatus={() => {
+                setPostModalType("status");
+                setShowPostModal(true);
+              }}
+              onOpenStatus={(status) => setViewingStatus(status)}
+            />
           </div>
 
           <hr className="border-gray-100 dark:border-zinc-800" />
@@ -504,6 +586,16 @@ export function SellerStorefrontModal({
                         <Bookmark size={18} className="text-rose-500" />
                         <span>Saved Items</span>
                       </>
+                    ) : statusTab === "feed" ? (
+                      <>
+                        <Sparkles size={18} className="text-amber-500" />
+                        <span>Store Feed & Clips</span>
+                      </>
+                    ) : statusTab === "glimpses" ? (
+                      <>
+                        <MessageSquare size={18} className="text-sky-500" />
+                        <span>Glimpses & Updates</span>
+                      </>
                     ) : (
                       <>
                         <ShoppingBag size={18} className="text-[var(--primary)]" />
@@ -514,24 +606,30 @@ export function SellerStorefrontModal({
                   <p className="text-[11px] text-gray-500 dark:text-zinc-400">
                     {statusTab === "saved"
                       ? `Showing ${filteredStoreItems.length} of ${savedCount} saved items`
+                      : statusTab === "feed"
+                      ? `${userFeedCount} photos & clips shared`
+                      : statusTab === "glimpses"
+                      ? `${userGlimpsesCount} glimpses shared`
                       : `Showing ${filteredStoreItems.length} of ${sellerListings.length} items`}
                   </p>
                 </div>
 
-                {/* Search input in store */}
-                <div className="relative w-36 sm:w-48">
-                  <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search catalogue..."
-                    className="w-full bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white pl-8 pr-3 py-1.5 rounded-xl text-xs outline-none focus:ring-1 focus:ring-[var(--primary)] border-0"
-                  />
-                </div>
+                {/* Search input in store (hidden on feed/glimpses tabs) */}
+                {statusTab !== "feed" && statusTab !== "glimpses" && (
+                  <div className="relative w-36 sm:w-48">
+                    <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search catalogue..."
+                      className="w-full bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white pl-8 pr-3 py-1.5 rounded-xl text-xs outline-none focus:ring-1 focus:ring-[var(--primary)] border-0"
+                    />
+                  </div>
+                )}
               </div>
 
-              {/* Status Filter Tabs */}
+              {/* Status & Social Filter Tabs */}
               <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
                 <button
                   type="button"
@@ -603,10 +701,40 @@ export function SellerStorefrontModal({
                     <span>Saved ({savedCount})</span>
                   </button>
                 )}
+
+                {/* Feed Tab (Moods & Clips merged) */}
+                <button
+                  type="button"
+                  onClick={() => setStatusTab("feed")}
+                  className={clsx(
+                    "px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5",
+                    statusTab === "feed"
+                      ? "bg-gradient-to-r from-amber-500 to-rose-500 text-white shadow-xs"
+                      : "bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 hover:bg-gray-200"
+                  )}
+                >
+                  <Sparkles size={12} />
+                  <span>Feed ({userFeedCount})</span>
+                </button>
+
+                {/* Glimpses Tab */}
+                <button
+                  type="button"
+                  onClick={() => setStatusTab("glimpses")}
+                  className={clsx(
+                    "px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5",
+                    statusTab === "glimpses"
+                      ? "bg-sky-600 text-white shadow-xs"
+                      : "bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 hover:bg-gray-200"
+                  )}
+                >
+                  <MessageSquare size={12} />
+                  <span>Glimpses ({userGlimpsesCount})</span>
+                </button>
               </div>
 
-              {/* Category Chips within Store */}
-              {storeCategories.length > 2 && (
+              {/* Category Chips within Store (hidden on Feed / Glimpses tabs) */}
+              {statusTab !== "feed" && statusTab !== "glimpses" && storeCategories.length > 2 && (
                 <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-0.5">
                   {storeCategories.map((cat) => (
                     <button
@@ -626,8 +754,26 @@ export function SellerStorefrontModal({
                 </div>
               )}
 
-              {/* Listings Grid */}
-              {filteredStoreItems.length === 0 ? (
+              {/* Content Area: Feed, Glimpses, or Product Listings */}
+              {statusTab === "feed" ? (
+                <StoreFeedView
+                  sellerUser={sellerUser}
+                  isMe={isMe}
+                  onOpenCreatePost={() => {
+                    setPostModalType("feed");
+                    setShowPostModal(true);
+                  }}
+                />
+              ) : statusTab === "glimpses" ? (
+                <StoreGlimpsesView
+                  sellerUser={sellerUser}
+                  isMe={isMe}
+                  onOpenCreateGlimpse={() => {
+                    setPostModalType("glimpse");
+                    setShowPostModal(true);
+                  }}
+                />
+              ) : filteredStoreItems.length === 0 ? (
                 <div className="py-12 text-center space-y-2 bg-gray-50 dark:bg-zinc-900/50 rounded-2xl border border-dashed border-gray-200 dark:border-zinc-800">
                   {statusTab === "saved" ? (
                     <Bookmark size={32} className="mx-auto text-rose-400 dark:text-rose-600" />
@@ -705,6 +851,22 @@ export function SellerStorefrontModal({
             </div>
         </div>
       </div>
+
+      {/* Active Story Viewer Modal */}
+      {viewingStatus && (
+        <StatusViewerModal
+          status={viewingStatus}
+          onClose={() => setViewingStatus(null)}
+        />
+      )}
+
+      {/* Unified Post Creator Modal (Status / Feed Post / Glimpse) */}
+      {showPostModal && (
+        <UnifiedPostModal
+          initialType={postModalType}
+          onClose={() => setShowPostModal(false)}
+        />
+      )}
 
       {/* Instagram-style Feed Modal when an item from the catalogue is clicked */}
       {(selectedItem || closingSelectedItem) && (

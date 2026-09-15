@@ -4,7 +4,6 @@ import { useMockData, isMarketplaceThread } from "@/context/MockContext";
 import ChatsView from "./views/ChatsView";
 import CallsView from "./views/CallsView";
 import MarketplaceView from "./views/MarketplaceView";
-import ProfileView from "./views/ProfileView";
 import MeView from "./views/MeView";
 import ChatThreadView from "./views/ChatThreadView";
 import ArchivedChatsView from "./views/ArchivedChatsView";
@@ -377,8 +376,8 @@ function MainAppShellContent() {
                 <MarketplaceView />
             </div>
 
-            {/* Store Tab */}
-            <div className={clsx("h-full w-full absolute inset-0", activeTab === "store" ? "opacity-100 z-10 pointer-events-auto visible" : "opacity-0 z-0 pointer-events-none invisible")}>
+            {/* Store / Profile Tab (Menu on Mobile, Store / Profile on Desktop) */}
+            <div className={clsx("h-full w-full absolute inset-0", (activeTab === "profile" || activeTab === "store") ? "opacity-100 z-10 pointer-events-auto visible" : "opacity-0 z-0 pointer-events-none invisible")}>
                 <SellerStorefrontModal 
                     sellerId="me" 
                     isStandaloneView={true} 
@@ -388,11 +387,6 @@ function MainAppShellContent() {
                         window.dispatchEvent(new Event("locationchange"));
                     }} 
                 />
-            </div>
-
-            {/* Profile Tab */}
-            <div className={clsx("h-full w-full absolute inset-0", activeTab === "profile" ? "opacity-100 z-10 pointer-events-auto visible" : "opacity-0 z-0 pointer-events-none invisible")}>
-                <ProfileView />
             </div>
 
             {/* Settings Tab */}
@@ -495,8 +489,8 @@ function MainAppShellContent() {
                         }
                     }}
                 >
-                    <ProfileView 
-                        userId={lastActiveProfileId} 
+                    <SellerStorefrontModal 
+                        sellerId={lastActiveProfileId} 
                         onClose={() => {
                             const urlParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : new URLSearchParams();
                             const fromParam = urlParams.get("from");
@@ -528,7 +522,7 @@ function MainAppShellContent() {
                                 window.history.pushState(null, "", "/marketplace");
                             }
                             window.dispatchEvent(new Event("locationchange"));
-                        }}
+                        }} 
                     />
                 </div>
             )}
