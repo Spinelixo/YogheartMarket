@@ -10,7 +10,6 @@ export default function PrivacyPage() {
     const [showBlockedModal, setShowBlockedModal] = useState(false);
     const [showPfpModal, setShowPfpModal] = useState(false);
     const [showFeedsModal, setShowFeedsModal] = useState(false);
-    const [showDatingModal, setShowDatingModal] = useState(false);
 
     // Swipe-to-dismiss states for Blocked Contacts Modal
     const [blockedDragY, setBlockedDragY] = useState(0);
@@ -72,26 +71,6 @@ export default function PrivacyPage() {
         setFeedsDragY(0);
     };
 
-    // Swipe-to-dismiss states for Dating Details Privacy Modal
-    const [datingDragY, setDatingDragY] = useState(0);
-    const [isDatingDragging, setIsDatingDragging] = useState(false);
-    const datingDragStartY = useRef(0);
-
-    const handleDatingTouchStart = (e: React.TouchEvent) => {
-        datingDragStartY.current = e.touches[0].clientY;
-        setIsDatingDragging(true);
-    };
-    const handleDatingTouchMove = (e: React.TouchEvent) => {
-        if (!isDatingDragging) return;
-        const deltaY = e.touches[0].clientY - datingDragStartY.current;
-        if (deltaY > 0) setDatingDragY(deltaY);
-    };
-    const handleDatingTouchEnd = () => {
-        setIsDatingDragging(false);
-        if (datingDragY > 120) setShowDatingModal(false);
-        setDatingDragY(0);
-    };
-
     const privacySettings = Object.assign(
         {
             lastSeen: true,
@@ -102,7 +81,6 @@ export default function PrivacyPage() {
             showAge: true,
             profilePicture: "everyone",
             feeds: "everyone",
-            datingDetails: "everyone",
         },
         currentUser?.settings?.privacy || {}
     );
@@ -112,9 +90,6 @@ export default function PrivacyPage() {
 
     const feedsValue = privacySettings.feeds || "everyone";
     const feedsLabels: Record<string, string> = { everyone: "Everyone", contacts: "My Contacts", nobody: "Nobody" };
-
-    const datingValue = privacySettings.datingDetails || "everyone";
-    const datingLabels: Record<string, string> = { everyone: "Everyone", contacts: "My Contacts", nobody: "Nobody" };
 
     const togglePrivacy = (key: "lastSeen" | "onlineStatus" | "readReceipts" | "discoverableByPhone" | "showDiscoverSuggestions" | "showAge") => {
         updateSettings("privacy", {
@@ -137,14 +112,6 @@ export default function PrivacyPage() {
             feeds: value
         });
         setShowFeedsModal(false);
-    };
-
-    const setDatingPrivacy = (value: string) => {
-        updateSettings("privacy", {
-            ...privacySettings,
-            datingDetails: value
-        });
-        setShowDatingModal(false);
     };
 
     const handleUnblock = (userId: string) => {
@@ -265,24 +232,6 @@ export default function PrivacyPage() {
                         </div>
                     </div>
 
-                    {/* Dating Details Privacy */}
-                    <div
-                        onClick={() => setShowDatingModal(true)}
-                        className="flex items-center justify-between px-4 md:px-5 py-4 border-b border-[var(--border)] dark:border-gray-800 cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/40 transition-colors"
-                    >
-                        <div className="flex items-center gap-4">
-                            <Sparkles size={20} className="text-[var(--secondary)]" />
-                            <div>
-                                <span className="font-medium block dark:text-white">Dating Details on Profile</span>
-                                <span className="text-xs text-[var(--secondary)]">Who can see your onboarding answers on your profile</span>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <span className="text-sm text-[var(--primary)] font-semibold">{datingLabels[datingValue]}</span>
-                            <ChevronRight size={18} className="text-[var(--secondary)]" />
-                        </div>
-                    </div>
-
                     <div className="flex items-center justify-between px-4 md:px-5 py-4">
                         <div className="flex items-center gap-4">
                             <CheckCircle size={20} className="text-[var(--secondary)]" />
@@ -317,8 +266,8 @@ export default function PrivacyPage() {
                         <div className="flex items-center gap-4">
                             <Sparkles size={20} className="text-[var(--secondary)]" />
                             <div>
-                                <span className="font-medium block dark:text-white">Discover Suggestions</span>
-                                <span className="text-xs text-[var(--secondary)]">Show &quot;Discover New Singles&quot; suggestions on your chat list</span>
+                                <span className="font-medium block dark:text-white">Item Discover Suggestions</span>
+                                <span className="text-xs text-[var(--secondary)]">Show &quot;Item Discover&quot; suggestions on your chat list</span>
                             </div>
                         </div>
                         <button
@@ -501,56 +450,6 @@ export default function PrivacyPage() {
                     </div>
                 </div>
             )}
-
-            {/* Dating Details Privacy Modal */}
-            {showDatingModal && (
-                <div className="modal-overlay backdrop-blur-sm" onClick={() => setShowDatingModal(false)}>
-                    <div 
-                        className="modal-content p-6 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 shadow-2xl rounded-2xl max-w-sm" 
-                        onClick={e => e.stopPropagation()}
-                        style={{
-                            transform: datingDragY > 0 ? `translateY(${datingDragY}px)` : undefined,
-                            transition: isDatingDragging ? 'none' : 'transform 0.2s cubic-bezier(0.32, 0.72, 0, 1)'
-                        }}
-                    >
-                        {/* Drag Handle Container with touch events */}
-                        <div
-                            className="w-full pb-3 md:hidden shrink-0 cursor-row-resize select-none flex justify-center -mt-2 mb-2"
-                            onTouchStart={handleDatingTouchStart}
-                            onTouchMove={handleDatingTouchMove}
-                            onTouchEnd={handleDatingTouchEnd}
-                        >
-                            <div className="w-10 h-1.5 bg-gray-300 dark:bg-zinc-700 rounded-full" />
-                        </div>
-                        <h2 className="text-lg font-bold mb-1 dark:text-white">Dating Details Privacy</h2>
-                        <p className="text-xs text-[var(--secondary)] mb-4">Who can see your onboarding answers on your profile?</p>
-                        <div className="space-y-1.5">
-                            {([
-                                { value: "everyone", label: "Everyone", desc: "Anyone on Yogheart can see your dating answers" },
-                                { value: "contacts", label: "My Contacts", desc: "Only people in your contacts" },
-                                { value: "nobody", label: "Nobody", desc: "Your dating answers will be hidden from all" }
-                            ] as const).map(opt => (
-                                <div
-                                    key={opt.value}
-                                    onClick={() => setDatingPrivacy(opt.value)}
-                                    className={clsx(
-                                        "flex items-center justify-between px-4 py-3 rounded-xl cursor-pointer transition-all",
-                                        datingValue === opt.value
-                                            ? "bg-[var(--primary)] text-white shadow-md shadow-blue-500/20"
-                                            : "hover:bg-gray-100 dark:hover:bg-zinc-800"
-                                    )}
-                                >
-                                    <div>
-                                        <span className={clsx("font-semibold block text-sm", datingValue !== opt.value && "dark:text-white")}>{opt.label}</span>
-                                        <span className={clsx("text-[11px]", datingValue === opt.value ? "text-white/70" : "text-[var(--secondary)]")}>{opt.desc}</span>
-                                    </div>
-                                    {datingValue === opt.value && <Check size={18} />}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            )}
-        </div >
+        </div>
     );
 }

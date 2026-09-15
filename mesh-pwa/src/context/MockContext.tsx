@@ -645,8 +645,6 @@ const DEFAULT_SETTINGS: Settings = {
     notificationSound: "Default",
     messageTone: "whoosh",
     storage: { autoDownload: "wifi", lessDataForCalls: false },
-    defaultIcebreaker: "Hey, do you want to chat? 😊✨",
-    showIcebreakersInChats: true,
     appIcon: "default",
 };
 
@@ -660,7 +658,8 @@ const INITIAL_USER: User = {
     avatar: null,
     photos: [],
     settings: DEFAULT_SETTINGS,
-    phoneNumber: "",
+    phoneNumber: "+15550001234",
+    savedContactIds: ["demo_maya", "demo_lucas", "demo_elena"],
     isBoosted: false,
 };
 
@@ -679,6 +678,7 @@ const DEFAULT_DATING_PROFILES: User[] = [
             "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=800&auto=format&fit=crop&q=80"
         ],
         settings: DEFAULT_SETTINGS,
+        phoneNumber: "+15551112222",
         location: "Toronto, ON",
         relationshipGoal: "Long-term relationship",
         jobTitle: "Fashion Designer & Stylist",
@@ -701,6 +701,7 @@ const DEFAULT_DATING_PROFILES: User[] = [
             "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=800&auto=format&fit=crop&q=80"
         ],
         settings: DEFAULT_SETTINGS,
+        phoneNumber: "+15553334444",
         location: "Montreal, QC",
         relationshipGoal: "Dating & Romance",
         jobTitle: "Software Engineer",
@@ -724,6 +725,7 @@ const DEFAULT_DATING_PROFILES: User[] = [
             "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=800&auto=format&fit=crop&q=80"
         ],
         settings: DEFAULT_SETTINGS,
+        phoneNumber: "+15555556666",
         location: "Vancouver, BC",
         relationshipGoal: "Looking for Love",
         jobTitle: "Architectural Designer",
@@ -746,6 +748,7 @@ const DEFAULT_DATING_PROFILES: User[] = [
             "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=800&auto=format&fit=crop&q=80"
         ],
         settings: DEFAULT_SETTINGS,
+        phoneNumber: "+15557778888",
         location: "New York, NY",
         relationshipGoal: "Serious Relationship",
         jobTitle: "Head Pastry Chef",
@@ -768,6 +771,7 @@ const DEFAULT_DATING_PROFILES: User[] = [
             "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800&auto=format&fit=crop&q=80"
         ],
         settings: DEFAULT_SETTINGS,
+        phoneNumber: "+15559990000",
         location: "Chicago, IL",
         relationshipGoal: "Dating & Fun",
         jobTitle: "Music Producer",
@@ -790,6 +794,7 @@ const DEFAULT_DATING_PROFILES: User[] = [
             "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800&auto=format&fit=crop&q=80"
         ],
         settings: DEFAULT_SETTINGS,
+        phoneNumber: "+15552223333",
         location: "Los Angeles, CA",
         relationshipGoal: "Long-term relationship",
         jobTitle: "Interior Designer",
@@ -801,7 +806,65 @@ const DEFAULT_DATING_PROFILES: User[] = [
     }
 ];
 
-const INITIAL_MARKETPLACE_ITEMS: MarketplaceItem[] = [];
+const INITIAL_MARKETPLACE_ITEMS: MarketplaceItem[] = [
+    {
+        id: "item_demo_1",
+        sellerId: "demo_maya",
+        sellerName: "Maya Chen",
+        sellerAvatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop&q=80",
+        sellerColor: "bg-amber-200",
+        sellerLocation: "Toronto, ON",
+        title: "Handmade Ceramic Matcha Bowl & Whisk",
+        price: 38,
+        category: "Home & Living",
+        condition: "Brand New",
+        description: "Wheel-thrown speckled stoneware matcha chawan with bamboo whisk. Never used, beautiful earthy glaze.",
+        images: ["https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?auto=format&fit=crop&w=600&q=80"],
+        location: "Toronto, ON",
+        status: "active",
+        createdAt: new Date().toISOString(),
+        savedBy: [],
+        viewsCount: 14
+    },
+    {
+        id: "item_demo_2",
+        sellerId: "demo_lucas",
+        sellerName: "Lucas Vance",
+        sellerAvatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=500&auto=format&fit=crop&q=80",
+        sellerColor: "bg-blue-200",
+        sellerLocation: "Montreal, QC",
+        title: "Fuji X-T30 Mirrorless Camera + 18-55mm Lens",
+        price: 850,
+        category: "Electronics",
+        condition: "Like New",
+        description: "In pristine condition with original box, strap, and 2 spare batteries. Low shutter count.",
+        images: ["https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=600&q=80"],
+        location: "Montreal, QC",
+        status: "active",
+        createdAt: new Date(Date.now() - 3600000 * 2).toISOString(),
+        savedBy: [],
+        viewsCount: 32
+    },
+    {
+        id: "item_demo_3",
+        sellerId: "demo_elena",
+        sellerName: "Elena Rostova",
+        sellerAvatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=500&auto=format&fit=crop&q=80",
+        sellerColor: "bg-rose-200",
+        sellerLocation: "Vancouver, BC",
+        title: "Mid-Century Modern Teak Coffee Table",
+        price: 195,
+        category: "Furniture",
+        condition: "Good",
+        description: "Authentic vintage 1960s Danish teak coffee table. Solid wood, slight patina on edge but structurally rock solid.",
+        images: ["https://images.unsplash.com/photo-1533090161767-e6ffed986c88?auto=format&fit=crop&w=600&q=80"],
+        location: "Vancouver, BC",
+        status: "active",
+        createdAt: new Date(Date.now() - 3600000 * 5).toISOString(),
+        savedBy: [],
+        viewsCount: 27
+    }
+];
 const INITIAL_CAMPAIGNS: Campaign[] = [];
 const INITIAL_RIDES: Ride[] = [
     {
@@ -2407,15 +2470,7 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
             return true;
         });
 
-        const activeThreads = sortThreads(uniqueFormattedThreads.filter(t => {
-            if (t.isArchived) return false;
-            const isPendingIncomingIcebreaker = t.status === "pending" && t.initiatedBy && t.initiatedBy !== currentUserId;
-            if (isPendingIncomingIcebreaker) {
-                const showIcebreakers = currentUser?.settings?.showIcebreakersInChats !== false;
-                if (!showIcebreakers) return false;
-            }
-            return true;
-        }));
+        const activeThreads = sortThreads(uniqueFormattedThreads.filter(t => !t.isArchived));
         const archivedThreads = sortThreads(uniqueFormattedThreads.filter(t => t.isArchived));
 
         return { requests, activeThreads, archivedThreads, uniqueFormattedThreads, formattedThreads };
@@ -2449,14 +2504,14 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
 
     // DATABASE MUTATION FUNCTIONS
 
-    const sendIcebreaker = async (targetUser: User, message: string, status: "pending" | "accepted" = "pending"): Promise<string> => {
+    const sendIcebreaker = async (targetUser: User, message: string, status: "pending" | "accepted" = "accepted"): Promise<string> => {
         if (!currentUserId) return "";
 
         // Create a real thread (or find existing) and send the message directly
         const threadId = await startDirectChat(targetUser, false);
         if (!threadId) return "";
 
-        // Send the icebreaker as the first message in the thread
+        // Send the message as the first message in the thread
         const messageId = crypto.randomUUID();
         const messageRef = doc(db, "threads", threadId, "messages", messageId);
 
@@ -2475,11 +2530,9 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
             lastTime: "Now",
             unreadFor: arrayUnion(targetUser.id),
             updatedAt: new Date().toISOString(),
-            status,
+            status: "active",
             initiatedBy: currentUserId
         });
-
-
 
         addNotification(`Message sent to ${targetUser.name}!`);
         return threadId;
@@ -3630,10 +3683,10 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
         );
     };
 
-    const startDirectChat = async (targetUser: User, autoSendIcebreaker = true): Promise<string> => {
+    const startDirectChat = async (targetUser: User, autoSendIcebreaker = false): Promise<string> => {
         if (!currentUserId) return "";
 
-        // 1. Check if regular dating thread already exists in local state (exclude groups and marketplace threads)
+        // 1. Check if regular direct thread already exists in local state (exclude groups and marketplace threads)
         const existingThread = formattedThreads.find(t => !t.isGroup && !isMarketplaceThread(t) && t.user.id === targetUser.id);
         if (existingThread) return existingThread.id;
 
@@ -3646,7 +3699,7 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
             const querySnap = await getDocs(q);
             const existingThreadDoc = querySnap.docs.find(d => {
                 const data = d.data();
-                // Exclude group threads and marketplace threads — we only want 1-on-1 Dating DMs
+                // Exclude group threads and marketplace threads — we only want 1-on-1 DMs
                 if (data.isGroup || data.isMarketplace || d.id.startsWith("mkt_") || d.id.startsWith("marketplace_")) return false;
                 return Array.isArray(data.participantIds) && data.participantIds.includes(targetUser.id);
             });
@@ -3711,7 +3764,7 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
             mutedFor: [],
             deletedFor: [],
             updatedAt: new Date().toISOString(),
-            status: "pending",
+            status: "active",
             initiatedBy: currentUserId
         });
 

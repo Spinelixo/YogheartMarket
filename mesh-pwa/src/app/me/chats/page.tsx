@@ -758,7 +758,7 @@ export default function ChatsPage() {
                         onClick={() => {
                             setShowMessageToneModal(true);
                         }}
-                        className="flex items-center justify-between px-4 md:px-5 py-4 cursor-pointer border-b border-[var(--border)] dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800/40 transition-colors"
+                        className="flex items-center justify-between px-4 md:px-5 py-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/40 transition-colors"
                     >
                         <div className="flex items-center gap-4">
                             <Music size={20} className="text-[var(--secondary)]" />
@@ -769,42 +769,6 @@ export default function ChatsPage() {
                                 {currentUser?.settings?.messageTone || "whoosh"}
                             </span>
                             <ChevronRight size={18} className="text-[var(--secondary)]" />
-                        </div>
-                    </div>
-
-                    <div
-                        onClick={() => {
-                            const currentVal = currentUser?.settings?.showIcebreakersInChats !== false;
-                            updateSettings("showIcebreakersInChats", !currentVal);
-                        }}
-                        className="flex items-center justify-between px-4 md:px-5 py-4 cursor-pointer border-b border-[var(--border)] dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800/40 transition-colors"
-                    >
-                        <div className="flex flex-col gap-1 pr-4">
-                            <span className="font-medium dark:text-white">Show Icebreakers in Chat List</span>
-                            <span className="text-xs text-[var(--secondary)]">Show received swipe connections and icebreakers directly in your chats page. If turned off, they will only appear on the Requests page.</span>
-                        </div>
-                        <div className={clsx(
-                            "w-12 h-7 rounded-full transition-colors relative shrink-0",
-                            (currentUser?.settings?.showIcebreakersInChats !== false) ? "bg-[var(--success)]" : "bg-gray-300 dark:bg-zinc-700"
-                        )}>
-                            <div className={clsx(
-                                "w-5 h-5 bg-white rounded-full absolute top-1 transition-all shadow-sm",
-                                (currentUser?.settings?.showIcebreakersInChats !== false) ? "left-6" : "left-1"
-                            )} />
-                        </div>
-                    </div>
-
-                    <div className="px-4 md:px-5 py-4">
-                        <div className="flex flex-col gap-2">
-                            <span className="font-medium dark:text-white">Default Icebreaker Text</span>
-                            <span className="text-xs text-[var(--secondary)]">This text is sent automatically when you swipe right to connect with someone.</span>
-                            <input
-                                type="text"
-                                value={currentUser?.settings?.defaultIcebreaker || "Hey, do you want to chat? 😊✨"}
-                                onChange={(e) => updateSettings("defaultIcebreaker", e.target.value)}
-                                className="w-full mt-2 px-3 py-2.5 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[var(--primary)] text-gray-950 dark:text-white"
-                                placeholder="Write something awesome and flirty..."
-                            />
                         </div>
                     </div>
                 </div>

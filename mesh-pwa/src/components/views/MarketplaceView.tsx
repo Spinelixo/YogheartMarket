@@ -486,7 +486,7 @@ export default function MarketplaceView() {
   return (
     <div className="h-full flex flex-col bg-[var(--background)] dark:bg-zinc-950 overflow-hidden relative antialiased subpixel-antialiased text-gray-900 dark:text-zinc-100">
       {/* Top Header */}
-      <header className="sticky top-0 z-30 bg-white dark:bg-zinc-900 px-4 pt-3 pb-2.5 shrink-0 border-b border-gray-150 dark:border-zinc-800">
+      <header className="sticky top-0 z-30 bg-white dark:bg-zinc-900 px-4 pt-3 pb-2 shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-xl text-white flex items-center justify-center shadow-xs bg-[var(--primary)]">

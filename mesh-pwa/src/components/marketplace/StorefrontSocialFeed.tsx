@@ -391,7 +391,7 @@ export function UnifiedPostModal({ initialType = "status", onClose }: UnifiedPos
   return (
     <div
       data-modal="true"
-      className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-fade-in"
+      className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-start justify-center p-3 pt-3 sm:pt-8 overflow-y-auto animate-fade-in"
       onClick={onClose}
     >
       <div

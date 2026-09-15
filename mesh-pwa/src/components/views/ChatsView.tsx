@@ -3,7 +3,7 @@
 import { useMockData, User, isMarketplaceThread } from "@/context/MockContext";
 import Link from "next/link";
 import { clsx } from "clsx";
-import { Search, Edit, X, Send, Archive, Users, UserPlus, Plus, UserCheck, UserX, Image, Bell, BellOff, Trash, Trash2, Ban, Flag, Pin, RefreshCw, Check, CheckCheck, AlertTriangle, ArrowLeft, EyeOff, CheckSquare, ChevronRight, CheckCircle2, Heart, Phone, Sparkles } from "lucide-react";
+import { Search, Edit, X, Send, Archive, Users, UserPlus, Plus, UserCheck, UserX, Image, Bell, BellOff, Trash, Trash2, Ban, Flag, Pin, RefreshCw, Check, CheckCheck, AlertTriangle, ArrowLeft, EyeOff, CheckSquare, ChevronRight, CheckCircle2, Heart, Phone, Sparkles, ShoppingBag } from "lucide-react";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
@@ -29,7 +29,7 @@ export default function ChatsView() {
     addNewLocalContact, muteChat, archiveChat, blockUser, reportUser, 
     deleteThread, deleteThreads, togglePinThread, syncDeviceContacts, addNotification, 
     setActiveThreadId, leaveGroup, requestNotificationPermission, setActiveTab,
-    callLogs
+    callLogs, marketplaceItems = []
   } = useMockData();
 
   const missedCallsCount = (callLogs && currentUser) 
@@ -98,9 +98,6 @@ export default function ChatsView() {
     }
     return false; // "nobody"
   };
-  const [selectedProfile, setSelectedProfile] = useState<User | null>(null);
-  const [message, setMessage] = useState("");
-  const [isSent, setIsSent] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
   const [swipingId, setSwipingId] = useState<string | null>(null);
@@ -113,18 +110,8 @@ export default function ChatsView() {
   const suggestionLongPressTimerRef = useRef<any>(null);
   const currentSwipeOffset = useRef(0);
   const currentSwipingId = useRef<string | null>(null);
-  const icebreakerInputRef = useRef<HTMLInputElement>(null);
   const chatLongPressTimeoutRef = useRef<any>(null);
   const chatSwipeTouchStartRef = useRef<{ x: number; y: number } | null>(null);
-
-  useEffect(() => {
-    if (selectedProfile) {
-      const timer = setTimeout(() => {
-        icebreakerInputRef.current?.focus();
-      }, 60);
-      return () => clearTimeout(timer);
-    }
-  }, [selectedProfile]);
 
   // Context Menu States
   const [showChatContextMenu, setShowChatContextMenu] = useState(false);
@@ -396,7 +383,6 @@ export default function ChatsView() {
   useModalHistory("confirmBlock", showConfirmBlock, () => { setShowConfirmBlock(false); });
   useModalHistory("reportModal", showReportModal, () => { setShowReportModal(false); });
   useModalHistory("confirmDeleteSyncedContacts", showConfirmDeleteSyncedContacts, () => { setShowConfirmDeleteSyncedContacts(false); });
-  useModalHistory("profilePreview", !!selectedProfile, () => { setSelectedProfile(null); setMessage(""); setIsSent(false); });
 
   useEffect(() => {
     if (anyModalOpen) {
@@ -475,13 +461,16 @@ export default function ChatsView() {
   };
 
 
-  const handleMatchedClick = (user: User) => {
-    const existingThread = threads.find(t => t.user.id === user.id);
+  const handleMatchedClick = async (user: User) => {
     setIsNewChatOpen(false);
+    const existingThread = threads.find(t => t.user.id === user.id);
     if (existingThread) {
       handleThreadClick(existingThread.id);
     } else {
-      setSelectedProfile(user);
+      const threadId = await startDirectChat(user, false);
+      if (threadId) {
+        handleThreadClick(threadId);
+      }
     }
   };
 
@@ -513,8 +502,54 @@ export default function ChatsView() {
     }
   };
 
-  // Filter out dismissed suggestions (gender filtering is handled by MockContext)
-  const visibleSuggestions = useMemo(() => suggestions.filter(s => !dismissedIds.has(s.id)), [suggestions, dismissedIds]);
+  // Item Discover: only contacts whose phone number is saved in phone AND who have active items they are selling
+  const itemDiscoverContacts = useMemo(() => {
+    if (!currentUser) return [];
+
+    const norm = (num?: string | null) => (num || "").replace(/[^0-9]/g, "");
+
+    const savedPhones = new Set<string>();
+    (currentUser.localContacts || []).forEach(c => {
+      const p = norm(c.phoneNumber);
+      if (p) savedPhones.add(p);
+    });
+    MOCK_DEVICE_CONTACTS.forEach(c => {
+      const p = norm(c.phoneNumber);
+      if (p) savedPhones.add(p);
+    });
+
+    const savedIds = new Set<string>(currentUser.savedContactIds || []);
+
+    return (allDatingUsers || []).filter(u => {
+      if (u.id === currentUser.id) return false;
+      if (dismissedIds.has(u.id)) return false;
+
+      // 1. Must be a contact saved in phone (by ID in savedContactIds or phone matching device contacts)
+      const isSavedById = savedIds.has(u.id);
+      const isSavedByPhone = u.phoneNumber ? savedPhones.has(norm(u.phoneNumber)) : false;
+      if (!isSavedById && !isSavedByPhone) return false;
+
+      // 2. Must have active items they are selling in the marketplace
+      const activeItems = (marketplaceItems || []).filter(item => 
+        (item.sellerId === u.id || (item.sellerName && item.sellerName.toLowerCase() === u.name.toLowerCase())) &&
+        item.status !== "sold"
+      );
+
+      return activeItems.length > 0;
+    }).map(u => {
+      const activeItems = (marketplaceItems || []).filter(item => 
+        (item.sellerId === u.id || (item.sellerName && item.sellerName.toLowerCase() === u.name.toLowerCase())) &&
+        item.status !== "sold"
+      );
+      return {
+        ...u,
+        itemsCount: activeItems.length,
+        featuredItem: activeItems[0]
+      };
+    });
+  }, [allDatingUsers, currentUser, marketplaceItems, dismissedIds]);
+
+  const visibleSuggestions = itemDiscoverContacts;
 
   // Unified threads for main Chats list (includes personal chats, group chats, and marketplace inquiries)
   const regularThreads = useMemo(() => {
@@ -595,20 +630,7 @@ export default function ChatsView() {
     return { filteredMatched: fMatched, filteredUnmatched: fUnmatched };
   }, [allDatingUsers, currentUser, localContacts, contactSearchQuery]);
 
-  const handleSend = async () => {
-    if (selectedProfile && message.trim()) {
-      setIsSent(true);
-      await sendIcebreaker(selectedProfile, message);
-      // Find the newly created thread to navigate to it
-      setTimeout(() => {
-        const threadId = threads.find(t => t.user.id === selectedProfile.id)?.id;
-        setSelectedProfile(null);
-        setIsSent(false);
-        setMessage("");
-        if (threadId) handleThreadClick(threadId);
-      }, 1200);
-    }
-  };
+
 
   const handleTouchStart = (e: React.TouchEvent, id: string) => {
     touchStartX.current = e.touches[0].clientX;
@@ -621,7 +643,7 @@ export default function ChatsView() {
     if (suggestionLongPressTimerRef.current) {
       clearTimeout(suggestionLongPressTimerRef.current);
     }
-    const profile = suggestions.find(s => s.id === id);
+    const profile = itemDiscoverContacts.find(s => s.id === id) || (allDatingUsers || []).find(s => s.id === id);
     if (profile) {
       suggestionLongPressTimerRef.current = setTimeout(() => {
         if (!hasMovedHorizontally.current && currentSwipeOffset.current < 10) {
@@ -662,22 +684,11 @@ export default function ChatsView() {
       clearTimeout(suggestionLongPressTimerRef.current);
     }
     if (currentSwipingId.current && !isLongPressTriggered.current) {
-      if (currentSwipeOffset.current > 40) {
-        // Swiped DOWN to connect!
-        const profile = suggestions.find(s => s.id === currentSwipingId.current);
-        if (profile) {
-          setSelectedProfile(profile);
-          setMessage(`Hi ${profile.name}! 👋 Saw your profile and wanted to connect.`);
-          setIsSent(false);
-        }
-      } else if (!hasMovedHorizontally.current && currentSwipeOffset.current < 10) {
-        // Deliberate tap: also opens connect confirmation
-        const profile = suggestions.find(s => s.id === currentSwipingId.current);
-        if (profile) {
-          setSelectedProfile(profile);
-          setMessage(`Hi ${profile.name}! 👋 Saw your profile and wanted to connect.`);
-          setIsSent(false);
-        }
+      if (!hasMovedHorizontally.current && currentSwipeOffset.current < 15) {
+        // Deliberate tap: navigate directly to seller storefront page
+        const contactId = currentSwipingId.current;
+        window.history.pushState(null, "", `/profile?userId=${contactId}&from=chats`);
+        window.dispatchEvent(new Event("locationchange"));
       }
     }
     currentSwipingId.current = null;
@@ -700,7 +711,7 @@ export default function ChatsView() {
     if (suggestionLongPressTimerRef.current) {
       clearTimeout(suggestionLongPressTimerRef.current);
     }
-    const profile = suggestions.find(s => s.id === id);
+    const profile = itemDiscoverContacts.find(s => s.id === id) || (allDatingUsers || []).find(s => s.id === id);
     if (profile) {
       suggestionLongPressTimerRef.current = setTimeout(() => {
         if (!hasMovedHorizontally.current && currentSwipeOffset.current < 10) {
@@ -734,21 +745,10 @@ export default function ChatsView() {
         clearTimeout(suggestionLongPressTimerRef.current);
       }
       if (currentSwipingId.current && !isLongPressTriggered.current) {
-        if (currentSwipeOffset.current > 40) {
-          // Swiped DOWN to connect!
-          const profile = suggestions.find(s => s.id === currentSwipingId.current);
-          if (profile) {
-            setSelectedProfile(profile);
-            setMessage(`Hi ${profile.name}! 👋 Saw your profile and wanted to connect.`);
-            setIsSent(false);
-          }
-        } else if (!hasMovedHorizontally.current && currentSwipeOffset.current < 10) {
-          const profile = suggestions.find(s => s.id === currentSwipingId.current);
-          if (profile) {
-            setSelectedProfile(profile);
-            setMessage(`Hi ${profile.name}! 👋 Saw your profile and wanted to connect.`);
-            setIsSent(false);
-          }
+        if (!hasMovedHorizontally.current && currentSwipeOffset.current < 15) {
+          const contactId = currentSwipingId.current;
+          window.history.pushState(null, "", `/profile?userId=${contactId}&from=chats`);
+          window.dispatchEvent(new Event("locationchange"));
         }
       }
       currentSwipingId.current = null;
@@ -767,12 +767,7 @@ export default function ChatsView() {
 
 
 
-  const viewFullProfile = () => {
-    if (selectedProfile) {
-      window.history.pushState(null, "", `/profile?userId=${selectedProfile.id}&from=chats`);
-      setSelectedProfile(null);
-    }
-  };
+
 
   return (
     <div className="h-full flex flex-col relative bg-[var(--background)] dark:bg-gray-900">
@@ -1046,8 +1041,7 @@ export default function ChatsView() {
                       </div>
                       <button
                         onClick={async () => {
-                          const defaultIcebreakerText = currentUser?.settings?.defaultIcebreaker || "Hey, do you want to chat? 😊✨";
-                          const threadId = await sendIcebreaker(discoveryResult, defaultIcebreakerText);
+                          const threadId = await startDirectChat(discoveryResult, false);
                           setIsNewChatOpen(false);
                           setContactSearchQuery("");
                           setDiscoveryResult(null);
@@ -1426,28 +1420,29 @@ export default function ChatsView() {
           </div>
         )}
 
-        {/* Discover Section */}
-        {currentUser?.settings?.privacy?.showDiscoverSuggestions !== false && visibleSuggestions.length > 0 && (
+        {/* Item Discover Section */}
+        {currentUser?.settings?.privacy?.showDiscoverSuggestions !== false && itemDiscoverContacts.length > 0 && (
           <section className="border-b border-[var(--border)] dark:border-gray-800 py-2 sm:py-2.5">
-            <div className="px-4 md:px-6 mb-1.5 flex items-center justify-between">
-              <h2 className="text-[11px] font-bold text-[var(--secondary)] uppercase tracking-wider">Discover New Singles</h2>
-              <span className="text-[10px] text-gray-400 dark:text-zinc-500">Swipe down to connect • Hold to remove</span>
+            <div className="px-4 md:px-6 mb-2 flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <ShoppingBag size={13} className="text-emerald-500" />
+                <h2 className="text-[11px] font-bold text-[var(--secondary)] uppercase tracking-wider">Item Discover</h2>
+              </div>
+              <span className="text-[10px] text-gray-400 dark:text-zinc-500">Tap to view store • Hold to hide</span>
             </div>
-            <div className="flex gap-3 overflow-x-auto px-4 md:px-6 hide-scrollbar py-2">
-              {visibleSuggestions.map((profile) => {
-                const isBeingSwiped = swipingId === profile.id;
-                const opacity = 1;
-                const translateY = isBeingSwiped ? swipeOffset : 0;
-                const showConnectLabel = isBeingSwiped && swipeOffset > 25;
-
+            <div className="flex gap-3.5 overflow-x-auto px-4 md:px-6 hide-scrollbar py-1">
+              {itemDiscoverContacts.map((profile) => {
                 return (
                   <div
                     key={profile.id}
-                    className="flex flex-col items-center gap-1 min-w-[60px] select-none cursor-pointer"
-                    style={{
-                      opacity,
-                      transform: `translateY(${translateY}px)`,
-                      transition: isBeingSwiped ? 'none' : 'all 0.3s ease'
+                    className="flex flex-col items-center gap-1 min-w-[62px] select-none cursor-pointer group"
+                    onClick={() => {
+                      window.history.pushState(null, "", `/profile?userId=${profile.id}&from=chats`);
+                      window.dispatchEvent(new Event("locationchange"));
+                    }}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      setProfileToRemove(profile);
                     }}
                     onTouchStart={(e) => handleTouchStart(e, profile.id)}
                     onTouchMove={handleTouchMove}
@@ -1457,26 +1452,22 @@ export default function ChatsView() {
                     <div className="relative">
                       <div
                         className={clsx(
-                          "w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 transition-all overflow-hidden flex items-center justify-center shadow-xs",
-                          (profile.avatar && checkPrivacy(profile, 'profilePicture')) ? "bg-white border-emerald-500" : profile.color,
-                          isBeingSwiped && swipeOffset > 25 ? "border-emerald-500 scale-105 shadow-md shadow-emerald-500/30" : "border-emerald-500",
-                          !isBeingSwiped && "hover:scale-105"
+                          "w-13 h-13 sm:w-14 sm:h-14 rounded-full border-2 border-emerald-500 transition-all overflow-hidden flex items-center justify-center shadow-xs group-hover:scale-105 group-active:scale-95",
+                          (profile.avatar && checkPrivacy(profile, 'profilePicture')) ? "bg-white" : profile.color
                         )}
                       >
                         {profile.avatar && checkPrivacy(profile, 'profilePicture') ? (
                           <img src={profile.avatar} alt={profile.name} className="w-full h-full object-cover" />
                         ) : (
-                          <span className="text-sm sm:text-base font-bold">{profile.name.charAt(0)}</span>
+                          <span className="text-sm sm:text-base font-bold text-zinc-800 dark:text-white">{profile.name.charAt(0)}</span>
                         )}
                       </div>
-                      {showConnectLabel && (
-                        <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-[9px] font-extrabold rounded-full whitespace-nowrap shadow-md flex items-center gap-1 animate-bounce z-20">
-                          <Heart size={9} className="fill-white text-white" />
-                          <span>Connect</span>
-                        </div>
-                      )}
+                      {/* Active item badge */}
+                      <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-sm border-2 border-white dark:border-zinc-900" title={`${profile.itemsCount} active listing${profile.itemsCount > 1 ? 's' : ''}`}>
+                        <ShoppingBag size={10} className="stroke-[2.5]" />
+                      </div>
                     </div>
-                    <span className="text-[11px] text-center font-medium truncate w-14 dark:text-white">{profile.name}</span>
+                    <span className="text-[11px] text-center font-medium truncate w-16 dark:text-white group-hover:text-emerald-600 transition-colors">{profile.name}</span>
                   </div>
                 );
               })}
@@ -1903,117 +1894,7 @@ export default function ChatsView() {
         </section>
       </div>
 
-      {/* Connect Confirmation & Quick Message Floating Modal */}
-      {selectedProfile && (
-        <div className="absolute inset-0 z-[160] bg-black/60 backdrop-blur-xs flex items-start justify-center p-4 pt-12 sm:pt-20 overflow-y-auto animate-in fade-in duration-150" onClick={() => setSelectedProfile(null)}>
-          <div
-            className="w-full max-w-[440px] bg-white dark:bg-zinc-900 rounded-3xl p-6 shadow-2xl border border-zinc-150 dark:border-zinc-800 animate-in zoom-in-95 duration-150"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2 text-xs font-extrabold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
-                <Sparkles size={15} />
-                <span>Message Member</span>
-              </div>
-              <button
-                onClick={() => setSelectedProfile(null)}
-                className="p-2 rounded-full text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
-                aria-label="Close"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="flex items-center gap-4 mb-4">
-              <div className={clsx("w-18 h-18 sm:w-20 sm:h-20 rounded-full shrink-0 overflow-hidden flex items-center justify-center border-2 border-emerald-500 shadow-md", (selectedProfile.avatar && checkPrivacy(selectedProfile, 'profilePicture')) ? "bg-white" : selectedProfile.color)}>
-                {selectedProfile.avatar && checkPrivacy(selectedProfile, 'profilePicture') ? (
-                  <img src={selectedProfile.avatar} alt={selectedProfile.name} className="w-full h-full object-cover" />
-                ) : (
-                  <span className="text-2xl sm:text-3xl font-black text-zinc-800 dark:text-white">{selectedProfile.name.charAt(0)}</span>
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="text-xl sm:text-2xl font-bold text-zinc-900 dark:text-white truncate">
-                  {selectedProfile.name}
-                </h3>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 line-clamp-2 leading-relaxed">{selectedProfile.bio || "Active on Yogheart"}</p>
-                <div className="flex items-center gap-2 mt-1.5">
-                  <button
-                    onClick={viewFullProfile}
-                    className="text-emerald-600 dark:text-emerald-400 text-xs font-bold hover:underline inline-flex items-center gap-1 cursor-pointer"
-                  >
-                    <span>View full profile</span>
-                    <span>→</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {checkPrivacy(selectedProfile, 'datingDetails') && selectedProfile.interests.length > 0 && (
-              <div className="flex flex-wrap gap-2 mb-4">
-                {selectedProfile.interests.slice(0, 4).map(i => (
-                  <span key={i} className="px-3 py-1 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-full text-xs font-semibold">{i}</span>
-                ))}
-              </div>
-            )}
-
-            <div className="text-xs font-semibold text-zinc-600 dark:text-zinc-300 mb-2">
-              Send an icebreaker to start chatting with {selectedProfile.name}:
-            </div>
-
-            {!isSent ? (
-              <div className="space-y-3.5">
-                <div className="relative">
-                  <input
-                    ref={icebreakerInputRef}
-                    type="text"
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                    placeholder={`Say hi to ${selectedProfile.name}...`}
-                    className="w-full pl-4 pr-12 py-3.5 bg-zinc-100 dark:bg-zinc-800/90 rounded-2xl outline-none text-sm text-zinc-900 dark:text-white placeholder-zinc-400 border border-transparent focus:border-emerald-500 focus:bg-white dark:focus:bg-zinc-800 transition-all shadow-inner"
-                    autoFocus
-                  />
-                  <button
-                    onClick={handleSend}
-                    disabled={!message.trim()}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl disabled:opacity-40 transition-colors cursor-pointer"
-                    title="Send icebreaker"
-                  >
-                    <Send size={16} />
-                  </button>
-                </div>
-
-                <div className="flex items-center gap-3 pt-1">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedProfile(null)}
-                    className="flex-1 py-3 rounded-2xl border border-zinc-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 text-xs sm:text-sm font-bold hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
-                  >
-                    Not now
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleSend}
-                    disabled={!message.trim()}
-                    className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs sm:text-sm font-bold shadow-lg shadow-emerald-600/25 disabled:opacity-40 transition-all cursor-pointer flex items-center justify-center gap-2"
-                  >
-                    <Heart size={15} className="fill-white" />
-                    <span>Connect & Chat</span>
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="py-4 bg-emerald-600 text-white rounded-2xl text-center font-bold text-sm shadow-md flex items-center justify-center gap-2 animate-in zoom-in-95 duration-150">
-                <Heart size={16} className="fill-white" />
-                <span>Message Sent! Opening chat...</span>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Remove Suggestion Confirmation Banner / Modal */}
+      {/* Hide from Item Discover Confirmation Modal */}
       {profileToRemove && (
         <div 
           className="absolute inset-0 z-[160] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150"
@@ -2032,10 +1913,10 @@ export default function ChatsView() {
             </div>
 
             <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-1">
-              Remove Suggestion?
+              Hide from Item Discover?
             </h3>
             <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-5 leading-relaxed">
-              Do you want to remove <span className="font-semibold text-zinc-800 dark:text-zinc-200">{profileToRemove.name}</span> from your Discover New Singles recommendations?
+              Do you want to hide <span className="font-semibold text-zinc-800 dark:text-zinc-200">{profileToRemove.name}</span> from your Item Discover recommendations?
             </p>
 
             <div className="flex items-center gap-3">
@@ -2051,17 +1932,18 @@ export default function ChatsView() {
                 onClick={() => {
                   setDismissedIds(prev => new Set([...prev, profileToRemove.id]));
                   setProfileToRemove(null);
-                  addNotification(`Removed ${profileToRemove.name} from suggestions.`);
+                  addNotification(`Hidden ${profileToRemove.name} from Item Discover.`);
                 }}
                 className="flex-1 py-3 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md shadow-rose-600/20 transition-all cursor-pointer flex items-center justify-center gap-1.5"
               >
                 <Trash2 size={14} />
-                <span>Remove</span>
+                <span>Hide</span>
               </button>
             </div>
           </div>
         </div>
       )}
+
 
       {/* Context Menu Overlay */}
       {typeof window !== "undefined" && showChatContextMenu && selectedChat && createPortal(

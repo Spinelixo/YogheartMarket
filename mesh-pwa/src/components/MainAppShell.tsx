@@ -507,6 +507,9 @@ function MainAppShellContent() {
                                     setActiveTab("chats");
                                     window.history.pushState(null, "", `/inbox?id=${fromThreadId}`);
                                 }
+                            } else if (fromParam === "chats") {
+                                setActiveTab("chats");
+                                window.history.pushState(null, "", "/");
                             } else if (fromParam === "marketplace") {
                                 setActiveTab("marketplace");
                                 window.history.pushState(null, "", "/marketplace");

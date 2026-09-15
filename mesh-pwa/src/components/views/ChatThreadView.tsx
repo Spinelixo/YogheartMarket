@@ -4286,44 +4286,6 @@ export default function ChatThreadView({ threadId, onClose }: { threadId: string
                         <LogOut size={16} className="text-zinc-400 shrink-0" />
                         <span className="text-sm text-zinc-500 dark:text-zinc-400 font-medium">You left this blend</span>
                     </div>
-                ) : thread && !thread.isGroup && thread.status === "pending" && thread.initiatedBy && thread.initiatedBy !== currentUser.id ? (
-                    /* Receiver: incoming pending icebreaker — show Accept / Decline */
-                    <div className="flex flex-col items-center gap-3 py-4 px-4 animate-in slide-in-from-bottom duration-300">
-                        <p className="text-xs text-gray-500 dark:text-zinc-400 text-center font-medium">
-                            {thread.user.name} wants to connect with you
-                        </p>
-                        <div className="flex items-center gap-3 w-full max-w-xs">
-                            <button
-                                onClick={async () => {
-                                    const req = requests.find(r => r.isThreadRequest && r.id === thread.id);
-                                    if (req) {
-                                        await declineRequest(req.id);
-                                    } else {
-                                        await declineRequest(thread.id);
-                                    }
-                                }}
-                                className="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 rounded-xl text-sm font-semibold text-zinc-600 dark:text-zinc-300 transition-colors cursor-pointer"
-                            >
-                                <X size={16} /> Decline
-                            </button>
-                            <button
-                                onClick={async () => {
-                                    await acceptThread(thread.id);
-                                }}
-                                className="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-[var(--primary)] hover:opacity-90 rounded-xl text-sm font-semibold text-white transition-all cursor-pointer shadow-sm"
-                            >
-                                <UserCheck size={16} /> Accept
-                            </button>
-                        </div>
-                    </div>
-                ) : thread && !thread.isGroup && thread.status === "pending" && thread.initiatedBy === currentUser.id ? (
-                    /* Sender: outgoing pending icebreaker — show waiting state */
-                    <div className="flex items-center justify-center gap-3 py-4 px-4 animate-in fade-in duration-300">
-                        <div className="flex items-center gap-2.5 py-3 px-5 bg-amber-50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-800/40 rounded-xl">
-                            <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-                            <span className="text-sm text-amber-700 dark:text-amber-400 font-medium">Waiting for {thread.user.name} to accept...</span>
-                        </div>
-                    </div>
                 ) : isBulkSelectMode ? (
                     <div className="flex items-center justify-between px-3 py-2 animate-in slide-in-from-bottom duration-200">
                         <div className="flex items-center gap-4">
@@ -5351,15 +5313,7 @@ export default function ChatThreadView({ threadId, onClose }: { threadId: string
                 userAvatar={selectedMember?.avatar || null}
                 userColor={selectedMember?.color || "bg-gray-200"}
                 location={selectedMember?.location || null}
-                showIcebreaker={selectedMember ? !threads.some(t => !t.isGroup && t.user?.id === selectedMember.id && t.status === "accepted") : false}
-                onIcebreaker={async () => {
-                    if (selectedMember) {
-                        const defaultIcebreakerText = currentUser?.settings?.defaultIcebreaker || "Hey, do you want to chat? 😊✨";
-                        setSelectedMember(null);
-                        setShowGroupProfile(false);
-                        await sendIcebreaker(selectedMember, defaultIcebreakerText);
-                    }
-                }}
+                showSendMessage={true}
                 onMessage={async () => {
                     if (selectedMember) {
                         const directThread = threads.find(t => !t.isGroup && t.user?.id === selectedMember.id);

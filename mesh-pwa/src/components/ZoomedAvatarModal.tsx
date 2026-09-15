@@ -12,8 +12,6 @@ interface ZoomedAvatarModalProps {
     onCall: (type: "audio" | "video") => void;
     onInfo: () => void;
     location?: string | null;
-    showIcebreaker?: boolean;
-    onIcebreaker?: () => void;
     isGroup?: boolean;
     onLeaveGroup?: () => void;
     isSelf?: boolean;
@@ -31,8 +29,6 @@ export default function ZoomedAvatarModal({
     onCall,
     onInfo,
     location,
-    showIcebreaker = false,
-    onIcebreaker,
     isGroup = false,
     onLeaveGroup,
     isSelf = false,
@@ -144,23 +140,6 @@ export default function ZoomedAvatarModal({
                                         <Info size={20} />
                                     </button>
                                 </div>
-                            ) : showIcebreaker ? (
-                                <>
-                                    <button 
-                                        onClick={() => { onClose(); onIcebreaker?.(); }} 
-                                        className="flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 text-white font-semibold text-sm hover:from-pink-600 hover:to-rose-600 hover:scale-105 active:scale-95 transition-all shadow-md cursor-pointer"
-                                        title="Send Icebreaker"
-                                    >
-                                        <Heart size={18} className="fill-white" /> Send Icebreaker
-                                    </button>
-                                    <button 
-                                        onClick={() => { onClose(); onInfo(); }} 
-                                        className="flex items-center justify-center w-12 h-12 rounded-full bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30 hover:scale-110 active:scale-95 transition-all shadow-sm border border-amber-100/20 dark:border-amber-900/10 cursor-pointer"
-                                        title="View Details"
-                                    >
-                                        <Info size={20} />
-                                    </button>
-                                </>
                             ) : (
                                 <>
                                     {showSendMessage && onMessage && (

@@ -1105,11 +1105,9 @@ export default function ProfileView({ userId: propUserId, onClose }: { userId?: 
 
     const privacySettings = (user?.settings?.privacy || {}) as any;
     const pfpPrivacy = privacySettings.profilePicture || "everyone";
-    const datingPrivacy = privacySettings.datingDetails || "everyone";
     const feedsPrivacy = privacySettings.feeds || "everyone";
 
     const canSeePfp = isSelf || pfpPrivacy === "everyone" || (pfpPrivacy === "contacts" && isSavedContact);
-    const canSeeDatingDetails = isSelf || datingPrivacy === "everyone" || (datingPrivacy === "contacts" && isSavedContact);
     const canSeeFeeds = isSelf || feedsPrivacy === "everyone" || (feedsPrivacy === "contacts" && isSavedContact);
 
     const profilePhoto = canSeePfp ? (user?.avatar || (user?.photos && user.photos.length > 0 ? user.photos[0] : null)) : null;
@@ -4403,32 +4401,17 @@ export default function ProfileView({ userId: propUserId, onClose }: { userId?: 
                                 <Users size={18} className="text-zinc-500" /> View Profile
                             </button>
 
-                            {/* Send Icebreaker: only for non-friends who are not admin */}
-                            {!canCommunicate && (
-                                <button
-                                    onClick={() => {
-                                        const member = selectedMemberForMenu;
-                                        setSelectedMemberForMenu(null);
-                                        sendIcebreaker(member, "👋 Hey! We're in the same group. Let's connect!");
-                                    }}
-                                    className="flex items-center gap-3 px-3 py-3 hover:bg-gray-50 dark:hover:bg-zinc-800/50 rounded-xl text-left text-sm font-semibold text-gray-800 dark:text-gray-200 transition-colors cursor-pointer"
-                                >
-                                    <MessageSquare size={18} className="text-amber-500" /> Send Icebreaker
-                                </button>
-                            )}
-                            
-                            {/* Communication options: visible for mutual friends OR admin */}
-                            {canCommunicate && (
-                                <button
-                                    onClick={() => {
-                                        setSelectedMemberForMenu(null);
-                                        handleMemberChat(selectedMemberForMenu);
-                                    }}
-                                    className="flex items-center gap-3 px-3 py-3 hover:bg-gray-50 dark:hover:bg-zinc-800/50 rounded-xl text-left text-sm font-semibold text-gray-800 dark:text-gray-200 transition-colors cursor-pointer"
-                                >
-                                    <MessageSquare size={18} className="text-indigo-500" /> Send Message
-                                </button>
-                            )}
+                            {/* Message member */}
+                            <button
+                                onClick={() => {
+                                    const member = selectedMemberForMenu;
+                                    setSelectedMemberForMenu(null);
+                                    handleMemberChat(member);
+                                }}
+                                className="flex items-center gap-3 px-3 py-3 hover:bg-gray-50 dark:hover:bg-zinc-800/50 rounded-xl text-left text-sm font-semibold text-gray-800 dark:text-gray-200 transition-colors cursor-pointer"
+                            >
+                                <MessageSquare size={18} className="text-emerald-500" /> Message
+                            </button>
 
                             {canCommunicate && (
                                 <button
