@@ -19,7 +19,8 @@ import {
   Send,
   Sparkles,
   Trash2,
-  Globe
+  Globe,
+  ChevronLeft
 } from "lucide-react";
 import { clsx } from "clsx";
 
@@ -308,6 +309,15 @@ interface UnifiedPostModalProps {
 export function UnifiedPostModal({ initialType = "status", onClose }: UnifiedPostModalProps) {
   const { postStatus, postMood, postDraft, addNotification } = useMockData();
   const [postType, setPostType] = useState<"status" | "feed" | "glimpse">(initialType);
+  const [isClosing, setIsClosing] = useState(false);
+
+  const handleClose = () => {
+    if (isClosing) return;
+    setIsClosing(true);
+    setTimeout(() => {
+      onClose();
+    }, 280);
+  };
 
   // Status state
   const [statusText, setStatusText] = useState("");
@@ -325,6 +335,23 @@ export function UnifiedPostModal({ initialType = "status", onClose }: UnifiedPos
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Swipe gesture to dismiss from left edge
+  const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    const deltaX = e.changedTouches[0].clientX - touchStartX.current;
+    const deltaY = Math.abs(e.changedTouches[0].clientY - touchStartY.current);
+    if (touchStartX.current < 60 && deltaX > 80 && deltaY < 80) {
+      handleClose();
+    }
+  };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, target: "status" | "feed") => {
     const file = e.target.files?.[0];
@@ -379,7 +406,7 @@ export function UnifiedPostModal({ initialType = "status", onClose }: UnifiedPos
         await postDraft(glimpseText.trim());
         addNotification("Glimpse published! 💭");
       }
-      onClose();
+      handleClose();
     } catch (err) {
       console.error(err);
       addNotification("Error posting content. Please try again.");
@@ -391,42 +418,72 @@ export function UnifiedPostModal({ initialType = "status", onClose }: UnifiedPos
   return (
     <div
       data-modal="true"
-      className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-start justify-center p-3 pt-3 sm:pt-8 overflow-y-auto animate-fade-in"
-      onClick={onClose}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      className={clsx(
+        "fixed inset-0 z-[9999] bg-white dark:bg-zinc-950 flex flex-col h-full w-full overflow-hidden select-none",
+        isClosing ? "animate-slide-out-to-right-edge" : "animate-slide-in-from-right-edge"
+      )}
     >
-      <div
-        className="w-full max-w-lg bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl p-5 sm:p-6 flex flex-col max-h-[85vh] sm:max-h-[90vh] overflow-y-auto custom-scrollbar"
-        style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom, 1.5rem))" }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-zinc-800 mb-4">
-          <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
-            {postType === "status" ? "Share New Status" : postType === "feed" ? "New Post" : "Share Glimpse"}
-          </h2>
+      {/* Top Header */}
+      <header className="px-4 py-3 border-b border-gray-150 dark:border-zinc-800 flex items-center justify-between shrink-0 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md sticky top-0 z-20">
+        <div className="flex items-center gap-2.5">
           <button
             type="button"
-            onClick={onClose}
-            className="w-8 h-8 rounded-full bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-300 flex items-center justify-center hover:bg-gray-200 transition-colors"
+            onClick={handleClose}
+            className="w-9 h-9 rounded-full bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-200 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
+            title="Back"
           >
-            <X size={16} />
+            <ChevronLeft size={22} />
           </button>
+          <div>
+            <h2 className="text-base font-bold text-gray-900 dark:text-white leading-tight">
+              {postType === "status" ? "Share New Status" : postType === "feed" ? "New Post / Clip" : "Share Glimpse"}
+            </h2>
+            <p className="text-[10px] text-gray-500 dark:text-zinc-400">
+              {postType === "status"
+                ? "Disappears after 24 hours"
+                : postType === "feed"
+                ? "Permanent post in your store feed"
+                : "Quick store announcement"}
+            </p>
+          </div>
         </div>
 
-        {/* Hidden File Input */}
-        <input
-          type="file"
-          ref={fileInputRef}
-          accept="image/*,video/*"
-          className="hidden"
-          onChange={(e) => handleFileUpload(e, postType === "status" ? "status" : "feed")}
-        />
+        <button
+          type="button"
+          disabled={isSubmitting}
+          onClick={handleSubmit}
+          className="px-4 py-2 bg-[var(--primary)] hover:bg-emerald-600 text-white font-bold text-xs rounded-xl shadow-xs transition-all active:scale-95 disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
+        >
+          {isSubmitting ? (
+            <span>Publishing...</span>
+          ) : (
+            <>
+              <Sparkles size={14} />
+              <span>Publish</span>
+            </>
+          )}
+        </button>
+      </header>
 
-        {/* BODY BY TYPE */}
+      {/* Hidden File Input */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        accept="image/*,video/*"
+        className="hidden"
+        onChange={(e) => handleFileUpload(e, postType === "status" ? "status" : "feed")}
+      />
+
+      {/* Scrollable Body */}
+      <div className="flex-1 overflow-y-auto px-4 py-5 max-w-xl mx-auto w-full custom-scrollbar flex flex-col gap-5">
+        {/* STATUS VIEW */}
         {postType === "status" && (
-          <div className="space-y-3">
+          <div className="space-y-4">
+            {/* Status Card Preview */}
             <div
-              className="w-full aspect-[16/10] rounded-2xl relative overflow-hidden flex items-center justify-center p-4 text-center shadow-inner"
+              className="w-full aspect-[4/3] rounded-3xl relative overflow-hidden flex items-center justify-center p-5 text-center shadow-lg transition-all"
               style={{
                 background: statusMediaData ? "#000" : STATUS_GRADIENTS[statusBg]
               }}
@@ -442,57 +499,62 @@ export function UnifiedPostModal({ initialType = "status", onClose }: UnifiedPos
                   value={statusText}
                   onChange={(e) => setStatusText(e.target.value.slice(0, 200))}
                   placeholder="What's on your mind? Tap to write..."
-                  className="w-full bg-black/30 backdrop-blur-xs text-white text-center font-bold text-base sm:text-lg placeholder:text-white/60 p-3 rounded-xl outline-none resize-none border border-white/20"
-                  rows={3}
+                  className="w-full bg-black/35 backdrop-blur-md text-white text-center font-bold text-lg sm:text-xl placeholder:text-white/65 p-4 rounded-2xl outline-none resize-none border border-white/20 shadow-inner"
+                  rows={4}
                 />
               )}
             </div>
 
             {/* Gradient Selector */}
             {!statusMediaData && (
-              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
-                {Object.keys(STATUS_GRADIENTS).map((key) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setStatusBg(key)}
-                    className={clsx(
-                      "w-7 h-7 rounded-full shrink-0 border-2 transition-transform",
-                      statusBg === key ? "scale-110 border-black dark:border-white shadow-xs" : "border-transparent"
-                    )}
-                    style={{ background: STATUS_GRADIENTS[key] }}
-                  />
-                ))}
+              <div className="space-y-2">
+                <p className="text-xs font-bold text-gray-500 dark:text-zinc-400">Background Colors</p>
+                <div className="flex items-center gap-2.5 overflow-x-auto no-scrollbar py-1">
+                  {Object.keys(STATUS_GRADIENTS).map((key) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setStatusBg(key)}
+                      className={clsx(
+                        "w-9 h-9 rounded-full shrink-0 border-2 transition-transform cursor-pointer",
+                        statusBg === key ? "scale-110 border-black dark:border-white shadow-md ring-2 ring-[var(--primary)]" : "border-transparent"
+                      )}
+                      style={{ background: STATUS_GRADIENTS[key] }}
+                    />
+                  ))}
+                </div>
               </div>
             )}
 
             {/* File Upload Button */}
-            <div className="flex items-center justify-between gap-2 pt-1">
+            <div className="flex items-center justify-between gap-3 pt-2">
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gray-100 dark:bg-zinc-800 text-xs font-bold text-gray-700 dark:text-zinc-200 hover:bg-gray-200"
+                className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-gray-100 dark:bg-zinc-800 text-xs font-bold text-gray-800 dark:text-zinc-200 hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
               >
-                <ImageIcon size={15} />
-                <span>{statusMediaData ? "Change Media" : "Add Photo/Video"}</span>
+                <ImageIcon size={17} />
+                <span>{statusMediaData ? "Change Photo/Video" : "Add Photo/Video"}</span>
               </button>
               {statusMediaData && (
                 <button
                   type="button"
                   onClick={() => setStatusMediaData(null)}
-                  className="text-xs text-red-500 font-bold hover:underline"
+                  className="text-xs text-red-500 font-bold hover:underline cursor-pointer flex items-center gap-1"
                 >
-                  Clear Media
+                  <Trash2 size={14} />
+                  <span>Clear Media</span>
                 </button>
               )}
             </div>
           </div>
         )}
 
+        {/* FEED POST VIEW */}
         {postType === "feed" && (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {feedMediaData ? (
-              <div className="w-full aspect-square max-h-64 rounded-2xl overflow-hidden relative bg-black flex items-center justify-center">
+              <div className="w-full aspect-square max-h-96 rounded-3xl overflow-hidden relative bg-black flex items-center justify-center shadow-md">
                 {feedMediaType === "video" ? (
                   <video src={feedMediaData} className="w-full h-full object-cover" autoPlay loop muted playsInline />
                 ) : (
@@ -501,64 +563,74 @@ export function UnifiedPostModal({ initialType = "status", onClose }: UnifiedPos
                 <button
                   type="button"
                   onClick={() => setFeedMediaData(null)}
-                  className="absolute top-2 right-2 w-7 h-7 bg-black/60 text-white rounded-full flex items-center justify-center"
+                  className="absolute top-3 right-3 w-8 h-8 bg-black/60 hover:bg-black text-white rounded-full flex items-center justify-center transition-colors cursor-pointer"
                 >
-                  <X size={14} />
+                  <X size={16} />
                 </button>
               </div>
             ) : (
               <div
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full h-44 rounded-2xl border-2 border-dashed border-gray-200 dark:border-zinc-700 hover:border-[var(--primary)] flex flex-col items-center justify-center gap-2 cursor-pointer bg-gray-50 dark:bg-zinc-950 transition-colors"
+                className="w-full h-64 rounded-3xl border-2 border-dashed border-gray-200 dark:border-zinc-700 hover:border-[var(--primary)] flex flex-col items-center justify-center gap-3 cursor-pointer bg-gray-50 dark:bg-zinc-900/50 hover:bg-emerald-50/20 dark:hover:bg-emerald-950/20 transition-all"
               >
-                <div className="w-11 h-11 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-[var(--primary)] flex items-center justify-center">
-                  <Film size={22} />
+                <div className="w-14 h-14 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 text-[var(--primary)] flex items-center justify-center shadow-xs">
+                  <Film size={28} />
                 </div>
-                <p className="text-xs font-bold text-gray-700 dark:text-zinc-300">Tap to upload Photo or Clip</p>
-                <p className="text-[11px] text-gray-400">Supports JPG, PNG, MP4, WebM</p>
+                <div className="text-center">
+                  <p className="text-sm font-bold text-gray-800 dark:text-zinc-200">Tap to upload Photo or Clip</p>
+                  <p className="text-xs text-gray-400 dark:text-zinc-500 mt-1">Supports JPG, PNG, MP4, WebM up to 100MB</p>
+                </div>
               </div>
             )}
 
-            <textarea
-              value={feedCaption}
-              onChange={(e) => setFeedCaption(e.target.value)}
-              placeholder="Write a caption..."
-              className="w-full bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white text-xs p-3 rounded-xl outline-none focus:ring-1 focus:ring-[var(--primary)] resize-none"
-              rows={3}
-            />
+            <div>
+              <label className="block text-xs font-bold text-gray-500 dark:text-zinc-400 mb-1.5">Caption</label>
+              <textarea
+                value={feedCaption}
+                onChange={(e) => setFeedCaption(e.target.value)}
+                placeholder="Write a caption for your store feed..."
+                className="w-full bg-gray-100 dark:bg-zinc-800/80 text-gray-900 dark:text-white text-sm p-4 rounded-2xl outline-none focus:ring-2 focus:ring-[var(--primary)] resize-none transition-all"
+                rows={4}
+              />
+            </div>
           </div>
         )}
 
+        {/* GLIMPSE VIEW */}
         {postType === "glimpse" && (
-          <div className="space-y-3">
+          <div className="space-y-4">
+            <label className="block text-xs font-bold text-gray-500 dark:text-zinc-400 mb-1.5">Your Announcement</label>
             <textarea
               value={glimpseText}
               onChange={(e) => setGlimpseText(e.target.value)}
-              placeholder="Share a thought, quick store update, or announcement..."
-              className="w-full bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white text-sm p-3.5 rounded-2xl outline-none focus:ring-1 focus:ring-[var(--primary)] resize-none"
-              rows={4}
+              placeholder="Share a thought, quick store update, or special promotion..."
+              className="w-full bg-gray-100 dark:bg-zinc-800/80 text-gray-900 dark:text-white text-base p-4 rounded-2xl outline-none focus:ring-2 focus:ring-[var(--primary)] resize-none transition-all"
+              rows={6}
             />
           </div>
         )}
+      </div>
 
-        {/* Submit Action */}
-        <div className="pt-4 mt-auto">
-          <button
-            type="button"
-            disabled={isSubmitting}
-            onClick={handleSubmit}
-            className="w-full py-3 bg-[var(--primary)] hover:bg-emerald-600 text-white font-bold text-xs rounded-xl shadow-md transition-all active:scale-98 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
-          >
-            {isSubmitting ? (
-              <span>Publishing...</span>
-            ) : (
-              <>
-                <Sparkles size={16} />
-                <span>Publish to Store</span>
-              </>
-            )}
-          </button>
-        </div>
+      {/* Bottom Sticky Action Bar */}
+      <div
+        className="p-4 border-t border-gray-150 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md shrink-0"
+        style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom, 1rem))" }}
+      >
+        <button
+          type="button"
+          disabled={isSubmitting}
+          onClick={handleSubmit}
+          className="w-full py-3.5 bg-[var(--primary)] hover:bg-emerald-600 text-white font-bold text-sm rounded-2xl shadow-md shadow-emerald-600/20 transition-all active:scale-98 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+        >
+          {isSubmitting ? (
+            <span>Publishing...</span>
+          ) : (
+            <>
+              <Sparkles size={17} />
+              <span>Publish to Store</span>
+            </>
+          )}
+        </button>
       </div>
     </div>
   );

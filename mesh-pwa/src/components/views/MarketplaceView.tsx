@@ -761,7 +761,7 @@ export default function MarketplaceView() {
         <ItemDetailModal
           item={selectedItem || closingItem!}
           isClosing={!!closingItem}
-          feedItems={filteredItems}
+          feedItems={[selectedItem || closingItem!]}
           onClose={handleCloseSelectedItem}
           onEdit={(item) => {
             setSelectedItem(null);

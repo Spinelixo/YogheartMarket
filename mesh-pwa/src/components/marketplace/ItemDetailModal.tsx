@@ -61,13 +61,14 @@ export function ItemDetailModal({
     addNotification
   } = useMockData();
 
-  // Multi-item feed list starting with the tapped item
+  // Multi-item feed list starting with the tapped item (only for storefront feed)
   const orderedFeedItems = useMemo(() => {
-    if (!feedItems || feedItems.length <= 1) return [item];
+    const isStorefrontFeed = hideSellerInfo || mode === "modal";
+    if (!isStorefrontFeed || !feedItems || feedItems.length <= 1) return [item];
     const idx = feedItems.findIndex((i) => i.id === item.id);
     if (idx === -1) return [item, ...feedItems.filter((i) => i.id !== item.id)];
     return [...feedItems.slice(idx), ...feedItems.slice(0, idx)];
-  }, [feedItems, item.id]);
+  }, [feedItems, item.id, hideSellerInfo, mode]);
 
   // Per-item state tracking (active image, custom message, isSending)
   const [activeImageIndexes, setActiveImageIndexes] = useState<Record<string, number>>({});
@@ -588,17 +589,13 @@ export function ItemDetailModal({
           </div>
         </div>
 
-        {/* Divider before next item if more items follow */}
+        {/* Divider before next item if more items follow (only in storefront feed) */}
         {index < orderedFeedItems.length - 1 && (
           <div className="py-6 px-4 flex items-center gap-3">
             <div className="flex-1 h-px bg-gray-200 dark:bg-zinc-800" />
             <span className="text-[11px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider flex items-center gap-1.5 shrink-0">
               <ShoppingBag size={12} className="text-[var(--primary)]" />
-              <span>
-                {mode === "modal" || hideSellerInfo
-                  ? `Next in ${curItem.sellerName}'s Store`
-                  : "Next on Marketplace"}
-              </span>
+              <span>{`Next in ${curItem.sellerName}'s Store`}</span>
             </span>
             <div className="flex-1 h-px bg-gray-200 dark:bg-zinc-800" />
           </div>
@@ -607,7 +604,7 @@ export function ItemDetailModal({
     );
   };
 
-  // Shared Inner Content (Renders all items in continuous feed)
+  // Shared Inner Content (Renders items in feed)
   const renderItemContent = () => (
     <div
       ref={scrollRef}
@@ -619,22 +616,14 @@ export function ItemDetailModal({
       <div className={clsx(mode === "page" ? "max-w-2xl mx-auto w-full" : "w-full")}>
         {orderedFeedItems.map((feedItem, idx) => renderSingleListing(feedItem, idx))}
 
-        {/* End of Storefront / Marketplace Feed Banner */}
+        {/* End of Storefront Feed Banner */}
         {orderedFeedItems.length > 1 && (
           <div className="py-8 text-center space-y-1 bg-gray-50/60 dark:bg-zinc-900/40 rounded-3xl mx-4 my-6 border border-dashed border-gray-200 dark:border-zinc-800">
             <p className="text-xs font-bold text-gray-700 dark:text-zinc-300">
-              {hideSellerInfo || mode === "modal" ? (
-                `You've seen all ${orderedFeedItems.length} items from ${item.sellerName}`
-              ) : (
-                `You've reached the end of the marketplace listings`
-              )}
+              {`You've seen all ${orderedFeedItems.length} items from ${item.sellerName}`}
             </p>
             <p className="text-[11px] text-gray-400 dark:text-zinc-500">
-              {hideSellerInfo || mode === "modal" ? (
-                "Swipe or tap close to return to the store catalogue"
-              ) : (
-                "Swipe or tap close to return to the marketplace feed"
-              )}
+              Swipe or tap close to return to the store catalogue
             </p>
           </div>
         )}
