@@ -72,25 +72,26 @@ function AuthRedirectWrapper({ children }: { children: React.ReactNode }) {
 
     const isRouteTransitioning = activePathname !== pathname;
 
-    const isPublicDocumentPage = pathname === "/privacy" || pathname === "/terms";
-    const isAuthPage = pathname === "/login" || pathname === "/signup" || isPublicDocumentPage;
-    const isAuthOrOnboarding = pathname === "/onboarding" || isAuthPage;
-    const isBypassAppShell = isAuthOrOnboarding || pathname.startsWith("/admin") || (pathname === "/" && (!user || loading));
+    const normalizedPath = (pathname || "/").replace(/\/+$/, "") || "/";
+    const isPublicDocumentPage = normalizedPath === "/privacy" || normalizedPath === "/terms";
+    const isAuthPage = normalizedPath === "/login" || normalizedPath === "/signup" || isPublicDocumentPage;
+    const isOnboardingPage = normalizedPath === "/onboarding" || normalizedPath.startsWith("/onboarding");
+    const isAuthOrOnboarding = isOnboardingPage || isAuthPage;
+    const isBypassAppShell = isAuthOrOnboarding || normalizedPath.startsWith("/admin") || (normalizedPath === "/" && (!user || loading));
 
     // Check local storage override to prevent race conditions during onboarding finish
     const localOnboardingComplete = typeof window !== "undefined" && localStorage.getItem("mesh_onboarding_complete") === "true";
 
-    const hasPhone = !!(userData?.phoneNumber || user?.phoneNumber);
     const onboardingComplete = userData 
-        ? (!!userData.onboardingComplete || (!!userData.isAdmin && hasPhone))
+        ? (!!userData.onboardingComplete || !!userData.isAdmin)
         : localOnboardingComplete;
 
     // Determine if redirect is required
-    const isHomePage = pathname === "/";
-    const needsRedirectToOnboarding = !!user && !onboardingComplete && pathname !== "/onboarding" && !pathname.startsWith("/admin");
+    const isHomePage = normalizedPath === "/";
+    const needsRedirectToOnboarding = !!user && !onboardingComplete && !isOnboardingPage && !normalizedPath.startsWith("/admin");
     // We only redirect away from auth pages if user is fully onboarded. 
     // Now, "/" serves BOTH login and home, so we don't redirect if it's "/" and user is onboarded.
-    const needsRedirectToHome = !!user && onboardingComplete && (pathname === "/onboarding" || pathname === "/login" || pathname === "/signup");
+    const needsRedirectToHome = !!user && onboardingComplete && (isOnboardingPage || normalizedPath === "/login" || normalizedPath === "/signup");
     
     // Logged out users trying to access protected routes (not auth pages and not /)
     const needsRedirectToLogin = !user && !isAuthPage && !isHomePage;
@@ -121,7 +122,7 @@ function AuthRedirectWrapper({ children }: { children: React.ReactNode }) {
     );
 
     const isProfileLoading = !!user && !isProfileLoaded;
-    const showLoader = pathname === "/onboarding" 
+    const showLoader = isOnboardingPage 
         ? (loading || needsRedirectToHome || needsRedirectToLogin || isProfileLoading)
         : ((loading && (!!user || hasPersistedSession)) || isRouteTransitioning || isRedirecting || isProfileLoading);
 

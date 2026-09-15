@@ -69,19 +69,6 @@ export default function OnboardingPage() {
     }
   }, [userData]);
 
-  // Auth redirect
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.push("/login");
-    } else if (
-      !authLoading &&
-      user &&
-      (userData?.onboardingComplete || localOnboardingComplete)
-    ) {
-      router.push("/");
-    }
-  }, [user, authLoading, userData, localOnboardingComplete, router]);
-
   // ─── DOB HELPERS ────────────────────────────────────────────────────────
   const handleDayChange = (val: string) => {
     const cleaned = val.replace(/[^0-9]/g, "");
@@ -316,10 +303,10 @@ export default function OnboardingPage() {
           {step === 1 && (
             <motion.div
               key="step-1"
-              initial={{ opacity: 0, x: direction === "forward" ? 20 : -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: direction === "forward" ? -20 : 20 }}
-              transition={{ duration: 0.2 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
               className="flex-1 flex flex-col justify-between py-6"
             >
               <div className="flex-1 flex flex-col justify-center">
@@ -353,7 +340,7 @@ export default function OnboardingPage() {
                     autoFocus
                   />
                   {errorMsg && (
-                    <p className="text-sm text-red-500 font-medium text-center mt-3 animate-shake">
+                    <p className="text-sm text-red-500 font-medium text-center mt-3 animate-fade-in">
                       {errorMsg}
                     </p>
                   )}
@@ -383,10 +370,10 @@ export default function OnboardingPage() {
           {step === 2 && (
             <motion.div
               key="step-2"
-              initial={{ opacity: 0, x: direction === "forward" ? 20 : -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: direction === "forward" ? -20 : 20 }}
-              transition={{ duration: 0.2 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
               className="flex-1 flex flex-col justify-between py-6"
             >
               <div className="flex-1 flex flex-col justify-center">
@@ -469,7 +456,7 @@ export default function OnboardingPage() {
                 </div>
 
                 {errorMsg && (
-                  <p className="text-sm text-red-500 font-medium text-center mt-2 animate-shake">
+                  <p className="text-sm text-red-500 font-medium text-center mt-2 animate-fade-in">
                     {errorMsg}
                   </p>
                 )}
@@ -496,10 +483,10 @@ export default function OnboardingPage() {
           {step === 3 && (
             <motion.div
               key="step-3"
-              initial={{ opacity: 0, x: direction === "forward" ? 20 : -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: direction === "forward" ? -20 : 20 }}
-              transition={{ duration: 0.2 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
               className="flex-1 flex flex-col justify-between py-6"
             >
               <div>
@@ -594,7 +581,7 @@ export default function OnboardingPage() {
                 </div>
 
                 {errorMsg && (
-                  <p className="text-sm text-red-500 font-medium text-center mt-2 animate-shake">
+                  <p className="text-sm text-red-500 font-medium text-center mt-2 animate-fade-in">
                     {errorMsg}
                   </p>
                 )}
