@@ -393,7 +393,7 @@ export function SellerStorefrontModal({
             <button
               type="button"
               onClick={() => {
-                window.history.pushState(null, "", "?settings=overlay");
+                window.history.pushState(null, "", "/profile?userId=me&settings=overlay");
                 window.dispatchEvent(new Event("locationchange"));
               }}
               title="Settings & Menu"
@@ -643,47 +643,6 @@ export function SellerStorefrontModal({
                 >
                   All ({sellerListings.length})
                 </button>
-
-                <button
-                  type="button"
-                  onClick={() => setStatusTab("active")}
-                  className={clsx(
-                    "px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer whitespace-nowrap",
-                    statusTab === "active"
-                      ? "bg-[var(--primary)] text-white shadow-xs"
-                      : "bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 hover:bg-gray-200"
-                  )}
-                >
-                  Active ({activeCount})
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setStatusTab("sold")}
-                  className={clsx(
-                    "px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer whitespace-nowrap",
-                    statusTab === "sold"
-                      ? "bg-red-600 text-white shadow-xs"
-                      : "bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 hover:bg-gray-200"
-                  )}
-                >
-                  Sold ({soldCount})
-                </button>
-
-                {freeCount > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setStatusTab("free")}
-                    className={clsx(
-                      "px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer whitespace-nowrap",
-                      statusTab === "free"
-                        ? "bg-emerald-600 text-white shadow-xs"
-                        : "bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 hover:bg-gray-200"
-                    )}
-                  >
-                    Free ({freeCount})
-                  </button>
-                )}
 
                 {/* Saved Items Tab — ONLY visible to Store Owner */}
                 {isMe && (

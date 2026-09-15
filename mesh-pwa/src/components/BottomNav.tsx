@@ -106,9 +106,12 @@ export function Sidebar() {
           let isActive = false;
           const isViewingThread = pathname.startsWith("/inbox");
           const fromParam = searchParams?.get("from");
-          const isViewingOtherProfile = pathname.startsWith("/profile") && (searchParams?.get("userId") !== "me" || !!fromParam || !!searchParams?.get("groupId"));
+          const isSettingsOverlay = searchParams?.get("settings") === "overlay" || pathname.startsWith("/me") || activeTab === "me";
+          const isViewingOtherProfile = !isSettingsOverlay && pathname.startsWith("/profile") && (searchParams?.get("userId") && searchParams?.get("userId") !== "me" || !!fromParam || !!searchParams?.get("groupId"));
 
-          if (isViewingThread) {
+          if (isSettingsOverlay) {
+            isActive = false;
+          } else if (isViewingThread) {
             if (fromParam === "marketplace") {
               isActive = item.id === "marketplace";
             } else {
@@ -130,13 +133,11 @@ export function Sidebar() {
             } else if (fromParam === "chat" || fromParam === "chats" || fromParam === "archived") {
               isActive = item.id === "chats";
             } else if (item.id === "marketplace") {
-              isActive = activeTab === "marketplace" || pathname === "/" || pathname.startsWith("/marketplace");
+              isActive = activeTab === "marketplace" || (pathname === "/" && activeTab !== "profile" && activeTab !== "calls" && activeTab !== "chats") || pathname.startsWith("/marketplace");
             } else if (item.id === "chats") {
-              isActive = (activeTab === "chats" || pathname === "/chats") && !pathname.startsWith("/profile") && !pathname.startsWith("/marketplace") && !pathname.startsWith("/calls");
+              isActive = (activeTab === "chats" || pathname === "/chats") && !pathname.startsWith("/profile") && !pathname.startsWith("/marketplace") && !pathname.startsWith("/calls") && !pathname.startsWith("/me");
             } else if (item.id === "calls") {
               isActive = activeTab === "calls" || pathname.startsWith("/calls");
-            } else if (item.id === "profile") {
-              isActive = (activeTab === "profile" || activeTab === "store" || pathname.startsWith("/profile") || pathname.startsWith("/store"));
             }
           }
 
@@ -194,28 +195,40 @@ export function Sidebar() {
         })}
       </nav>
       <div className="p-2 border-t border-[var(--border)] mt-auto">
-        <Link
-          href="/profile?userId=me"
-          scroll={false}
-          onPointerDown={handleTabPointerDown}
-          onClick={(e) => {
-            e.preventDefault();
-            setActiveThreadId(null);
-            setActiveTab("profile");
-            window.history.pushState(null, "", "/profile?userId=me");
-            window.dispatchEvent(new CustomEvent("closeMarketplaceOverlays"));
-            window.dispatchEvent(new Event("locationchange"));
-          }}
-          className={clsx(
-            "flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all select-none relative overflow-hidden touch-manipulation cursor-pointer",
-            (activeTab === "profile" || activeTab === "store" || pathname.startsWith("/profile") || pathname.startsWith("/store")) && !searchParams?.get("settings")
-              ? "bg-[var(--primary)] text-white shadow-md shadow-emerald-600/20 font-bold"
-              : "text-gray-800 hover:bg-gray-100 dark:text-zinc-200 dark:hover:bg-zinc-800/60 font-medium"
-          )}
-        >
-          <Store size={19} className="relative z-10 pointer-events-none" />
-          <span className="text-sm relative z-10 pointer-events-none">Store / Profile</span>
-        </Link>
+        {(() => {
+          const isSettingsOverlay = searchParams?.get("settings") === "overlay" || pathname.startsWith("/me") || activeTab === "me";
+          const isStoreProfileActive =
+            isSettingsOverlay ||
+            activeTab === "profile" ||
+            activeTab === "store" ||
+            pathname.startsWith("/profile") ||
+            pathname.startsWith("/store");
+
+          return (
+            <Link
+              href="/profile?userId=me"
+              scroll={false}
+              onPointerDown={handleTabPointerDown}
+              onClick={(e) => {
+                e.preventDefault();
+                setActiveThreadId(null);
+                setActiveTab("profile");
+                window.history.pushState(null, "", "/profile?userId=me");
+                window.dispatchEvent(new CustomEvent("closeMarketplaceOverlays"));
+                window.dispatchEvent(new Event("locationchange"));
+              }}
+              className={clsx(
+                "flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all select-none relative overflow-hidden touch-manipulation cursor-pointer",
+                isStoreProfileActive
+                  ? "bg-[var(--primary)] text-white shadow-md shadow-emerald-600/20 font-bold"
+                  : "text-gray-800 hover:bg-gray-100 dark:text-zinc-200 dark:hover:bg-zinc-800/60 font-medium"
+              )}
+            >
+              <Store size={19} className="relative z-10 pointer-events-none" />
+              <span className="text-sm relative z-10 pointer-events-none">Store / Profile</span>
+            </Link>
+          );
+        })()}
       </div>
     </div>
   );
@@ -356,7 +369,11 @@ export function BottomNav() {
           const fromParam = searchParams?.get("from");
           const isViewingThread = pathname.startsWith("/inbox");
 
-          if (isViewingThread) {
+          const isSettingsOverlay = searchParams?.get("settings") === "overlay" || pathname.startsWith("/me") || activeTab === "me";
+
+          if (isSettingsOverlay) {
+            isActive = item.id === "profile";
+          } else if (isViewingThread) {
             isActive = false;
           } else if (fromParam === "calls") {
             isActive = item.id === "calls";
@@ -365,17 +382,16 @@ export function BottomNav() {
           } else if (fromParam === "chat" || fromParam === "chats" || fromParam === "archived") {
             isActive = item.id === "chats";
           } else if (item.id === "marketplace") {
-            isActive = activeTab === "marketplace" || pathname === "/" || pathname.startsWith("/marketplace");
+            isActive = activeTab === "marketplace" || (pathname === "/" && activeTab !== "profile" && activeTab !== "calls" && activeTab !== "chats") || pathname.startsWith("/marketplace");
           } else if (item.id === "chats") {
-            isActive = (activeTab === "chats" || pathname === "/chats") && !pathname.startsWith("/marketplace") && !pathname.startsWith("/profile") && !pathname.startsWith("/calls");
+            isActive = (activeTab === "chats" || pathname === "/chats") && !pathname.startsWith("/marketplace") && !pathname.startsWith("/profile") && !pathname.startsWith("/calls") && !pathname.startsWith("/me");
           } else if (item.id === "calls") {
             isActive = (activeTab === "calls" || pathname.startsWith("/calls")) && !pathname.startsWith("/profile");
           } else if (item.id === "profile") {
             const userIdParam = searchParams?.get("userId");
             const groupIdParam = searchParams?.get("groupId");
             const isViewingOther = (userIdParam && userIdParam !== "me" && currentUser && userIdParam !== currentUser.id) || !!groupIdParam;
-            const isSettingsOverlay = searchParams?.get("settings") === "overlay";
-            isActive = (activeTab === "profile" || activeTab === "store" || pathname.startsWith("/profile") || pathname.startsWith("/store")) && !isViewingOther && !isSettingsOverlay && !fromParam;
+            isActive = (activeTab === "profile" || activeTab === "store" || pathname.startsWith("/profile") || pathname.startsWith("/store")) && !isViewingOther && !fromParam;
           }
 
           const Icon = item.icon;
