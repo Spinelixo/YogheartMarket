@@ -199,7 +199,8 @@ export function StatusViewerModal({ status, onClose }: StatusViewerModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-2 sm:p-4 backdrop-blur-md animate-fade-in"
+      data-modal="true"
+      className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center p-2 sm:p-4 backdrop-blur-md animate-fade-in"
       onClick={onClose}
     >
       <div
@@ -389,11 +390,13 @@ export function UnifiedPostModal({ initialType = "status", onClose }: UnifiedPos
 
   return (
     <div
-      className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in"
+      data-modal="true"
+      className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-fade-in"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg bg-white dark:bg-zinc-900 rounded-t-3xl sm:rounded-3xl shadow-2xl p-5 sm:p-6 flex flex-col max-h-[90vh] overflow-y-auto"
+        className="w-full max-w-lg bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl p-5 sm:p-6 flex flex-col max-h-[85vh] sm:max-h-[90vh] overflow-y-auto custom-scrollbar"
+        style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom, 1.5rem))" }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -581,8 +584,8 @@ export function StoreFeedView({ sellerUser, isMe, onOpenCreatePost }: StoreFeedV
 
   return (
     <div className="space-y-4 pt-1">
-      {/* Create Button Header (when owner) */}
-      {isMe && (
+      {/* Create Button Header (when owner and there are posts) */}
+      {isMe && moodsList.length > 0 && (
         <div className="flex justify-end">
           <button
             type="button"
@@ -605,6 +608,20 @@ export function StoreFeedView({ sellerUser, isMe, onOpenCreatePost }: StoreFeedV
           <p className="text-xs text-gray-500 dark:text-zinc-400 max-w-xs mx-auto">
             {isMe ? "Post photos and video clips to show off your products and store vibe." : "This seller hasn't posted any photos or clips yet."}
           </p>
+
+          {/* Centered New Post / Clip button directly below the description line */}
+          {isMe && (
+            <div className="mt-5 flex justify-center">
+              <button
+                type="button"
+                onClick={onOpenCreatePost}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-[var(--primary)] hover:bg-emerald-600 text-white font-bold text-xs shadow-md shadow-emerald-600/25 active:scale-95 transition-all cursor-pointer"
+              >
+                <Plus size={16} />
+                <span>New Post / Clip</span>
+              </button>
+            </div>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -831,7 +848,8 @@ export function StoreGlimpsesView({ sellerUser, isMe, onOpenCreateGlimpse }: Sto
             value={newGlimpse}
             onChange={(e) => setNewGlimpse(e.target.value)}
             placeholder="Share a glimpse or thought with your customers..."
-            className="w-full bg-white dark:bg-zinc-800 text-xs text-gray-900 dark:text-white p-3 rounded-xl outline-none focus:ring-1 focus:ring-[var(--primary)] resize-none border border-gray-100 dark:border-zinc-700"
+            className="w-full bg-white dark:bg-zinc-800 text-base sm:text-xs text-gray-900 dark:text-white p-3 rounded-xl outline-none focus:ring-1 focus:ring-[var(--primary)] resize-none border border-gray-100 dark:border-zinc-700"
+            style={{ fontSize: "16px" }}
             rows={2}
           />
           <div className="flex justify-end">
@@ -944,7 +962,8 @@ export function StoreGlimpsesView({ sellerUser, isMe, onOpenCreateGlimpse }: Sto
                         value={commentInput}
                         onChange={(e) => setCommentInput(e.target.value)}
                         placeholder="Write a comment..."
-                        className="flex-1 bg-gray-50 dark:bg-zinc-800 text-xs px-3 py-1.5 rounded-xl outline-none text-gray-900 dark:text-white"
+                        className="flex-1 bg-gray-50 dark:bg-zinc-800 text-base sm:text-xs px-3 py-1.5 rounded-xl outline-none text-gray-900 dark:text-white"
+                        style={{ fontSize: "16px" }}
                         onKeyDown={(e) => {
                           if (e.key === "Enter") handleSendComment(draft.id);
                         }}

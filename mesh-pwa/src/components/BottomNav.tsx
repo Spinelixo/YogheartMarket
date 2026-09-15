@@ -247,23 +247,26 @@ export function BottomNav() {
 
     const handleFocusChange = () => {
       const activeEl = document.activeElement;
-      const isInputFocused = activeEl && (
-        activeEl.tagName === "INPUT" ||
-        activeEl.tagName === "TEXTAREA" ||
-        (activeEl as HTMLElement).isContentEditable
+      const isInputFocused = !!(
+        activeEl && (
+          activeEl.tagName === "INPUT" ||
+          activeEl.tagName === "TEXTAREA" ||
+          (activeEl as HTMLElement).isContentEditable
+        )
       );
-      setIsKeyboardOpen(!!isInputFocused);
+      setIsKeyboardOpen((prev) => (prev !== isInputFocused ? isInputFocused : prev));
     };
 
+    let resizeTimer: NodeJS.Timeout | null = null;
     const handleViewportResize = () => {
-      if (window.visualViewport) {
+      if (!window.visualViewport) return;
+      if (resizeTimer) clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (!window.visualViewport) return;
         const heightRatio = window.visualViewport.height / window.innerHeight;
-        if (heightRatio < 0.75) {
-          setIsKeyboardOpen(true);
-        } else {
-          handleFocusChange();
-        }
-      }
+        const shouldHide = heightRatio < 0.75;
+        setIsKeyboardOpen((prev) => (prev !== shouldHide ? shouldHide : prev));
+      }, 60);
     };
 
     window.addEventListener("focusin", handleFocusChange);
@@ -273,6 +276,7 @@ export function BottomNav() {
     }
 
     return () => {
+      if (resizeTimer) clearTimeout(resizeTimer);
       window.removeEventListener("focusin", handleFocusChange);
       window.removeEventListener("focusout", handleFocusChange);
       if (window.visualViewport) {
