@@ -334,7 +334,7 @@ export function SellerStorefrontModal({
               <ShieldCheck size={14} className="text-blue-500 shrink-0" />
             </div>
             <p className="text-[11px] text-gray-500 dark:text-zinc-400 truncate">
-              {isStandaloneView ? `${sellerListings.length} Listed · ${savedCount} Private Saved` : sellerTypeInfo.label}
+              {isStandaloneView ? `${sellerListings.length} Listed · ${savedCount} Saved` : sellerTypeInfo.label}
             </p>
           </div>
         </div>
@@ -450,17 +450,6 @@ export function SellerStorefrontModal({
 
             {/* Quick Badges Row */}
             <div className="flex flex-wrap items-center gap-2 pt-3 text-[11px]">
-              <button
-                type="button"
-                onClick={() => setShowReviewsModal(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100/80 dark:bg-amber-950/40 dark:hover:bg-amber-900/60 text-amber-700 dark:text-amber-300 font-bold border border-amber-200/60 dark:border-amber-900/50 shadow-2xs hover:scale-105 active:scale-95 transition-all cursor-pointer group"
-                title="View Ratings & Customer Reviews"
-              >
-                <Star size={12} className="fill-amber-500 text-amber-500 group-hover:scale-110 transition-transform" />
-                <span>{storeProfile.rating || "4.9"} ({storeProfile.reviewCount || "28"} reviews)</span>
-                <span className="text-[10px] text-amber-600 dark:text-amber-400 underline font-semibold ml-0.5">Read reviews</span>
-              </button>
-
               <span className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 font-medium">
                 <MapPin size={12} className="text-rose-500" />
                 <span>{storeProfile.location || sellerUser.location || sellerLocation || "Montreal"}</span>
@@ -477,6 +466,17 @@ export function SellerStorefrontModal({
                   {`${sellerListings.length} Total Listed · ${soldCount} Sold`}
                 </span>
               </span>
+
+              <button
+                type="button"
+                onClick={() => setShowReviewsModal(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100/80 dark:bg-amber-950/40 dark:hover:bg-amber-900/60 text-amber-700 dark:text-amber-300 font-bold border border-amber-200/60 dark:border-amber-900/50 shadow-2xs hover:scale-105 active:scale-95 transition-all cursor-pointer group"
+                title="View Ratings & Customer Reviews"
+              >
+                <Star size={12} className="fill-amber-500 text-amber-500 group-hover:scale-110 transition-transform" />
+                <span>{storeProfile.rating || "4.9"} ({storeProfile.reviewCount || "28"} reviews)</span>
+                <span className="text-[10px] text-amber-600 dark:text-amber-400 underline font-semibold ml-0.5">Read reviews</span>
+              </button>
             </div>
 
             {/* Features / Fulfillment options */}
@@ -488,38 +488,6 @@ export function SellerStorefrontModal({
               <span className="bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 px-2 py-0.5 rounded-md">
                 ✓ Doorstep Pickup
               </span>
-            </div>
-
-            {/* Seller Trust & Verified Reviews Banner */}
-            <div className="pt-3">
-              <div 
-                onClick={() => setShowReviewsModal(true)}
-                className="bg-gradient-to-r from-amber-50/80 via-orange-50/40 to-yellow-50/60 dark:from-zinc-850 dark:via-zinc-800 dark:to-zinc-850 rounded-2xl p-3 sm:p-3.5 border border-amber-200/60 dark:border-zinc-700/80 flex items-center justify-between gap-3 cursor-pointer hover:border-amber-300 dark:hover:border-zinc-600 transition-all group shadow-2xs"
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-950/60 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0 font-black text-xs border border-amber-300/40">
-                    ★ {storeProfile.rating || "4.9"}
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-bold text-gray-900 dark:text-white">
-                        Seller Trust & Ratings
-                      </span>
-                      <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400 leading-tight">
-                        ✓ Verified
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-gray-500 dark:text-zinc-400 truncate">
-                      Click to read customer reviews or rate this seller
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-1 shrink-0 text-xs font-bold text-amber-700 dark:text-amber-400 group-hover:underline">
-                  <span>See All</span>
-                  <ChevronRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
-                </div>
-              </div>
             </div>
           </div>
 
@@ -533,7 +501,7 @@ export function SellerStorefrontModal({
                     {statusTab === "saved" ? (
                       <>
                         <Bookmark size={18} className="text-rose-500" />
-                        <span>Private Saved Items</span>
+                        <span>Saved Items</span>
                       </>
                     ) : (
                       <>
@@ -544,7 +512,7 @@ export function SellerStorefrontModal({
                   </h2>
                   <p className="text-[11px] text-gray-500 dark:text-zinc-400">
                     {statusTab === "saved"
-                      ? `Showing ${filteredStoreItems.length} of ${savedCount} saved items (private to you)`
+                      ? `Showing ${filteredStoreItems.length} of ${savedCount} saved items`
                       : `Showing ${filteredStoreItems.length} of ${sellerListings.length} items`}
                   </p>
                 </div>
@@ -618,7 +586,7 @@ export function SellerStorefrontModal({
                   </button>
                 )}
 
-                {/* Private Saved Items Tab — ONLY visible to Store Owner */}
+                {/* Saved Items Tab — ONLY visible to Store Owner */}
                 {isMe && (
                   <button
                     type="button"
@@ -632,12 +600,6 @@ export function SellerStorefrontModal({
                   >
                     <Bookmark size={12} />
                     <span>Saved ({savedCount})</span>
-                    <span className={clsx(
-                      "text-[9px] font-bold px-1.5 py-0.2 rounded-full",
-                      statusTab === "saved" ? "bg-white/25 text-white" : "bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-300"
-                    )}>
-                      Private
-                    </span>
                   </button>
                 )}
               </div>
@@ -676,7 +638,7 @@ export function SellerStorefrontModal({
                   </h3>
                   <p className="text-xs text-gray-500 dark:text-zinc-500 max-w-xs mx-auto">
                     {statusTab === "saved"
-                      ? "Items you bookmark on the marketplace will appear here privately."
+                      ? "Items you bookmark on the marketplace will appear here."
                       : "Try switching filter tabs or clearing your search."}
                   </p>
                 </div>
