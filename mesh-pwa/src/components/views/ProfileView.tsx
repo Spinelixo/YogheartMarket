@@ -673,7 +673,7 @@ export default function ProfileView({ userId: propUserId, onClose }: { userId?: 
         if (fromParam === "marketplace") {
             setActiveThreadId(null);
             setGlobalActiveTab("marketplace");
-            window.history.pushState(null, "", "/marketplace?subpage=inbox");
+            window.history.pushState(null, "", "/marketplace");
             return;
         }
         if (fromParam === "calls") {

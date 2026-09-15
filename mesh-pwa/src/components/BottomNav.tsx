@@ -88,8 +88,8 @@ export function Sidebar() {
     window.dispatchEvent(new Event("locationchange"));
   };
 
-  const unreadChatsCount = threads ? threads.filter((t: any) => !isMarketplaceThread(t) && t.unread).length : 0;
-  const unreadMarketCount = threads ? threads.filter((t: any) => isMarketplaceThread(t) && t.unread).length : 0;
+  const unreadChatsCount = threads ? threads.filter((t: any) => t.unread).length : 0;
+  const unreadMarketCount = 0;
   const missedCallsCount = (callLogs && currentUser) 
     ? callLogs.filter((log: any) => log.callerId !== currentUser.id && log.status === "missed" && log.read !== true).length 
     : 0;
@@ -356,8 +356,8 @@ export function BottomNav() {
     window.dispatchEvent(new Event("locationchange"));
   };
 
-  const unreadChatsCount = threads ? threads.filter((t: any) => !isMarketplaceThread(t) && t.unread).length : 0;
-  const unreadMarketCount = threads ? threads.filter((t: any) => isMarketplaceThread(t) && t.unread).length : 0;
+  const unreadChatsCount = threads ? threads.filter((t: any) => t.unread).length : 0;
+  const unreadMarketCount = 0;
   const missedCallsCount = (callLogs && currentUser) 
     ? callLogs.filter((log: any) => log.callerId !== currentUser.id && log.status === "missed" && log.read !== true).length 
     : 0;

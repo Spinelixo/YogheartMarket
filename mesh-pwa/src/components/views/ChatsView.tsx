@@ -516,9 +516,9 @@ export default function ChatsView() {
   // Filter out dismissed suggestions (gender filtering is handled by MockContext)
   const visibleSuggestions = useMemo(() => suggestions.filter(s => !dismissedIds.has(s.id)), [suggestions, dismissedIds]);
 
-  // Filter threads for main Chats list (exclude Marketplace inquiries so they stay strictly in Market Inbox)
+  // Unified threads for main Chats list (includes personal chats, group chats, and marketplace inquiries)
   const regularThreads = useMemo(() => {
-    return (threads || []).filter(t => !isMarketplaceThread(t));
+    return threads || [];
   }, [threads]);
 
   // Filter threads by search
@@ -1608,7 +1608,12 @@ export default function ChatsView() {
                         <div className="flex-1 min-w-0">
                           <div className="flex justify-between items-baseline mb-1">
                             <h3 className="font-semibold text-[15px] truncate dark:text-white flex items-center gap-1.5">
-                              {chat.user.name}
+                              <span className="truncate">{chat.user.name}</span>
+                              {isMarketplaceThread(chat) && (
+                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-900/50 shrink-0">
+                                  Marketplace
+                                </span>
+                              )}
                               {currentUser.pinnedThreadIds?.includes(chat.id) && (
                                 <Pin size={12} className="text-blue-500 fill-blue-500 rotate-45 shrink-0" />
                               )}
@@ -1785,7 +1790,12 @@ export default function ChatsView() {
                             <div className="flex-1 min-w-0">
                               <div className="flex justify-between items-baseline mb-1">
                                 <h3 className="font-semibold text-[15px] truncate dark:text-white flex items-center gap-1.5">
-                                  {chat.user.name}
+                                  <span className="truncate">{chat.user.name}</span>
+                                  {isMarketplaceThread(chat) && (
+                                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-900/50 shrink-0">
+                                      Marketplace
+                                    </span>
+                                  )}
                                   {currentUser.pinnedThreadIds?.includes(chat.id) && (
                                     <Pin size={12} className="text-blue-500 fill-blue-500 rotate-45 shrink-0" />
                                   )}

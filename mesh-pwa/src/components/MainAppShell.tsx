@@ -448,15 +448,14 @@ function MainAppShellContent() {
                             if (document.activeElement instanceof HTMLElement) {
                                   document.activeElement.blur();
                             }
-                            const currentThread = threads.find(t => t.id === lastActiveThreadId);
                             const fromParam = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("from") : null;
-                            const isFromMarketplace = fromParam === "marketplace" || (currentThread && isMarketplaceThread(currentThread));
+                            const isFromMarketplace = fromParam === "marketplace";
                             const isCurrentlyArchived = typeof window !== "undefined" && (window.location.pathname.startsWith("/archived") || fromParam === "archived");
 
                             setActiveThreadId(null);
                             if (isFromMarketplace) {
                                 setActiveTab("marketplace");
-                                window.history.pushState(null, "", "/marketplace?subpage=inbox");
+                                window.history.pushState(null, "", "/marketplace");
                             } else if (isCurrentlyArchived) {
                                 window.history.pushState(null, "", "/archived");
                             } else {

@@ -1207,9 +1207,7 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
             if (path === "/inbox" && threadId) {
                 setActiveThreadIdState(threadId);
                 const fromParam = searchParams.get("from");
-                const matchedThread = (threadsList || []).find(t => t.id === threadId);
-                const isMarket = fromParam === "marketplace" || (matchedThread && isMarketplaceThread(matchedThread));
-                if (isMarket) {
+                if (fromParam === "marketplace") {
                     setActiveTabState("marketplace");
                 } else if (fromParam !== "archived") {
                     setActiveTabState("chats");
