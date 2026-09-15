@@ -1,0 +1,4 @@
+{
+  "summary":  "Controllers for routing requests to database services layer in Admin Backend. Includes login, lookup, ban, incidents list, resolve, and health handlers.",
+  "updatedAt":  "2026-06-22T03:24:25.537888600Z"
+}

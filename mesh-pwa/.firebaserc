@@ -1,0 +1,15 @@
+{
+  "projects": {
+    "default": "yogheartmarket"
+  },
+  "targets": {
+    "yogheartmarket": {
+      "hosting": {
+        "main": [
+          "yogheartmarket"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

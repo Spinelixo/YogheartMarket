@@ -1,0 +1,4 @@
+{
+  "summary":  "Admin authentication middleware using Firebase Auth ID token verification and Firestore admin roles verification.",
+  "updatedAt":  "2026-06-22T03:24:13.467148300Z"
+}

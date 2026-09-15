@@ -1,0 +1,717 @@
+"use client";
+
+import { useState, useMemo, useEffect } from "react";
+import {
+  MarketplaceItem,
+  User,
+  useMockData
+} from "@/context/MockContext";
+import {
+  ArrowLeft,
+  MapPin,
+  Star,
+  Clock,
+  Package,
+  ShoppingBag,
+  Sparkles,
+  Share2,
+  MessageCircle,
+  Edit2,
+  Search,
+  UtensilsCrossed,
+  Flower2,
+  Building2,
+  Shirt,
+  Tv,
+  ShieldCheck,
+  ChevronRight,
+  MessageSquarePlus,
+  Calendar,
+  Users
+} from "lucide-react";
+import { clsx } from "clsx";
+import { useModalHistory } from "@/hooks/useModalHistory";
+import { shareContent } from "@/utils/nativeShare";
+import { ItemDetailModal } from "./ItemDetailModal";
+import { EditMarketplaceProfileModal } from "./EditMarketplaceProfileModal";
+import { StoreReviewsModal } from "./StoreReviewsModal";
+
+interface SellerStorefrontModalProps {
+  sellerId: string;
+  sellerName?: string;
+  sellerAvatar?: string | null;
+  sellerLocation?: string;
+  onClose: () => void;
+  onOpenMessage?: (sellerUser: User, item?: MarketplaceItem) => void;
+  isClosing?: boolean;
+}
+
+export function SellerStorefrontModal({
+  sellerId,
+  sellerName,
+  sellerAvatar,
+  sellerLocation,
+  onClose,
+  onOpenMessage,
+  isClosing: externalIsClosing = false
+}: SellerStorefrontModalProps) {
+  const {
+    currentUser,
+    allDatingUsers,
+    marketplaceItems,
+    sendMarketplaceInquiry,
+    addNotification,
+    setActiveThreadId
+  } = useMockData();
+
+  const isMe = sellerId === "me" || sellerId === currentUser?.id;
+  const [internalIsClosing, setInternalIsClosing] = useState(false);
+  const isClosing = externalIsClosing || internalIsClosing;
+  const [animPhase, setAnimPhase] = useState<"entering" | "stable">("entering");
+
+  useEffect(() => {
+    setInternalIsClosing(false);
+    setAnimPhase("entering");
+    const timer = setTimeout(() => {
+      setAnimPhase("stable");
+    }, 240);
+    return () => clearTimeout(timer);
+  }, [sellerId]);
+
+  // Resolve Seller User Object
+  const sellerUser = useMemo(() => {
+    if (isMe && currentUser) return currentUser;
+    const found = (allDatingUsers || []).find((u) => u.id === sellerId || u.name === sellerName);
+    if (found) return found;
+
+    // Fallback user object
+    return {
+      id: sellerId,
+      name: sellerName || "Marketplace Seller",
+      avatar: sellerAvatar || null,
+      color: "bg-blue-200",
+      location: sellerLocation || "Local",
+      bio: "Active seller on Yogheart Marketplace.",
+      interests: [],
+      onboardingComplete: true
+    } as unknown as User;
+  }, [sellerId, sellerName, sellerAvatar, sellerLocation, allDatingUsers, isMe, currentUser]);
+
+  const storeProfile = sellerUser.marketplaceStore || {};
+  const displayName = storeProfile.storeName || sellerUser.name || sellerName || "Seller Store";
+
+  // All listings by this seller
+  const sellerListings = useMemo(() => {
+    return (marketplaceItems || []).filter((item) => {
+      if (isMe) {
+        return item.sellerId === "me" || item.sellerId === currentUser?.id || item.sellerName === currentUser?.name;
+      }
+      return (
+        item.sellerId === sellerId ||
+        item.sellerId === sellerUser.id ||
+        (sellerName && item.sellerName?.toLowerCase() === sellerName.toLowerCase())
+      );
+    });
+  }, [marketplaceItems, sellerId, sellerUser.id, sellerName, isMe, currentUser]);
+
+  // Category Icon & Label Helper
+  const getSellerTypeInfo = () => {
+    const type = storeProfile.sellerType || "chef";
+    if (storeProfile.customSellerType) {
+      return { label: storeProfile.customSellerType, icon: Sparkles };
+    }
+    switch (type) {
+      case "chef":
+      case "restaurant":
+        return { label: "Private Chef & Home Culinary", icon: UtensilsCrossed };
+      case "florist":
+        return { label: "Artisanal Florist & Gifts", icon: Flower2 };
+      case "real_estate":
+        return { label: "Real Estate & Rentals Host", icon: Building2 };
+      case "fashion":
+        return { label: "Fashion Brand & Boutique", icon: Shirt };
+      case "auto":
+        return { label: "Automotive Specialist", icon: Package };
+      case "electronics":
+        return { label: "Electronics & Tech Specialist", icon: Tv };
+      case "artisan":
+        return { label: "Handcrafted Artisan & Crafts", icon: Sparkles };
+      default:
+        return { label: "Verified Marketplace Seller", icon: ShoppingBag };
+    }
+  };
+
+  const sellerTypeInfo = getSellerTypeInfo();
+  const SellerTypeIcon = sellerTypeInfo.icon;
+
+  const [statusTab, setStatusTab] = useState<"all" | "active" | "sold" | "free">("all");
+  const [selectedCategory, setSelectedCategory] = useState<string>("All");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedItem, setSelectedItem] = useState<MarketplaceItem | null>(null);
+  const [showEditStoreModal, setShowEditStoreModal] = useState(false);
+  const [showReviewsModal, setShowReviewsModal] = useState(false);
+  const [closingReviewsModal, setClosingReviewsModal] = useState(false);
+
+  const handleCloseReviewsModal = () => {
+    if (!showReviewsModal || closingReviewsModal) {
+      if (!showReviewsModal) setClosingReviewsModal(false);
+      return;
+    }
+    setClosingReviewsModal(true);
+    setShowReviewsModal(false);
+    setTimeout(() => {
+      setClosingReviewsModal(false);
+    }, 220);
+  };
+
+  // Available categories in this store's inventory
+  const storeCategories = useMemo(() => {
+    const set = new Set<string>();
+    sellerListings.forEach((item) => {
+      if (item.category) set.add(item.category);
+    });
+    return ["All", ...Array.from(set)];
+  }, [sellerListings]);
+
+  // Filtered store items
+  const filteredStoreItems = useMemo(() => {
+    return sellerListings.filter((item) => {
+      // Status filtering
+      if (statusTab === "active" && item.status === "sold") return false;
+      if (statusTab === "sold" && item.status !== "sold") return false;
+      if (statusTab === "free" && item.price !== 0) return false;
+
+      // Category filtering
+      if (selectedCategory !== "All") {
+        if (item.category?.toLowerCase() !== selectedCategory.toLowerCase()) return false;
+      }
+
+      // Search filtering
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        const matchTitle = item.title.toLowerCase().includes(q);
+        const matchDesc = item.description?.toLowerCase().includes(q);
+        const matchCategory = item.category?.toLowerCase().includes(q);
+        if (!matchTitle && !matchDesc && !matchCategory) return false;
+      }
+
+      return true;
+    });
+  }, [sellerListings, statusTab, selectedCategory, searchQuery]);
+
+  const activeCount = sellerListings.filter((i) => i.status !== "sold").length;
+  const soldCount = sellerListings.filter((i) => i.status === "sold").length;
+  const freeCount = sellerListings.filter((i) => i.price === 0).length;
+
+  const handleBack = () => {
+    onClose();
+  };
+
+  const handleShareStore = async () => {
+    const res = await shareContent({
+      title: `${displayName}'s Storefront on Yogheart Market`,
+      text: `Check out ${displayName}'s storefront on Yogheart Market!`,
+      dialogTitle: `Share ${displayName}'s Store`,
+    });
+    if (res === "copied") {
+      addNotification("Profile link copied to clipboard! 📋");
+    }
+  };
+
+  const handleMessageSeller = async () => {
+    if (isMe) {
+      addNotification("This is your own profile!");
+      return;
+    }
+    try {
+      if (onOpenMessage) {
+        onOpenMessage(sellerUser);
+        return;
+      }
+
+      const firstItem = sellerListings[0];
+      const customMsg = `Hi ${sellerUser.name}, I'm browsing your marketplace store!`;
+      if (firstItem) {
+        const threadId = await sendMarketplaceInquiry(sellerUser, firstItem, customMsg);
+        setActiveThreadId(threadId);
+        window.history.pushState(null, "", `/inbox?id=${threadId}&from=marketplace`);
+        onClose();
+      } else {
+        window.history.pushState(null, "", `/profile?userId=${sellerUser.id}&from=marketplace`);
+        onClose();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const [closingSelectedItem, setClosingSelectedItem] = useState<MarketplaceItem | null>(null);
+
+  const handleCloseSelectedItem = () => {
+    if (!selectedItem || closingSelectedItem) {
+      if (!selectedItem) setClosingSelectedItem(null);
+      return;
+    }
+    const cur = selectedItem;
+    setClosingSelectedItem(cur);
+    setSelectedItem(null);
+    setTimeout(() => {
+      setClosingSelectedItem(null);
+    }, 220);
+  };
+
+  // History sync for seller storefront page itself
+  useModalHistory(`sellerStorefrontPage-${sellerId}`, !isClosing, handleBack);
+
+  // History sync for catalogue preview modal and edit modal
+  useModalHistory(`storefrontItemPreview-${sellerId}`, !!selectedItem, () => {
+    handleCloseSelectedItem();
+  });
+  useModalHistory(`storefrontEditStore-${sellerId}`, showEditStoreModal, () => {
+    setShowEditStoreModal(false);
+  });
+  useModalHistory(`storefrontReviewsModal-${sellerId}`, showReviewsModal, () => {
+    handleCloseReviewsModal();
+  });
+
+  return (
+    <div
+      data-seller-storefront-page="true"
+      className={clsx(
+        "absolute inset-0 z-50 h-full w-full bg-white dark:bg-zinc-950 shadow-[-12px_0_30px_-5px_rgba(0,0,0,0.25)] border-l border-zinc-200/40 dark:border-zinc-800/40 flex flex-col overflow-hidden antialiased subpixel-antialiased text-gray-900 dark:text-zinc-100",
+        isClosing
+          ? "animate-slide-out-to-right-edge"
+          : animPhase === "entering"
+          ? "animate-slide-in-from-right-edge"
+          : ""
+      )}
+      style={{
+        pointerEvents: isClosing ? "none" : "auto",
+        willChange: isClosing || animPhase === "entering" ? "transform" : "auto",
+        backfaceVisibility: "hidden",
+        WebkitBackfaceVisibility: "hidden",
+        transform: animPhase === "stable" && !isClosing ? "translate3d(0, 0, 0)" : undefined,
+      }}
+    >
+      {/* Fixed Sticky Top Header */}
+      <header className="bg-white dark:bg-zinc-900 px-3 md:px-5 py-3 flex items-center justify-between border-b border-[var(--border)] dark:border-zinc-800 sticky top-0 z-30 shrink-0 shadow-xs">
+        <div className="flex items-center gap-2 min-w-0 flex-1 mr-2">
+          <button
+            type="button"
+            onClick={handleBack}
+            className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-full transition-colors cursor-pointer shrink-0"
+            title="Back"
+          >
+            <ArrowLeft size={24} className="text-[var(--primary)]" />
+          </button>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5 truncate">
+              <h2 className="text-sm sm:text-base font-bold text-gray-900 dark:text-white truncate leading-tight">
+                {displayName}
+              </h2>
+              <ShieldCheck size={14} className="text-blue-500 shrink-0" />
+            </div>
+            <p className="text-[11px] text-gray-500 dark:text-zinc-400 truncate">
+              {sellerTypeInfo.label}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1.5 shrink-0">
+          <button
+            type="button"
+            onClick={handleShareStore}
+            title="Share Storefront"
+            className="w-9 h-9 rounded-full bg-gray-100 dark:bg-zinc-800 flex items-center justify-center text-gray-700 dark:text-zinc-200 hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
+          >
+            <Share2 size={17} />
+          </button>
+        </div>
+      </header>
+
+      {/* Scrollable Page Body */}
+      <div className="flex-1 overflow-y-auto min-h-0 custom-scrollbar overscroll-contain pb-36 sm:pb-16">
+        <div className="max-w-3xl mx-auto w-full">
+          {/* Store Banner */}
+          <div className="relative w-full h-40 sm:h-52 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 overflow-hidden select-none">
+            {storeProfile.bannerImage ? (
+              <img
+                src={storeProfile.bannerImage}
+                alt="Store Banner"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="absolute inset-0 bg-gradient-to-br from-indigo-700 via-blue-600 to-rose-500 opacity-90">
+                <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]" />
+              </div>
+            )}
+          </div>
+
+          {/* Store Profile Info Card */}
+          <div className="px-5 pb-5 -mt-14 sm:-mt-16 relative z-10">
+            <div className="flex items-end justify-between gap-3 mb-3">
+              {/* Avatar */}
+              <div className="relative">
+                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl overflow-hidden border-4 border-white dark:border-zinc-950 shadow-xl bg-zinc-200 dark:bg-zinc-800 shrink-0">
+                  {sellerUser.avatar ? (
+                    <img
+                      src={sellerUser.avatar}
+                      alt={displayName}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center font-black text-3xl text-gray-700 dark:text-zinc-200">
+                      {displayName.charAt(0)}
+                    </div>
+                  )}
+                </div>
+                <div className="absolute -bottom-1 -right-1 p-1.5 bg-blue-600 text-white rounded-full border-2 border-white dark:border-zinc-950 shadow-sm" title="Verified Seller">
+                  <ShieldCheck size={15} />
+                </div>
+              </div>
+
+              {/* Action Button: Edit or Message */}
+              <div>
+                {isMe ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowEditStoreModal(true)}
+                    className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-900 dark:text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
+                  >
+                    <Edit2 size={14} />
+                    <span>Edit Profile</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleMessageSeller}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-2xl text-white font-bold text-xs shadow-lg transition-all cursor-pointer bg-[var(--primary)] hover:bg-blue-600 shadow-blue-500/25"
+                  >
+                    <MessageCircle size={15} />
+                    <span>Message Store</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Title & Badge */}
+            <div className="space-y-1.5">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight">
+                  {displayName}
+                </h1>
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold border bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-900/50">
+                  <SellerTypeIcon size={12} />
+                  <span>{sellerTypeInfo.label}</span>
+                </span>
+              </div>
+
+              {/* Real Name if Store Name is different */}
+              {storeProfile.storeName && (
+                <p className="text-xs text-gray-500 dark:text-zinc-400 font-medium">
+                  By {sellerUser.name}
+                </p>
+              )}
+
+              {/* Headline */}
+              {storeProfile.headline && (
+                <p className="text-sm font-semibold text-gray-800 dark:text-zinc-200 pt-0.5">
+                  {storeProfile.headline}
+                </p>
+              )}
+
+              {/* Bio / Description */}
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-zinc-400 leading-relaxed pt-1 whitespace-pre-line">
+                {storeProfile.bio || sellerUser.bio || "Active seller on Yogheart Market. Welcome to my store!"}
+              </p>
+            </div>
+
+            {/* Quick Badges Row */}
+            <div className="flex flex-wrap items-center gap-2 pt-3 text-[11px]">
+              <button
+                type="button"
+                onClick={() => setShowReviewsModal(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100/80 dark:bg-amber-950/40 dark:hover:bg-amber-900/60 text-amber-700 dark:text-amber-300 font-bold border border-amber-200/60 dark:border-amber-900/50 shadow-2xs hover:scale-105 active:scale-95 transition-all cursor-pointer group"
+                title="View Ratings & Customer Reviews"
+              >
+                <Star size={12} className="fill-amber-500 text-amber-500 group-hover:scale-110 transition-transform" />
+                <span>{storeProfile.rating || "4.9"} ({storeProfile.reviewCount || "28"} reviews)</span>
+                <span className="text-[10px] text-amber-600 dark:text-amber-400 underline font-semibold ml-0.5">Read reviews</span>
+              </button>
+
+              <span className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 font-medium">
+                <MapPin size={12} className="text-rose-500" />
+                <span>{storeProfile.location || sellerUser.location || sellerLocation || "Montreal"}</span>
+              </span>
+
+              <span className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 font-medium">
+                <Clock size={12} className="text-emerald-500" />
+                <span>{storeProfile.responseRate || "Fast Replies (~10m)"}</span>
+              </span>
+
+              <span className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 font-medium">
+                <Package size={12} className="text-blue-500" />
+                <span>
+                  {`${sellerListings.length} Total Listed · ${soldCount} Sold`}
+                </span>
+              </span>
+            </div>
+
+            {/* Features / Fulfillment options */}
+            <div className="flex flex-wrap items-center gap-1.5 pt-2 text-[10px] text-gray-500 dark:text-zinc-400">
+              <span className="font-semibold text-gray-700 dark:text-zinc-300">Fulfillment:</span>
+              <span className="bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-md font-bold">
+                ✓ Local Delivery Available
+              </span>
+              <span className="bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 px-2 py-0.5 rounded-md">
+                ✓ Doorstep Pickup
+              </span>
+            </div>
+
+            {/* Seller Trust & Verified Reviews Banner */}
+            <div className="pt-3">
+              <div 
+                onClick={() => setShowReviewsModal(true)}
+                className="bg-gradient-to-r from-amber-50/80 via-orange-50/40 to-yellow-50/60 dark:from-zinc-850 dark:via-zinc-800 dark:to-zinc-850 rounded-2xl p-3 sm:p-3.5 border border-amber-200/60 dark:border-zinc-700/80 flex items-center justify-between gap-3 cursor-pointer hover:border-amber-300 dark:hover:border-zinc-600 transition-all group shadow-2xs"
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-9 h-9 rounded-xl bg-amber-100 dark:bg-amber-950/60 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0 font-black text-xs border border-amber-300/40">
+                    ★ {storeProfile.rating || "4.9"}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-bold text-gray-900 dark:text-white">
+                        Seller Trust & Ratings
+                      </span>
+                      <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400 leading-tight">
+                        ✓ Verified
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-gray-500 dark:text-zinc-400 truncate">
+                      Click to read customer reviews or rate this seller
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1 shrink-0 text-xs font-bold text-amber-700 dark:text-amber-400 group-hover:underline">
+                  <span>See All</span>
+                  <ChevronRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <hr className="border-gray-100 dark:border-zinc-800" />
+
+          {/* Store Inventory / Catalogue Header */}
+          <div className="p-4 sm:p-5 space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <h2 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-1.5">
+                    <ShoppingBag size={18} className="text-[var(--primary)]" />
+                    <span>Store Catalogue & Listings</span>
+                  </h2>
+                  <p className="text-[11px] text-gray-500 dark:text-zinc-400">
+                    Showing {filteredStoreItems.length} of {sellerListings.length} items
+                  </p>
+                </div>
+
+                {/* Search input in store */}
+                <div className="relative w-36 sm:w-48">
+                  <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search catalogue..."
+                    className="w-full bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white pl-8 pr-3 py-1.5 rounded-xl text-xs outline-none focus:ring-1 focus:ring-[var(--primary)] border-0"
+                  />
+                </div>
+              </div>
+
+              {/* Status Filter Tabs */}
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
+                <button
+                  type="button"
+                  onClick={() => setStatusTab("all")}
+                  className={clsx(
+                    "px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer whitespace-nowrap",
+                    statusTab === "all"
+                      ? "bg-[var(--primary)] text-white shadow-xs"
+                      : "bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 hover:bg-gray-200"
+                  )}
+                >
+                  All ({sellerListings.length})
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setStatusTab("active")}
+                  className={clsx(
+                    "px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer whitespace-nowrap",
+                    statusTab === "active"
+                      ? "bg-[var(--primary)] text-white shadow-xs"
+                      : "bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 hover:bg-gray-200"
+                  )}
+                >
+                  Active ({activeCount})
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setStatusTab("sold")}
+                  className={clsx(
+                    "px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer whitespace-nowrap",
+                    statusTab === "sold"
+                      ? "bg-red-600 text-white shadow-xs"
+                      : "bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 hover:bg-gray-200"
+                  )}
+                >
+                  Sold ({soldCount})
+                </button>
+
+                {freeCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setStatusTab("free")}
+                    className={clsx(
+                      "px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer whitespace-nowrap",
+                      statusTab === "free"
+                        ? "bg-emerald-600 text-white shadow-xs"
+                        : "bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 hover:bg-gray-200"
+                    )}
+                  >
+                    Free ({freeCount})
+                  </button>
+                )}
+              </div>
+
+              {/* Category Chips within Store */}
+              {storeCategories.length > 2 && (
+                <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-0.5">
+                  {storeCategories.map((cat) => (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setSelectedCategory(cat)}
+                      className={clsx(
+                        "px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer whitespace-nowrap",
+                        selectedCategory === cat
+                          ? "bg-gray-900 dark:bg-white text-white dark:text-black"
+                          : "bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 text-gray-600 dark:text-zinc-400"
+                      )}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Listings Grid */}
+              {filteredStoreItems.length === 0 ? (
+                <div className="py-12 text-center space-y-2 bg-gray-50 dark:bg-zinc-900/50 rounded-2xl border border-dashed border-gray-200 dark:border-zinc-800">
+                  <ShoppingBag size={32} className="mx-auto text-gray-400 dark:text-zinc-600" />
+                  <h3 className="font-bold text-sm text-gray-700 dark:text-zinc-300">
+                    No items found in this section
+                  </h3>
+                  <p className="text-xs text-gray-500 dark:text-zinc-500">
+                    Try switching filter tabs or clearing your search.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">
+                  {filteredStoreItems.map((item) => {
+                    const coverImg =
+                      item.images && item.images.length > 0
+                        ? item.images[0]
+                        : "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop&q=80";
+
+                    return (
+                      <div
+                        key={item.id}
+                        onClick={() => setSelectedItem(item)}
+                        className="group bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden border border-gray-150 dark:border-zinc-800 shadow-xs hover:shadow-md transition-all flex flex-col cursor-pointer relative"
+                      >
+                        {/* Image & Badges */}
+                        <div className="relative w-full aspect-square bg-zinc-100 dark:bg-zinc-800 overflow-hidden select-none">
+                          <img
+                            src={coverImg}
+                            alt={item.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+
+                          {/* Sold Overlay */}
+                          {item.status === "sold" && (
+                            <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                              <span className="bg-red-600 text-white font-black text-xs px-2.5 py-1 rounded-lg uppercase tracking-wider shadow-md">
+                                SOLD
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Price Badge */}
+                          <div className="absolute bottom-2 left-2 bg-black/75 backdrop-blur-md text-white font-black text-xs px-2 py-0.5 rounded-lg shadow-xs">
+                            {item.price === 0 ? "FREE" : `$${item.price.toLocaleString()}`}
+                          </div>
+
+                          {/* Condition Badge */}
+                          <div className="absolute top-2 left-2 bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md text-gray-800 dark:text-zinc-200 text-[10px] font-bold px-2 py-0.5 rounded-md shadow-xs">
+                            {item.condition}
+                          </div>
+                        </div>
+
+                        {/* Info */}
+                        <div className="p-2.5 flex-1 flex flex-col justify-between">
+                          <div>
+                            <h3 className="font-bold text-xs text-gray-900 dark:text-white line-clamp-2 leading-tight group-hover:text-[var(--primary)] transition-colors">
+                              {item.title}
+                            </h3>
+                            <div className="flex items-center gap-1 text-[10px] text-gray-500 dark:text-zinc-400 mt-1">
+                              <MapPin size={10} className="text-rose-500 shrink-0" />
+                              <span className="truncate">{item.location}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+        </div>
+      </div>
+
+      {/* Instagram-style Feed Modal when an item from the catalogue is clicked */}
+      {(selectedItem || closingSelectedItem) && (
+        <ItemDetailModal
+          mode="modal"
+          hideSellerInfo={true}
+          item={selectedItem || closingSelectedItem!}
+          isClosing={!!closingSelectedItem}
+          feedItems={filteredStoreItems}
+          onClose={handleCloseSelectedItem}
+        />
+      )}
+
+      {/* Edit Marketplace Store Profile Modal */}
+      {showEditStoreModal && (
+        <EditMarketplaceProfileModal
+          onClose={() => setShowEditStoreModal(false)}
+        />
+      )}
+
+      {/* Ratings & Customer Reviews Modal */}
+      {(showReviewsModal || closingReviewsModal) && (
+        <StoreReviewsModal
+          sellerUser={sellerUser}
+          sellerName={displayName}
+          sellerListings={sellerListings}
+          currentUser={currentUser}
+          isDriver={false}
+          isClosing={closingReviewsModal}
+          onClose={handleCloseReviewsModal}
+        />
+      )}
+    </div>
+  );
+}

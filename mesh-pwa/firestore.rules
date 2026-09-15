@@ -1,0 +1,77 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // User Profiles
+    match /users/{userId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    // Marketplace Items (public browse, authenticated sell/edit/delete)
+    match /marketplace_items/{itemId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated();
+    }
+
+    // Chat Threads & Messages
+    match /threads/{threadId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+
+      match /messages/{messageId} {
+        allow read: if isAuthenticated();
+        allow write: if isAuthenticated();
+      }
+    }
+
+    // WebRTC Call Signaling
+    match /calls/{callId} {
+      allow read, write: if isAuthenticated();
+
+      match /{subcollection=**} {
+        allow read, write: if isAuthenticated();
+      }
+    }
+
+    // Call Logs
+    match /call_logs/{logId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Statuses
+    match /statuses/{statusId} {
+      allow read: if true;
+      allow write: if isAuthenticated();
+    }
+
+    // Friend / Dating Requests
+    match /friend_requests/{requestId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Device Tokens
+    match /device_tokens/{tokenId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Reports and Feedback
+    match /reports/{reportId} {
+      allow read, write: if isAuthenticated();
+    }
+    match /feedbacks/{feedbackId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Fallback rule
+    match /{document=**} {
+      allow read, write: if isAuthenticated();
+    }
+  }
+}

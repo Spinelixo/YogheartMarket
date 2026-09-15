@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Yogheart</string>
+    <string name="title_activity_main">Yogheart</string>
+    <string name="package_name">com.mesh.dating</string>
+    <string name="custom_url_scheme">com.mesh.dating</string>
+
+    <!-- App Launcher Shortcuts -->
+    <string name="shortcut_chats">Chats</string>
+    <string name="shortcut_chats_desc">View your active conversations</string>
+    <string name="shortcut_calls">Calls</string>
+    <string name="shortcut_calls_desc">View your recent calls</string>
+    <string name="shortcut_requests">Requests</string>
+    <string name="shortcut_requests_desc">View connection requests and likes</string>
+    <string name="shortcut_marketplace">Marketplace</string>
+    <string name="shortcut_marketplace_desc">Browse marketplace storefronts</string>
+</resources>

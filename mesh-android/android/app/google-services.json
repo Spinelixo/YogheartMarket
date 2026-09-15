@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "86437967745",
+    "project_id": "mesh-app-prod-58473",
+    "storage_bucket": "mesh-app-prod-58473.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:86437967745:android:0032e6a82aad549b85da80",
+        "android_client_info": {
+          "package_name": "com.mesh.dating"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "86437967745-gk7pna0qe1ejg8ltr2aq96pthu80hjsc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBsyhM2mb74JKU1E9_rGgpZoNprBc5vAXc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "86437967745-gk7pna0qe1ejg8ltr2aq96pthu80hjsc.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

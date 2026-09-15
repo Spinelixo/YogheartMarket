@@ -1,0 +1,78 @@
+{
+  "name": "Yogheart - Connect Meaningfully",
+  "short_name": "Yogheart",
+  "description": "A modern messaging and dating experience that builds real connections.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/app-icons/apple-glitter.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/app-icons/apple-glitter.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/app-icons/icon-glitter.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/app-icons/icon-glitter.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Chats",
+      "short_name": "Chats",
+      "description": "View your active conversations",
+      "url": "/inbox",
+      "icons": [
+        {
+          "src": "/app-icons/apple-glitter.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Calls",
+      "short_name": "Calls",
+      "description": "View your recent calls",
+      "url": "/calls",
+      "icons": [
+        {
+          "src": "/app-icons/apple-glitter.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Requests",
+      "short_name": "Requests",
+      "description": "View connection requests and likes",
+      "url": "/requests",
+      "icons": [
+        {
+          "src": "/app-icons/apple-glitter.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ]
+}

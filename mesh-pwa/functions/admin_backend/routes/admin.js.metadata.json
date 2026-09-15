@@ -1,0 +1,4 @@
+{
+  "summary":  "Routing definition for Admin Backend mapping all endpoints under /api/v1/admin/ with express router and attaching verification middleware.",
+  "updatedAt":  "2026-06-22T03:24:29.226691700Z"
+}
