@@ -397,9 +397,9 @@ export function UnifiedPostModal({ initialType = "status", onClose }: UnifiedPos
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-zinc-800">
+        <div className="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-zinc-800 mb-4">
           <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
-            {postType === "status" ? "Share New Status" : postType === "feed" ? "New Feed Post (Photo / Clip)" : "Share Glimpse"}
+            {postType === "status" ? "Share New Status" : postType === "feed" ? "New Post" : "Share Glimpse"}
           </h2>
           <button
             type="button"
@@ -407,40 +407,6 @@ export function UnifiedPostModal({ initialType = "status", onClose }: UnifiedPos
             className="w-8 h-8 rounded-full bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-300 flex items-center justify-center hover:bg-gray-200 transition-colors"
           >
             <X size={16} />
-          </button>
-        </div>
-
-        {/* Tab Picker */}
-        <div className="flex bg-gray-100 dark:bg-zinc-800 p-1 rounded-xl my-3 text-xs font-bold text-gray-600 dark:text-zinc-400">
-          <button
-            type="button"
-            onClick={() => setPostType("status")}
-            className={clsx(
-              "flex-1 py-1.5 rounded-lg transition-all",
-              postType === "status" ? "bg-white dark:bg-zinc-700 text-gray-900 dark:text-white shadow-xs" : ""
-            )}
-          >
-            Status
-          </button>
-          <button
-            type="button"
-            onClick={() => setPostType("feed")}
-            className={clsx(
-              "flex-1 py-1.5 rounded-lg transition-all",
-              postType === "feed" ? "bg-white dark:bg-zinc-700 text-gray-900 dark:text-white shadow-xs" : ""
-            )}
-          >
-            Feed (Photo/Clip)
-          </button>
-          <button
-            type="button"
-            onClick={() => setPostType("glimpse")}
-            className={clsx(
-              "flex-1 py-1.5 rounded-lg transition-all",
-              postType === "glimpse" ? "bg-white dark:bg-zinc-700 text-gray-900 dark:text-white shadow-xs" : ""
-            )}
-          >
-            Glimpse
           </button>
         </div>
 

@@ -26,7 +26,6 @@ const desktopSidebarNavItems = [
   { name: "Marketplace", href: "/marketplace", icon: ShoppingBag, id: "marketplace" },
   { name: "Chats", href: "/chats", icon: MessageCircle, id: "chats" },
   { name: "Calls", href: "/calls", icon: Phone, id: "calls" },
-  { name: "Store / Profile", href: "/profile", icon: Store, id: "profile" },
 ];
 
 const mainPaths = ["/", "/marketplace", "/chats", "/calls", "/store", "/profile", "/me", "/inbox"];
@@ -196,26 +195,26 @@ export function Sidebar() {
       </nav>
       <div className="p-2 border-t border-[var(--border)] mt-auto">
         <Link
-          href="/me"
+          href="/profile?userId=me"
           scroll={false}
           onPointerDown={handleTabPointerDown}
           onClick={(e) => {
             e.preventDefault();
             setActiveThreadId(null);
-            setActiveTab("me");
-            window.history.pushState(null, "", "/me");
+            setActiveTab("profile");
+            window.history.pushState(null, "", "/profile?userId=me");
             window.dispatchEvent(new CustomEvent("closeMarketplaceOverlays"));
             window.dispatchEvent(new Event("locationchange"));
           }}
           className={clsx(
             "flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all select-none relative overflow-hidden touch-manipulation cursor-pointer",
-            (activeTab === "me" || pathname.startsWith("/me") || searchParams?.get("settings") === "overlay")
+            (activeTab === "profile" || activeTab === "store" || pathname.startsWith("/profile") || pathname.startsWith("/store")) && !searchParams?.get("settings")
               ? "bg-[var(--primary)] text-white shadow-md shadow-emerald-600/20 font-bold"
               : "text-gray-800 hover:bg-gray-100 dark:text-zinc-200 dark:hover:bg-zinc-800/60 font-medium"
           )}
         >
-          <Settings size={19} className="relative z-10 pointer-events-none" />
-          <span className="text-sm relative z-10 pointer-events-none">Settings</span>
+          <Store size={19} className="relative z-10 pointer-events-none" />
+          <span className="text-sm relative z-10 pointer-events-none">Store / Profile</span>
         </Link>
       </div>
     </div>
