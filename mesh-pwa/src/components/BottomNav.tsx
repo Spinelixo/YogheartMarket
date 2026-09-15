@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -8,7 +8,8 @@ import {
   Settings,
   User,
   Phone,
-  ShoppingBag
+  ShoppingBag,
+  Store
 } from "lucide-react";
 import { useMockData, isMarketplaceThread } from "@/context/MockContext";
 import { triggerRipple } from "@/utils/ui";
@@ -17,6 +18,7 @@ const navItems = [
   { name: "Market", href: "/marketplace", icon: ShoppingBag },
   { name: "Chats", href: "/chats", icon: MessageCircle },
   { name: "Calls", href: "/calls", icon: Phone },
+  { name: "Store", href: "/store", icon: Store },
   { name: "Menu", href: "/profile", icon: User },
   { name: "Settings", href: "/me", icon: Settings },
 ];
@@ -25,14 +27,16 @@ const desktopSidebarNavItems = [
   { name: "Marketplace", href: "/marketplace", icon: ShoppingBag, id: "marketplace" },
   { name: "Chats", href: "/chats", icon: MessageCircle, id: "chats" },
   { name: "Calls", href: "/calls", icon: Phone, id: "calls" },
+  { name: "Store", href: "/store", icon: Store, id: "store" },
 ];
 
-const mainPaths = ["/", "/marketplace", "/chats", "/calls", "/profile", "/me", "/inbox"];
+const mainPaths = ["/", "/marketplace", "/chats", "/calls", "/store", "/profile", "/me", "/inbox"];
 
 function getTabName(name: string) {
   if (name === "Market" || name === "Marketplace") return "marketplace";
   if (name === "Chats") return "chats";
   if (name === "Calls") return "calls";
+  if (name === "Store") return "store";
   if (name === "Menu") return "profile";
   return "me";
 }
@@ -79,6 +83,9 @@ export function Sidebar() {
     } else if (item.id === "calls") {
       setActiveTab("calls");
       window.history.pushState(null, "", "/calls");
+    } else if (item.id === "store") {
+      setActiveTab("store");
+      window.history.pushState(null, "", "/store");
     }
     window.dispatchEvent(new CustomEvent("closeMarketplaceOverlays"));
     window.dispatchEvent(new Event("locationchange"));
@@ -131,6 +138,8 @@ export function Sidebar() {
               isActive = (activeTab === "chats" || pathname === "/chats") && !pathname.startsWith("/profile") && !pathname.startsWith("/marketplace") && !pathname.startsWith("/calls");
             } else if (item.id === "calls") {
               isActive = activeTab === "calls" || pathname.startsWith("/calls");
+            } else if (item.id === "store") {
+              isActive = activeTab === "store" || pathname.startsWith("/store");
             }
           }
 
@@ -331,6 +340,7 @@ export function BottomNav() {
     { name: "Market", href: "/marketplace", icon: ShoppingBag, id: "marketplace" },
     { name: "Chats", href: "/chats", icon: MessageCircle, id: "chats" },
     { name: "Calls", href: "/calls", icon: Phone, id: "calls" },
+    { name: "Store", href: "/store", icon: Store, id: "store" },
     { name: "Menu", href: "/profile", icon: User, id: "profile" },
   ];
 
@@ -341,6 +351,9 @@ export function BottomNav() {
     if (item.id === "calls") {
       setActiveTab("calls");
       window.history.pushState(null, "", "/calls");
+    } else if (item.id === "store") {
+      setActiveTab("store");
+      window.history.pushState(null, "", "/store");
     } else if (item.id === "marketplace") {
       setActiveTab("marketplace");
       window.history.pushState(null, "", "/marketplace");
@@ -388,6 +401,8 @@ export function BottomNav() {
             isActive = (activeTab === "chats" || pathname === "/chats") && !pathname.startsWith("/marketplace") && !pathname.startsWith("/profile") && !pathname.startsWith("/calls");
           } else if (item.id === "calls") {
             isActive = (activeTab === "calls" || pathname.startsWith("/calls")) && !pathname.startsWith("/profile");
+          } else if (item.id === "store") {
+            isActive = (activeTab === "store" || pathname.startsWith("/store")) && !pathname.startsWith("/profile");
           } else if (item.id === "profile") {
             const userIdParam = searchParams?.get("userId");
             const groupIdParam = searchParams?.get("groupId");

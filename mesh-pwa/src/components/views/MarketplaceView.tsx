@@ -536,61 +536,10 @@ export default function MarketplaceView() {
   // Inbox subpage filters
   const [inboxFilter, setInboxFilter] = useState<"all" | "buying" | "selling">("all");
 
-  // Category horizontal scroll ref and arrow indicators
-  const categoriesRef = useRef<HTMLDivElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(true);
-
-  const checkCategoryScroll = useCallback(() => {
-    if (!categoriesRef.current) return;
-    const { scrollLeft, scrollWidth, clientWidth } = categoriesRef.current;
-    setCanScrollLeft(scrollLeft > 5);
-    setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 5);
-  }, []);
-
-  useEffect(() => {
-    checkCategoryScroll();
-    const el = categoriesRef.current;
-    if (el) {
-      el.addEventListener("scroll", checkCategoryScroll, { passive: true });
-      window.addEventListener("resize", checkCategoryScroll);
-      return () => {
-        el.removeEventListener("scroll", checkCategoryScroll);
-        window.removeEventListener("resize", checkCategoryScroll);
-      };
-    }
-  }, [checkCategoryScroll]);
-
-  // Smooth mouse wheel horizontal scrolling
-  const handleCategoriesWheel = (e: React.WheelEvent<HTMLDivElement>) => {
-    if (!categoriesRef.current) return;
-    if (e.deltaY !== 0) {
-      categoriesRef.current.scrollLeft += e.deltaY;
-    }
-  };
-
-  const scrollCategories = (direction: "left" | "right") => {
-    if (!categoriesRef.current) return;
-    const distance = 200;
-    categoriesRef.current.scrollBy({
-      left: direction === "left" ? -distance : distance,
-      behavior: "smooth",
-    });
-  };
-
   // Filtered & Sorted items for Browse subpage
   const filteredItems = useMemo(() => {
     return marketplaceItems
       .filter((item) => {
-        // Tab filtering
-        if (browseTab === "my_items") {
-          const isMyItem = item.sellerId === currentUser?.id || item.sellerId === "me";
-          if (!isMyItem) return false;
-        } else if (browseTab === "saved") {
-          const isSaved = currentUser ? item.savedBy?.includes(currentUser.id) : false;
-          if (!isSaved) return false;
-        }
-
         // Category filtering (multi-select)
         if (selectedCategories.length > 0) {
           const itemCat = (item.category || "").toLowerCase();
@@ -605,14 +554,14 @@ export default function MarketplaceView() {
         if (searchQuery.trim()) {
           const q = searchQuery.toLowerCase().trim();
           const matchTitle = item.title.toLowerCase().includes(q);
-          const matchDesc = item.description.toLowerCase().includes(q);
-          const matchLoc = item.location.toLowerCase().includes(q);
-          const matchCategory = item.category.toLowerCase().includes(q);
+          const matchDesc = item.description?.toLowerCase().includes(q);
+          const matchLoc = item.location?.toLowerCase().includes(q);
+          const matchCategory = item.category?.toLowerCase().includes(q);
           if (!matchTitle && !matchDesc && !matchLoc && !matchCategory) return false;
         }
 
-        // Availability filtering (always show sold items under "My Listings")
-        if (browseTab !== "my_items" && filterAvailability === "available" && item.status === "sold") {
+        // Availability filtering
+        if (filterAvailability === "available" && item.status === "sold") {
           return false;
         }
 
@@ -817,101 +766,93 @@ export default function MarketplaceView() {
       {/* ────────────────── SUBPAGE 1: BROWSE MARKET ────────────────── */}
       {mainSubpage === "browse" && (
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Search, Filter Tabs & Scrollable Categories */}
-          <div className="bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md border-b border-gray-150 dark:border-zinc-800 px-4 py-2 space-y-2 shrink-0">
-            {/* Single clean line: Quick Filters (Explore, My Listings, Saved) & Right Edge: Search + Filters */}
+          {/* Search & Main Filter Line */}
+          <div className="bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md border-b border-gray-150 dark:border-zinc-800 px-4 py-2.5 shrink-0">
+            {/* Single clean line: Quick Filters (All, Rentals, Foods, Electronics) & Right Edge: Search + Filters */}
             <div className="flex items-center justify-between gap-2">
-              <div className="flex bg-gray-100 dark:bg-zinc-800/80 p-1 rounded-xl shrink-0 overflow-x-auto no-scrollbar gap-0.5">
-                <button
-                  onClick={() => setBrowseTab("explore")}
-                  className={clsx(
-                    "px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap",
-                    browseTab === "explore"
-                      ? "bg-white dark:bg-zinc-700 text-[var(--primary)] shadow-xs"
-                      : "text-gray-600 dark:text-zinc-400 hover:text-gray-900"
-                  )}
-                >
-                  Explore
-                </button>
-                <button
-                  onClick={() => setBrowseTab("my_items")}
-                  className={clsx(
-                    "px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap",
-                    browseTab === "my_items"
-                      ? "bg-white dark:bg-zinc-700 text-[var(--primary)] shadow-xs"
-                      : "text-gray-600 dark:text-zinc-400 hover:text-gray-900"
-                  )}
-                >
-                  <span>My Listings</span>
-                  {myItemsCount > 0 && (
-                    <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300">
-                      {myItemsCount}
-                    </span>
-                  )}
-                </button>
-                <button
-                  onClick={() => setBrowseTab("saved")}
-                  className={clsx(
-                    "px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap",
-                    browseTab === "saved"
-                      ? "bg-white dark:bg-zinc-700 text-[var(--primary)] shadow-xs"
-                      : "text-gray-600 dark:text-zinc-400 hover:text-gray-900"
-                  )}
-                >
-                  <Bookmark size={11} />
-                  <span>Saved</span>
-                  {savedItemsCount > 0 && (
-                    <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-300">
-                      {savedItemsCount}
-                    </span>
-                  )}
-                </button>
+              <div className="flex bg-gray-100 dark:bg-zinc-800/80 p-1 rounded-xl shrink-0 overflow-x-auto no-scrollbar gap-1">
+                {[
+                  { label: "All", icon: Layers },
+                  { label: "Rentals", icon: Building2 },
+                  { label: "Foods", icon: UtensilsCrossed },
+                  { label: "Electronics", icon: Tv },
+                ].map((item) => {
+                  const isAll = item.label === "All";
+                  const isSelected = isAll
+                    ? selectedCategories.length === 0
+                    : selectedCategories.includes(item.label);
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.label}
+                      type="button"
+                      onClick={() => {
+                        if (isAll) {
+                          setSelectedCategories([]);
+                        } else {
+                          setSelectedCategories((prev) =>
+                            prev.includes(item.label) ? [] : [item.label]
+                          );
+                        }
+                      }}
+                      className={clsx(
+                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5",
+                        isSelected
+                          ? "bg-white dark:bg-zinc-700 text-[var(--primary)] shadow-xs"
+                          : "text-gray-600 dark:text-zinc-400 hover:text-gray-900"
+                      )}
+                    >
+                      <Icon size={13} />
+                      <span>{item.label}</span>
+                    </button>
+                  );
+                })}
               </div>
 
               {/* Right Edge: Search Toggle & Filters button */}
               <div className="flex items-center gap-1.5 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setShowSearchBar(!showSearchBar)}
-                    className={clsx(
-                      "p-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center shadow-xs",
-                      showSearchBar || searchQuery
-                        ? "bg-[var(--primary)] text-white shadow-emerald-500/20"
-                        : "bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 hover:bg-gray-200 dark:hover:bg-zinc-700"
-                    )}
-                    title={showSearchBar ? "Close search" : "Search items"}
-                  >
-                    <Search size={15} />
-                  </button>
+                <button
+                  type="button"
+                  onClick={() => setShowSearchBar(!showSearchBar)}
+                  className={clsx(
+                    "p-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center shadow-xs",
+                    showSearchBar || searchQuery
+                      ? "bg-[var(--primary)] text-white shadow-emerald-500/20"
+                      : "bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 hover:bg-gray-200 dark:hover:bg-zinc-700"
+                  )}
+                  title={showSearchBar ? "Close search" : "Search items"}
+                >
+                  <Search size={15} />
+                </button>
 
-                  <button
-                    onClick={() => {
-                      setFilterSubscreen("main");
-                      setMinPriceInput(filterMinPrice !== null ? String(filterMinPrice) : "");
-                      setMaxPriceInput(filterMaxPrice !== null ? String(filterMaxPrice) : "");
-                      setShowFiltersModal(true);
-                    }}
-                    className={clsx(
-                      "flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-xs shadow-xs transition-all cursor-pointer shrink-0",
-                      activeFilterCount > 0
-                        ? "bg-blue-600 text-white shadow-blue-500/20"
-                        : "bg-gray-100 dark:bg-zinc-800 text-gray-800 dark:text-zinc-200 hover:bg-gray-200 dark:hover:bg-zinc-700"
-                    )}
-                  >
-                    <SlidersHorizontal size={14} />
-                    <span>Filters</span>
-                    {activeFilterCount > 0 && (
-                      <span className="w-4 h-4 rounded-full bg-white text-blue-600 text-[10px] flex items-center justify-center font-extrabold ml-0.5">
-                        {activeFilterCount}
-                      </span>
-                    )}
-                  </button>
-                </div>
+                <button
+                  onClick={() => {
+                    setFilterSubscreen("main");
+                    setMinPriceInput(filterMinPrice !== null ? String(filterMinPrice) : "");
+                    setMaxPriceInput(filterMaxPrice !== null ? String(filterMaxPrice) : "");
+                    setShowFiltersModal(true);
+                  }}
+                  className={clsx(
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-xs shadow-xs transition-all cursor-pointer shrink-0",
+                    activeFilterCount > 0
+                      ? "bg-blue-600 text-white shadow-blue-500/20"
+                      : "bg-gray-100 dark:bg-zinc-800 text-gray-800 dark:text-zinc-200 hover:bg-gray-200 dark:hover:bg-zinc-700"
+                  )}
+                >
+                  <SlidersHorizontal size={14} />
+                  <span>Filters</span>
+                  {activeFilterCount > 0 && (
+                    <span className="w-4 h-4 rounded-full bg-white text-blue-600 text-[10px] flex items-center justify-center font-extrabold ml-0.5">
+                      {activeFilterCount}
+                    </span>
+                  )}
+                </button>
+              </div>
             </div>
 
             {/* Expandable Search Input Bar when Search Icon is active */}
             {showSearchBar && (
-              <div className="relative animate-fade-in pt-0.5">
+              <div className="relative animate-fade-in pt-2">
                 <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
@@ -938,122 +879,10 @@ export default function MarketplaceView() {
                 )}
               </div>
             )}
-
-            {/* ── Scrollable Category Chips Line with Left/Right Buttons & Wheel Drag ── */}
-            <div className="relative flex items-center group/cat">
-                {/* Left Scroll Button */}
-                {canScrollLeft && (
-                  <button
-                    type="button"
-                    onClick={() => scrollCategories("left")}
-                    aria-label="Scroll left"
-                    className="absolute -left-1.5 z-10 w-7 h-7 rounded-full bg-white dark:bg-zinc-800 shadow-md border border-gray-200 dark:border-zinc-700 flex items-center justify-center text-gray-700 dark:text-zinc-200 hover:bg-gray-50 dark:hover:bg-zinc-700 transition-all cursor-pointer"
-                  >
-                    <ChevronLeft size={16} />
-                  </button>
-                )}
-
-                {/* Scrollable Container */}
-                <div
-                  ref={categoriesRef}
-                  onWheel={handleCategoriesWheel}
-                  className="flex gap-2 overflow-x-auto py-1 px-1 no-scrollbar text-xs scroll-smooth select-none w-full"
-                  style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-                >
-                  {CATEGORIES.map((cat) => {
-                    const Icon = cat.icon;
-                    const isAll = cat.label === "All";
-                    const isSelected = isAll 
-                      ? selectedCategories.length === 0 
-                      : selectedCategories.includes(cat.label);
-                    return (
-                      <button
-                        key={cat.label}
-                        onClick={() => {
-                          if (isAll) {
-                            setSelectedCategories([]);
-                          } else {
-                            setSelectedCategories((prev) => {
-                              if (prev.includes(cat.label)) {
-                                return prev.filter((c) => c !== cat.label);
-                              } else {
-                                return [...prev, cat.label];
-                              }
-                            });
-                          }
-                        }}
-                        className={clsx(
-                          "px-3.5 py-1.5 rounded-full font-bold flex items-center gap-1.5 whitespace-nowrap transition-all shrink-0 cursor-pointer text-xs shadow-xs",
-                          isSelected
-                            ? "bg-[var(--primary)] text-white scale-102"
-                            : "bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 hover:bg-gray-200 dark:hover:bg-zinc-700"
-                        )}
-                      >
-                        <Icon size={13} />
-                        <span>{cat.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Right Scroll Button */}
-                {canScrollRight && (
-                  <button
-                    type="button"
-                    onClick={() => scrollCategories("right")}
-                    aria-label="Scroll right"
-                    className="absolute -right-1.5 z-10 w-7 h-7 rounded-full bg-white dark:bg-zinc-800 shadow-md border border-gray-200 dark:border-zinc-700 flex items-center justify-center text-gray-700 dark:text-zinc-200 hover:bg-gray-50 dark:hover:bg-zinc-700 transition-all cursor-pointer"
-                  >
-                    <ChevronRight size={16} />
-                  </button>
-                )}
-              </div>
           </div>
 
           {/* Listings Cards Grid */}
           <div className="flex-1 overflow-y-auto p-3 sm:p-4 pb-28 lg:pb-6">
-              {/* My Marketplace Storefront Header Card */}
-              {browseTab === "my_items" && (
-                <div className="mb-4 p-4 rounded-3xl bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-purple-500/10 border border-blue-200/60 dark:border-blue-900/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-500/20 shrink-0">
-                      <Store size={22} />
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-extrabold text-sm text-gray-900 dark:text-white">
-                          {currentUser?.marketplaceStore?.storeName || `${currentUser?.name}'s Marketplace Storefront`}
-                        </h3>
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400">
-                          {currentUser?.marketplaceStore?.customSellerType || "Verified Seller"}
-                        </span>
-                      </div>
-                      <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">
-                        {currentUser?.marketplaceStore?.headline || "Your dedicated marketplace store, catalogue & listings"}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => setActiveSellerStore({ id: currentUser?.id || "me", name: currentUser?.name || "My Store" })}
-                      className="px-3.5 py-2 rounded-xl bg-white dark:bg-zinc-800 text-gray-800 dark:text-white font-bold text-xs shadow-xs border border-gray-200 dark:border-zinc-700 hover:bg-gray-50 dark:hover:bg-zinc-700 transition-all cursor-pointer flex items-center gap-1.5"
-                    >
-                      <ShoppingBag size={14} className="text-[var(--primary)]" />
-                      <span>View Store</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowEditMarketplaceProfileModal(true)}
-                      className="px-3.5 py-2 rounded-xl bg-[var(--primary)] text-white font-bold text-xs shadow-sm hover:bg-blue-600 transition-all cursor-pointer flex items-center gap-1.5"
-                    >
-                      <Edit3 size={14} />
-                      <span>Edit Profile</span>
-                    </button>
-                  </div>
-                </div>
-              )}
 
               {filteredItems.length > 0 ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
@@ -1151,43 +980,26 @@ export default function MarketplaceView() {
                     <ShoppingBag size={28} />
                   </div>
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
-                    {browseTab === "my_items"
-                      ? "No items listed yet"
-                      : browseTab === "saved"
-                      ? "No saved items"
-                      : filterDistanceOption !== "suggested"
+                    {filterDistanceOption !== "suggested"
                       ? `No items found within ${filterDistanceOption === "custom" ? filterCustomDistanceKm : filterDistanceOption} km`
                       : "No items found"}
                   </h3>
                   <p className="text-xs text-gray-500 dark:text-zinc-400 max-w-xs mb-6">
-                    {browseTab === "my_items"
-                      ? "List your unused items, clothes, or electronics and start selling to members locally."
-                      : browseTab === "saved"
-                      ? "Tap the heart icon on any listing to save it here for later."
-                      : activeFilterCount > 0
+                    {activeFilterCount > 0
                       ? "Try resetting some filters or adjusting your search keywords to see more items."
                       : "Try adjusting your search keywords or switching category filters."}
                   </p>
 
-                  {browseTab === "my_items" ? (
-                    <button
-                      onClick={() => setShowCreateModal(true)}
-                      className="py-3 px-6 bg-[var(--primary)] text-white font-bold text-xs rounded-2xl flex items-center gap-2 shadow-lg shadow-blue-500/20 cursor-pointer"
-                    >
-                      <Plus size={16} /> List Your First Item
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => {
-                        handleResetAllFilters();
-                        setSearchQuery("");
-                        setBrowseTab("explore");
-                      }}
-                      className="py-2.5 px-5 bg-gray-100 dark:bg-zinc-800 text-gray-800 dark:text-zinc-200 font-bold text-xs rounded-xl hover:bg-gray-200 cursor-pointer"
-                    >
-                      Reset all filters
-                    </button>
-                  )}
+                  <button
+                    onClick={() => {
+                      handleResetAllFilters();
+                      setSearchQuery("");
+                      setSelectedCategories([]);
+                    }}
+                    className="py-2.5 px-5 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-800 dark:text-zinc-200 font-bold text-xs rounded-xl transition-all cursor-pointer"
+                  >
+                    Reset Filters
+                  </button>
                 </div>
               )}
             </div>

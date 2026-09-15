@@ -1221,6 +1221,7 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
                 if (path === "/" || path === "/marketplace" || path.startsWith("/marketplace")) setActiveTabState("marketplace");
                 else if (path === "/chats") setActiveTabState("chats");
                 else if (path === "/calls") setActiveTabState("calls");
+                else if (path === "/store" || path.startsWith("/store")) setActiveTabState("store");
                 else if (path === "/profile") setActiveTabState("profile");
                 else if (path === "/me" || path === "/admin" || path.startsWith("/admin") || path.startsWith("/me/")) setActiveTabState("me");
             }

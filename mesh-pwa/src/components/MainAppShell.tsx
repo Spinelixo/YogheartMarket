@@ -8,6 +8,7 @@ import ProfileView from "./views/ProfileView";
 import MeView from "./views/MeView";
 import ChatThreadView from "./views/ChatThreadView";
 import ArchivedChatsView from "./views/ArchivedChatsView";
+import { SellerStorefrontModal } from "./marketplace/SellerStorefrontModal";
 import { WhatsAppPermissionsModal } from "./permissions/WhatsAppPermissionsModal";
 import { clsx } from "clsx";
 import { useState, useEffect, useCallback, Suspense, useRef } from "react";
@@ -374,6 +375,19 @@ function MainAppShellContent() {
             {/* Marketplace Tab */}
             <div className={clsx("h-full w-full absolute inset-0", activeTab === "marketplace" ? "opacity-100 z-10 pointer-events-auto visible" : "opacity-0 z-0 pointer-events-none invisible")}>
                 <MarketplaceView />
+            </div>
+
+            {/* Store Tab */}
+            <div className={clsx("h-full w-full absolute inset-0", activeTab === "store" ? "opacity-100 z-10 pointer-events-auto visible" : "opacity-0 z-0 pointer-events-none invisible")}>
+                <SellerStorefrontModal 
+                    sellerId="me" 
+                    isStandaloneView={true} 
+                    onClose={() => {
+                        setActiveTab("marketplace");
+                        window.history.pushState(null, "", "/marketplace");
+                        window.dispatchEvent(new Event("locationchange"));
+                    }} 
+                />
             </div>
 
             {/* Profile Tab */}

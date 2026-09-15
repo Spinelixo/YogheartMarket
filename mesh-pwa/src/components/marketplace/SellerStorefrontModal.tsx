@@ -27,7 +27,8 @@ import {
   ChevronRight,
   MessageSquarePlus,
   Calendar,
-  Users
+  Users,
+  Bookmark
 } from "lucide-react";
 import { clsx } from "clsx";
 import { useModalHistory } from "@/hooks/useModalHistory";
@@ -44,6 +45,7 @@ interface SellerStorefrontModalProps {
   onClose: () => void;
   onOpenMessage?: (sellerUser: User, item?: MarketplaceItem) => void;
   isClosing?: boolean;
+  isStandaloneView?: boolean;
 }
 
 export function SellerStorefrontModal({
@@ -53,7 +55,8 @@ export function SellerStorefrontModal({
   sellerLocation,
   onClose,
   onOpenMessage,
-  isClosing: externalIsClosing = false
+  isClosing: externalIsClosing = false,
+  isStandaloneView = false
 }: SellerStorefrontModalProps) {
   const {
     currentUser,
@@ -144,7 +147,14 @@ export function SellerStorefrontModal({
   const sellerTypeInfo = getSellerTypeInfo();
   const SellerTypeIcon = sellerTypeInfo.icon;
 
-  const [statusTab, setStatusTab] = useState<"all" | "active" | "sold" | "free">("all");
+  // Private Saved Items (only accessible to store owner)
+  const savedItems = useMemo(() => {
+    if (!isMe || !currentUser) return [];
+    return (marketplaceItems || []).filter((item) => item.savedBy?.includes(currentUser.id));
+  }, [isMe, currentUser, marketplaceItems]);
+  const savedCount = savedItems.length;
+
+  const [statusTab, setStatusTab] = useState<"all" | "active" | "sold" | "free" | "saved">("all");
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedItem, setSelectedItem] = useState<MarketplaceItem | null>(null);
@@ -164,19 +174,21 @@ export function SellerStorefrontModal({
     }, 220);
   };
 
-  // Available categories in this store's inventory
+  // Available categories in this store's inventory (or saved items when in saved tab)
   const storeCategories = useMemo(() => {
     const set = new Set<string>();
-    sellerListings.forEach((item) => {
+    const sourceListings = statusTab === "saved" ? savedItems : sellerListings;
+    sourceListings.forEach((item) => {
       if (item.category) set.add(item.category);
     });
     return ["All", ...Array.from(set)];
-  }, [sellerListings]);
+  }, [sellerListings, savedItems, statusTab]);
 
   // Filtered store items
   const filteredStoreItems = useMemo(() => {
-    return sellerListings.filter((item) => {
-      // Status filtering
+    const sourceListings = statusTab === "saved" ? savedItems : sellerListings;
+    return sourceListings.filter((item) => {
+      // Status filtering (only applies to seller listings, not saved items)
       if (statusTab === "active" && item.status === "sold") return false;
       if (statusTab === "sold" && item.status !== "sold") return false;
       if (statusTab === "free" && item.price !== 0) return false;
@@ -197,7 +209,7 @@ export function SellerStorefrontModal({
 
       return true;
     });
-  }, [sellerListings, statusTab, selectedCategory, searchQuery]);
+  }, [sellerListings, savedItems, statusTab, selectedCategory, searchQuery]);
 
   const activeCount = sellerListings.filter((i) => i.status !== "sold").length;
   const soldCount = sellerListings.filter((i) => i.status === "sold").length;
@@ -260,8 +272,8 @@ export function SellerStorefrontModal({
     }, 220);
   };
 
-  // History sync for seller storefront page itself
-  useModalHistory(`sellerStorefrontPage-${sellerId}`, !isClosing, handleBack);
+  // History sync for seller storefront page itself (only when modal overlay)
+  useModalHistory(`sellerStorefrontPage-${sellerId}`, !isClosing && !isStandaloneView, handleBack);
 
   // History sync for catalogue preview modal and edit modal
   useModalHistory(`storefrontItemPreview-${sellerId}`, !!selectedItem, () => {
@@ -278,41 +290,51 @@ export function SellerStorefrontModal({
     <div
       data-seller-storefront-page="true"
       className={clsx(
-        "absolute inset-0 z-50 h-full w-full bg-white dark:bg-zinc-950 shadow-[-12px_0_30px_-5px_rgba(0,0,0,0.25)] border-l border-zinc-200/40 dark:border-zinc-800/40 flex flex-col overflow-hidden antialiased subpixel-antialiased text-gray-900 dark:text-zinc-100",
-        isClosing
-          ? "animate-slide-out-to-right-edge"
-          : animPhase === "entering"
-          ? "animate-slide-in-from-right-edge"
-          : ""
+        isStandaloneView
+          ? "h-full w-full bg-white dark:bg-zinc-950 flex flex-col overflow-hidden text-gray-900 dark:text-zinc-100 pb-16 lg:pb-0"
+          : "absolute inset-0 z-50 h-full w-full bg-white dark:bg-zinc-950 shadow-[-12px_0_30px_-5px_rgba(0,0,0,0.25)] border-l border-zinc-200/40 dark:border-zinc-800/40 flex flex-col overflow-hidden antialiased subpixel-antialiased text-gray-900 dark:text-zinc-100",
+        !isStandaloneView && (
+          isClosing
+            ? "animate-slide-out-to-right-edge"
+            : animPhase === "entering"
+            ? "animate-slide-in-from-right-edge"
+            : ""
+        )
       )}
       style={{
         pointerEvents: isClosing ? "none" : "auto",
-        willChange: isClosing || animPhase === "entering" ? "transform" : "auto",
+        willChange: !isStandaloneView && (isClosing || animPhase === "entering") ? "transform" : "auto",
         backfaceVisibility: "hidden",
         WebkitBackfaceVisibility: "hidden",
-        transform: animPhase === "stable" && !isClosing ? "translate3d(0, 0, 0)" : undefined,
+        transform: !isStandaloneView && animPhase === "stable" && !isClosing ? "translate3d(0, 0, 0)" : undefined,
       }}
     >
       {/* Fixed Sticky Top Header */}
       <header className="bg-white dark:bg-zinc-900 px-3 md:px-5 py-3 flex items-center justify-between border-b border-[var(--border)] dark:border-zinc-800 sticky top-0 z-30 shrink-0 shadow-xs">
         <div className="flex items-center gap-2 min-w-0 flex-1 mr-2">
-          <button
-            type="button"
-            onClick={handleBack}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-full transition-colors cursor-pointer shrink-0"
-            title="Back"
-          >
-            <ArrowLeft size={24} className="text-[var(--primary)]" />
-          </button>
+          {!isStandaloneView ? (
+            <button
+              type="button"
+              onClick={handleBack}
+              className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-full transition-colors cursor-pointer shrink-0"
+              title="Back"
+            >
+              <ArrowLeft size={24} className="text-[var(--primary)]" />
+            </button>
+          ) : (
+            <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 flex items-center justify-center text-[var(--primary)] shrink-0 shadow-xs border border-emerald-150 dark:border-emerald-900/40">
+              <ShoppingBag size={20} />
+            </div>
+          )}
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5 truncate">
               <h2 className="text-sm sm:text-base font-bold text-gray-900 dark:text-white truncate leading-tight">
-                {displayName}
+                {isStandaloneView ? "My Storefront" : displayName}
               </h2>
               <ShieldCheck size={14} className="text-blue-500 shrink-0" />
             </div>
             <p className="text-[11px] text-gray-500 dark:text-zinc-400 truncate">
-              {sellerTypeInfo.label}
+              {isStandaloneView ? `${sellerListings.length} Listed · ${savedCount} Private Saved` : sellerTypeInfo.label}
             </p>
           </div>
         </div>
@@ -508,11 +530,22 @@ export function SellerStorefrontModal({
               <div className="flex items-center justify-between gap-2">
                 <div>
                   <h2 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-1.5">
-                    <ShoppingBag size={18} className="text-[var(--primary)]" />
-                    <span>Store Catalogue & Listings</span>
+                    {statusTab === "saved" ? (
+                      <>
+                        <Bookmark size={18} className="text-rose-500" />
+                        <span>Private Saved Items</span>
+                      </>
+                    ) : (
+                      <>
+                        <ShoppingBag size={18} className="text-[var(--primary)]" />
+                        <span>Store Catalogue & Listings</span>
+                      </>
+                    )}
                   </h2>
                   <p className="text-[11px] text-gray-500 dark:text-zinc-400">
-                    Showing {filteredStoreItems.length} of {sellerListings.length} items
+                    {statusTab === "saved"
+                      ? `Showing ${filteredStoreItems.length} of ${savedCount} saved items (private to you)`
+                      : `Showing ${filteredStoreItems.length} of ${sellerListings.length} items`}
                   </p>
                 </div>
 
@@ -584,6 +617,29 @@ export function SellerStorefrontModal({
                     Free ({freeCount})
                   </button>
                 )}
+
+                {/* Private Saved Items Tab — ONLY visible to Store Owner */}
+                {isMe && (
+                  <button
+                    type="button"
+                    onClick={() => setStatusTab("saved")}
+                    className={clsx(
+                      "px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5",
+                      statusTab === "saved"
+                        ? "bg-rose-600 text-white shadow-xs"
+                        : "bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 hover:bg-gray-200"
+                    )}
+                  >
+                    <Bookmark size={12} />
+                    <span>Saved ({savedCount})</span>
+                    <span className={clsx(
+                      "text-[9px] font-bold px-1.5 py-0.2 rounded-full",
+                      statusTab === "saved" ? "bg-white/25 text-white" : "bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-300"
+                    )}>
+                      Private
+                    </span>
+                  </button>
+                )}
               </div>
 
               {/* Category Chips within Store */}
@@ -610,12 +666,18 @@ export function SellerStorefrontModal({
               {/* Listings Grid */}
               {filteredStoreItems.length === 0 ? (
                 <div className="py-12 text-center space-y-2 bg-gray-50 dark:bg-zinc-900/50 rounded-2xl border border-dashed border-gray-200 dark:border-zinc-800">
-                  <ShoppingBag size={32} className="mx-auto text-gray-400 dark:text-zinc-600" />
+                  {statusTab === "saved" ? (
+                    <Bookmark size={32} className="mx-auto text-rose-400 dark:text-rose-600" />
+                  ) : (
+                    <ShoppingBag size={32} className="mx-auto text-gray-400 dark:text-zinc-600" />
+                  )}
                   <h3 className="font-bold text-sm text-gray-700 dark:text-zinc-300">
-                    No items found in this section
+                    {statusTab === "saved" ? "No saved items yet" : "No items found in this section"}
                   </h3>
-                  <p className="text-xs text-gray-500 dark:text-zinc-500">
-                    Try switching filter tabs or clearing your search.
+                  <p className="text-xs text-gray-500 dark:text-zinc-500 max-w-xs mx-auto">
+                    {statusTab === "saved"
+                      ? "Items you bookmark on the marketplace will appear here privately."
+                      : "Try switching filter tabs or clearing your search."}
                   </p>
                 </div>
               ) : (
