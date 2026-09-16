@@ -575,8 +575,13 @@ export function SellerStorefrontModal({
             <StatusStoriesRow
               sellerUser={sellerUser}
               isMe={isMe}
+              hasFeedPosts={userFeedCount > 0}
               onOpenCreateStatus={() => {
                 setPostModalType("status");
+                setShowPostModal(true);
+              }}
+              onOpenCreatePost={() => {
+                setPostModalType("feed");
                 setShowPostModal(true);
               }}
               onOpenStatus={(status) => setViewingStatus(status)}
@@ -607,13 +612,13 @@ export function SellerStorefrontModal({
                       </>
                     )}
                   </h2>
-                  <p className="text-[11px] text-gray-500 dark:text-zinc-400">
-                    {statusTab === "saved"
-                      ? `Showing ${filteredStoreItems.length} of ${savedCount} saved items`
-                      : statusTab === "feed"
-                      ? `${userFeedCount} photos & clips shared`
-                      : `Showing ${filteredStoreItems.length} of ${sellerListings.length} items`}
-                  </p>
+                  {statusTab !== "feed" && (
+                    <p className="text-[11px] text-gray-500 dark:text-zinc-400">
+                      {statusTab === "saved"
+                        ? `Showing ${filteredStoreItems.length} of ${savedCount} saved items`
+                        : `Showing ${filteredStoreItems.length} of ${sellerListings.length} items`}
+                    </p>
+                  )}
                 </div>
               </div>
 

@@ -21,7 +21,9 @@ import {
   Trash2,
   Globe,
   ChevronLeft,
-  ArrowLeft
+  ArrowLeft,
+  Edit2,
+  Check
 } from "lucide-react";
 import { clsx } from "clsx";
 import { useModalHistory } from "@/hooks/useModalHistory";
@@ -43,14 +45,18 @@ export const STATUS_GRADIENTS: Record<string, string> = {
 interface StatusStoriesRowProps {
   sellerUser: User;
   isMe: boolean;
+  hasFeedPosts?: boolean;
   onOpenCreateStatus: () => void;
+  onOpenCreatePost?: () => void;
   onOpenStatus: (status: Status) => void;
 }
 
 export function StatusStoriesRow({
   sellerUser,
   isMe,
+  hasFeedPosts = false,
   onOpenCreateStatus,
+  onOpenCreatePost,
   onOpenStatus
 }: StatusStoriesRowProps) {
   const { getStatusesForUser } = useMockData();
@@ -87,7 +93,23 @@ export function StatusStoriesRow({
             <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full border-2 border-dashed border-gray-300 dark:border-zinc-700 flex items-center justify-center bg-gray-50 dark:bg-zinc-900 hover:border-[var(--primary)] hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-all group-hover:scale-105">
               <Plus size={20} className="text-gray-400 group-hover:text-[var(--primary)] transition-colors" />
             </div>
-            <span className="text-[10px] text-gray-500 dark:text-zinc-400 font-medium">New</span>
+            <span className="text-[10px] text-gray-500 dark:text-zinc-400 font-medium">
+              {hasFeedPosts ? "Status" : "New"}
+            </span>
+          </button>
+        )}
+
+        {/* + New Post Button (Owner only, circular, placed next to circular new Status when there are feed posts) */}
+        {isMe && hasFeedPosts && onOpenCreatePost && (
+          <button
+            type="button"
+            onClick={onOpenCreatePost}
+            className="flex flex-col items-center gap-1.5 shrink-0 group cursor-pointer"
+          >
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full border-2 border-dashed border-gray-300 dark:border-zinc-700 flex items-center justify-center bg-gray-50 dark:bg-zinc-900 hover:border-[var(--primary)] hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-all group-hover:scale-105">
+              <Plus size={20} className="text-gray-400 group-hover:text-[var(--primary)] transition-colors" />
+            </div>
+            <span className="text-[10px] text-gray-500 dark:text-zinc-400 font-medium">New Post</span>
           </button>
         )}
 
@@ -704,24 +726,7 @@ export function StoreFeedView({ sellerUser, isMe, onOpenCreatePost }: StoreFeedV
           )}
         </div>
       ) : (
-        <div className="space-y-3">
-          {/* Action header when posts already exist in feed */}
-          {isMe && (
-            <div className="flex items-center justify-between px-1 py-1">
-              <span className="text-xs font-bold text-gray-500 dark:text-zinc-400">
-                {moodsList.length} {moodsList.length === 1 ? "Post / Clip" : "Posts & Clips"}
-              </span>
-              <button
-                type="button"
-                onClick={onOpenCreatePost}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[var(--primary)] hover:bg-emerald-600 text-white font-bold text-xs shadow-xs active:scale-95 transition-all cursor-pointer"
-              >
-                <Plus size={14} />
-                <span>New Post / Clip</span>
-              </button>
-            </div>
-          )}
-
+        <div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {moodsList.map((mood) => {
             const isVideo = mood.type === "video";
@@ -815,8 +820,28 @@ function FeedDetailModal({
   isClosing,
   onClose
 }: FeedDetailModalProps) {
-  const { currentUser, likeMood, commentOnMood, deleteMood } = useMockData();
+  const { currentUser, likeMood, commentOnMood, deleteMood, updateMood } = useMockData();
   const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
+  const [editingPostId, setEditingPostId] = useState<string | null>(null);
+  const [editingCaption, setEditingCaption] = useState<string>("");
+  const [isSavingCaption, setIsSavingCaption] = useState(false);
+
+  const handleStartEditCaption = (postId: string, currentCaption: string) => {
+    setEditingPostId(postId);
+    setEditingCaption(currentCaption || "");
+  };
+
+  const handleSaveCaption = async (postId: string) => {
+    setIsSavingCaption(true);
+    try {
+      await updateMood(postId, { caption: editingCaption.trim() });
+      setEditingPostId(null);
+    } catch (err) {
+      console.error("Failed to update caption:", err);
+    } finally {
+      setIsSavingCaption(false);
+    }
+  };
 
   useModalHistory(`storeFeedViewer-${initialPost.id}`, !isClosing, () => {
     onClose();
@@ -925,19 +950,29 @@ function FeedDetailModal({
                   </div>
 
                   {isMe && (
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        await deleteMood(post.id);
-                        if (orderedPosts.length <= 1) {
-                          onClose();
-                        }
-                      }}
-                      className="p-2 text-gray-400 hover:text-red-500 rounded-full transition-colors cursor-pointer"
-                      title="Delete post"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => handleStartEditCaption(post.id, post.caption || "")}
+                        className="p-2 text-gray-400 hover:text-[var(--primary)] rounded-full transition-colors cursor-pointer"
+                        title="Edit caption"
+                      >
+                        <Edit2 size={16} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          await deleteMood(post.id);
+                          if (orderedPosts.length <= 1) {
+                            onClose();
+                          }
+                        }}
+                        className="p-2 text-gray-400 hover:text-red-500 rounded-full transition-colors cursor-pointer"
+                        title="Delete post"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   )}
                 </div>
 
@@ -984,15 +1019,72 @@ function FeedDetailModal({
                   </div>
                 </div>
 
-                {/* Caption */}
-                {post.caption && (
-                  <p className="text-xs text-gray-800 dark:text-zinc-200 leading-relaxed whitespace-pre-wrap pt-0.5">
-                    <span className="font-bold text-gray-900 dark:text-white mr-1.5">
-                      {post.userName || storeDisplayName}
-                    </span>
-                    {post.caption}
-                  </p>
-                )}
+                {/* Caption / Edit Caption */}
+                {editingPostId === post.id ? (
+                  <div className="space-y-2 pt-1 bg-gray-50 dark:bg-zinc-900/60 p-3 rounded-2xl border border-gray-200/80 dark:border-zinc-800">
+                    <div className="flex items-center justify-between text-xs font-bold text-gray-500 dark:text-zinc-400">
+                      <span>Edit Caption</span>
+                      {isSavingCaption && <span className="text-[var(--primary)] animate-pulse">Saving...</span>}
+                    </div>
+                    <textarea
+                      value={editingCaption}
+                      onChange={(e) => setEditingCaption(e.target.value)}
+                      placeholder="Write a caption..."
+                      className="w-full bg-white dark:bg-zinc-800 text-gray-900 dark:text-white text-xs p-3 rounded-xl outline-none focus:ring-2 focus:ring-[var(--primary)] resize-none border border-gray-200 dark:border-zinc-700"
+                      rows={3}
+                      autoFocus
+                    />
+                    <div className="flex items-center justify-end gap-2 pt-0.5">
+                      <button
+                        type="button"
+                        disabled={isSavingCaption}
+                        onClick={() => setEditingPostId(null)}
+                        className="px-3 py-1.5 text-xs font-bold text-gray-500 hover:text-gray-700 dark:hover:text-zinc-300 transition-colors cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isSavingCaption}
+                        onClick={() => handleSaveCaption(post.id)}
+                        className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[var(--primary)] hover:bg-emerald-600 text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-xs disabled:opacity-50"
+                      >
+                        <Check size={14} />
+                        <span>Save</span>
+                      </button>
+                    </div>
+                  </div>
+                ) : post.caption ? (
+                  <div className="pt-0.5 flex items-start justify-between gap-2 group">
+                    <p className="text-xs text-gray-800 dark:text-zinc-200 leading-relaxed whitespace-pre-wrap flex-1">
+                      <span className="font-bold text-gray-900 dark:text-white mr-1.5">
+                        {post.userName || storeDisplayName}
+                      </span>
+                      {post.caption}
+                    </p>
+                    {isMe && (
+                      <button
+                        type="button"
+                        onClick={() => handleStartEditCaption(post.id, post.caption || "")}
+                        className="opacity-0 group-hover:opacity-100 sm:opacity-0 focus:opacity-100 p-1 text-gray-400 hover:text-[var(--primary)] transition-opacity cursor-pointer shrink-0"
+                        title="Edit caption"
+                      >
+                        <Edit2 size={13} />
+                      </button>
+                    )}
+                  </div>
+                ) : isMe ? (
+                  <div className="pt-0.5">
+                    <button
+                      type="button"
+                      onClick={() => handleStartEditCaption(post.id, "")}
+                      className="text-xs text-gray-400 hover:text-[var(--primary)] italic cursor-pointer flex items-center gap-1.5 transition-colors"
+                    >
+                      <Edit2 size={13} />
+                      <span>Add a caption...</span>
+                    </button>
+                  </div>
+                ) : null}
 
                 {/* Comments Thread */}
                 {post.comments && post.comments.length > 0 && (

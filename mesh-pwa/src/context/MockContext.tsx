@@ -4091,11 +4091,12 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
 
     const updateMood = async (moodId: string, updates: Partial<Mood>) => {
         try {
+            setMoods((prev) => prev.map((m) => (m.id === moodId ? { ...m, ...updates } : m)));
             await updateDoc(doc(db, "moods", moodId), updates);
-            addNotification("Mood updated! 📝");
+            addNotification("Post updated! 📝");
         } catch (err) {
             console.error("Failed to update mood:", err);
-            addNotification("Failed to update mood.");
+            addNotification("Failed to update post.");
         }
     };
 
