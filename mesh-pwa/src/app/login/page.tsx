@@ -370,7 +370,32 @@ export default function LoginPage() {
             if (signUpMode) {
                 // Create new account
                 const result = await createUserWithEmailAndPassword(auth, trimmedEmail, passwordInput);
-                await setupSessionAndRedirect(result.user.uid, "");
+                const newUid = result.user.uid;
+                const newSessionId = Math.random().toString(36).substring(2) + Date.now().toString(36);
+                if (typeof window !== "undefined") {
+                    localStorage.setItem("mesh_session_token", newSessionId);
+                    localStorage.removeItem("mesh_onboarding_complete");
+                }
+                const initialUserData = {
+                    id: newUid,
+                    name: "User",
+                    phoneNumber: "",
+                    email: trimmedEmail,
+                    email_lowercase: trimmedEmail,
+                    photoURL: null,
+                    bio: "Active seller on Yogheart Marketplace.",
+                    activeSessionId: newSessionId,
+                    onboardingComplete: false,
+                    settings: {
+                        privacy: { discoverableByPhone: true, lastSeen: true, readReceipts: true }
+                    },
+                    createdAt: new Date().toISOString()
+                };
+                await setDoc(doc(db, "users", newUid), initialUserData);
+                setIsSigningIn(false);
+                setLoading(false);
+                router.replace("/onboarding");
+                return;
             } else {
                 // Sign in existing account
                 const result = await signInWithEmailAndPassword(auth, trimmedEmail, passwordInput);

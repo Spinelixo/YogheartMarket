@@ -121,7 +121,7 @@ function AuthRedirectWrapper({ children }: { children: React.ReactNode }) {
 
     const isProfileLoading = !!user && !isProfileLoaded;
     const showLoader = isOnboardingPage 
-        ? (loading || needsRedirectToHome || needsRedirectToLogin || isProfileLoading)
+        ? ((loading && !user) || needsRedirectToHome || needsRedirectToLogin)
         : ((loading && (!!user || hasPersistedSession)) || isRouteTransitioning || isRedirecting || isProfileLoading);
 
     useEffect(() => {
@@ -151,7 +151,7 @@ function AuthRedirectWrapper({ children }: { children: React.ReactNode }) {
             const timer = setTimeout(() => {
                 setRenderLoader(false);
                 setIsExiting(false);
-            }, 350);
+            }, 180);
             return () => clearTimeout(timer);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -294,8 +294,8 @@ function AuthRedirectWrapper({ children }: { children: React.ReactNode }) {
                     `}</style>
                     <div className="flex flex-col items-center justify-center">
                         <svg 
-                            width="80" 
-                            height="80" 
+                            width="38" 
+                            height="38" 
                             viewBox="0 0 100 100" 
                             className="animate-premium-spin"
                         >
@@ -303,7 +303,7 @@ function AuthRedirectWrapper({ children }: { children: React.ReactNode }) {
                                 points="50,25 73.8,42.3 64.7,70.2 35.3,70.2 26.2,42.3" 
                                 fill="#0b57d0" 
                                 stroke="#0b57d0"
-                                strokeWidth="14" 
+                                strokeWidth="8" 
                                 strokeLinejoin="round"
                             />
                         </svg>

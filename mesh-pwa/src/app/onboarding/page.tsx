@@ -10,7 +10,7 @@ import { useAuth } from "@/context/AuthContext";
 import { processImageFile, cropImageToSquareWithPosition } from "@/utils/imageProcessor";
 import { clsx } from "clsx";
 import {
-  User, Camera, ArrowRight, ChevronLeft, Plus, X, Loader2, MoveVertical
+  User, Camera, ArrowRight, ChevronLeft, Plus, X, Loader2, MoveVertical, Store
 } from "lucide-react";
 
 export default function OnboardingPage() {
@@ -22,7 +22,7 @@ export default function OnboardingPage() {
     typeof window !== "undefined" &&
     localStorage.getItem("mesh_onboarding_complete") === "true";
 
-  // Active step: 1 (Name), 2 (Birthday), 3 (Photos)
+  // Active step: 1 (Name), 2 (Birthday), 3 (Store Name), 4 (Photos)
   const [step, setStep] = useState(1);
   const [direction, setDirection] = useState<"forward" | "back">("forward");
   const [loading, setLoading] = useState(false);
@@ -40,7 +40,11 @@ export default function OnboardingPage() {
   const monthInputRef = useRef<HTMLInputElement>(null);
   const yearInputRef = useRef<HTMLInputElement>(null);
 
-  // Step 3: Photos
+  // Step 3: Store Name
+  const [storeName, setStoreName] = useState("");
+  const storeInputRef = useRef<HTMLInputElement>(null);
+
+  // Step 4: Photos
   const [photos, setPhotos] = useState<string[]>([]);
   const [uploadingSlot, setUploadingSlot] = useState<number | null>(null);
   const [photoSlotTarget, setPhotoSlotTarget] = useState(0);
@@ -76,6 +80,9 @@ export default function OnboardingPage() {
         setPhotos(userData.photos);
       } else if (userData.avatar) {
         setPhotos([userData.avatar]);
+      }
+      if (userData.marketplaceStore?.storeName) {
+        setStoreName(userData.marketplaceStore.storeName);
       }
     }
   }, [userData]);
@@ -236,6 +243,7 @@ export default function OnboardingPage() {
       }
 
       const trimmedName = name.trim() || "User";
+      const trimmedStoreName = storeName.trim() || (trimmedName ? `${trimmedName}'s Store` : "Yogheart Store");
 
       if (uid) {
         await setDoc(
@@ -252,7 +260,7 @@ export default function OnboardingPage() {
             updatedAt: new Date().toISOString(),
             marketplaceStore: {
               ownerName: trimmedName,
-              storeName: trimmedName,
+              storeName: trimmedStoreName,
               avatar: mainAvatar,
               headline: "Active seller on Yogheart Marketplace.",
               bio: "Active seller on Yogheart Marketplace.",
@@ -306,8 +314,8 @@ export default function OnboardingPage() {
     }
   };
 
-  // Progress percentage (3 steps: 33%, 66%, 100%)
-  const progressPercent = Math.round((step / 3) * 100);
+  // Progress percentage (4 steps: 25%, 50%, 75%, 100%)
+  const progressPercent = Math.round((step / 4) * 100);
 
   return (
     <div className="min-h-screen w-full flex flex-col bg-white dark:bg-gray-900 text-gray-900 dark:text-white font-sans relative select-none">
@@ -328,10 +336,10 @@ export default function OnboardingPage() {
           )}
 
           <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-            Step {step} of 3
+            Step {step} of 4
           </span>
 
-          {step === 3 ? (
+          {step === 4 ? (
             <button
               type="button"
               onClick={handleFinish}
@@ -349,7 +357,7 @@ export default function OnboardingPage() {
         <div className="w-full h-1.5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
           <motion.div
             className="h-full bg-emerald-500 rounded-full"
-            initial={{ width: "33%" }}
+            initial={{ width: "25%" }}
             animate={{ width: `${progressPercent}%` }}
             transition={{ duration: 0.3 }}
           />
@@ -539,10 +547,76 @@ export default function OnboardingPage() {
             </motion.div>
           )}
 
-          {/* ═══════════════ STEP 3: PHOTOS ═══════════════ */}
+          {/* ═══════════════ STEP 3: STORE NAME ═══════════════ */}
           {step === 3 && (
             <motion.div
               key="step-3"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="flex-1 flex flex-col justify-between py-6"
+            >
+              <div className="flex-1 flex flex-col justify-center">
+                <div className="text-center mb-8">
+                  <div className="w-16 h-16 bg-emerald-50 dark:bg-emerald-950/40 rounded-3xl mx-auto flex items-center justify-center mb-4 text-emerald-600 dark:text-emerald-400 shadow-sm border border-emerald-100 dark:border-emerald-900/40">
+                    <Store size={30} />
+                  </div>
+                  <h1 className="text-2xl sm:text-3xl font-bold mb-2 tracking-tight">
+                    What should be the name of the store?
+                  </h1>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 px-4 leading-relaxed">
+                    This is your storefront brand name visible to customers in the marketplace.
+                  </p>
+                </div>
+
+                <div className="w-full max-w-sm mx-auto">
+                  <input
+                    ref={storeInputRef}
+                    type="text"
+                    value={storeName}
+                    onChange={(e) => {
+                      setStoreName(e.target.value);
+                      if (errorMsg) setErrorMsg("");
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        goForward(4);
+                      }
+                    }}
+                    placeholder={name.trim() ? `${name.trim()}'s Store` : "Your Store Name"}
+                    className="w-full text-center text-xl font-bold bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl py-4 focus:ring-2 focus:ring-emerald-500 outline-none dark:text-white transition-all shadow-inner"
+                    autoFocus
+                  />
+                  <p className="text-xs text-gray-400 dark:text-gray-500 text-center mt-3">
+                    Tip: You can use your own name or a unique brand name. You can change this anytime.
+                  </p>
+                  {errorMsg && (
+                    <p className="text-sm text-red-500 font-medium text-center mt-2 animate-fade-in">
+                      {errorMsg}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="pt-6 pb-8">
+                <button
+                  type="button"
+                  onClick={() => {
+                    goForward(4);
+                  }}
+                  className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold text-base shadow-lg shadow-emerald-600/20 active:scale-[0.99] transition-all flex items-center justify-center gap-2"
+                >
+                  Continue <ArrowRight size={18} />
+                </button>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ═══════════════ STEP 4: PHOTOS ═══════════════ */}
+          {step === 4 && (
+            <motion.div
+              key="step-4"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
