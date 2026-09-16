@@ -97,9 +97,35 @@ export function SellerStorefrontModal({
 
   // Resolve Seller User Object
   const sellerUser = useMemo(() => {
-    if (isMe && currentUser) return currentUser;
-    const found = (allDatingUsers || []).find((u) => u.id === sellerId || u.name === sellerName);
-    if (found) return found;
+    if (isMe && currentUser) {
+      const myAvatar = currentUser.marketplaceStore?.avatar || currentUser.avatar || sellerAvatar || null;
+      const myStoreName = currentUser.marketplaceStore?.storeName || currentUser.name || "My Storefront";
+      return {
+        ...currentUser,
+        name: myStoreName,
+        avatar: myAvatar,
+        marketplaceStore: {
+          ...(currentUser.marketplaceStore || {}),
+          storeName: myStoreName,
+          avatar: myAvatar
+        }
+      };
+    }
+    const found = (allDatingUsers || []).find((u) => u.id === sellerId || (sellerName && u.name?.toLowerCase() === sellerName.toLowerCase()));
+    if (found) {
+      const foundAvatar = found.marketplaceStore?.avatar || found.avatar || sellerAvatar || null;
+      const foundStoreName = found.marketplaceStore?.storeName || found.name || sellerName || "Seller Store";
+      return {
+        ...found,
+        name: foundStoreName,
+        avatar: foundAvatar,
+        marketplaceStore: {
+          ...(found.marketplaceStore || {}),
+          storeName: foundStoreName,
+          avatar: foundAvatar
+        }
+      };
+    }
 
     // Fallback user object
     return {
@@ -110,12 +136,19 @@ export function SellerStorefrontModal({
       location: sellerLocation || "Local",
       bio: "Active seller on Yogheart Marketplace.",
       interests: [],
-      onboardingComplete: true
+      onboardingComplete: true,
+      marketplaceStore: {
+        storeName: sellerName || "Marketplace Seller",
+        avatar: sellerAvatar || null
+      }
     } as unknown as User;
   }, [sellerId, sellerName, sellerAvatar, sellerLocation, allDatingUsers, isMe, currentUser]);
 
   const storeProfile = sellerUser.marketplaceStore || {};
-  const displayName = storeProfile.storeName || sellerUser.name || sellerName || "Seller Store";
+  const effectiveAvatar = storeProfile.avatar || sellerUser.avatar || sellerAvatar || (isMe ? currentUser?.avatar : null);
+  const displayName = isMe 
+    ? (currentUser?.marketplaceStore?.storeName || currentUser?.name || "My Storefront")
+    : (storeProfile.storeName || sellerUser.name || sellerName || "Seller Store");
 
   // All listings by this seller
   const sellerListings = useMemo(() => {
@@ -450,9 +483,9 @@ export function SellerStorefrontModal({
                         : "border-4 border-white dark:border-zinc-950 shadow-xl"
                     )}
                   >
-                    {sellerUser.avatar ? (
+                    {effectiveAvatar ? (
                       <img
-                        src={sellerUser.avatar}
+                        src={effectiveAvatar}
                         alt={displayName}
                         className="w-full h-full object-cover rounded-2xl"
                       />
@@ -511,12 +544,10 @@ export function SellerStorefrontModal({
                 </p>
               )}
 
-              {/* Tagline / Headline */}
-              {(storeProfile.headline || storeProfile.bio || sellerUser.bio) && (
-                <p className="text-sm font-semibold text-gray-800 dark:text-zinc-200 pt-0.5">
-                  {storeProfile.headline || storeProfile.bio || sellerUser.bio}
-                </p>
-              )}
+              {/* Tagline / Speciality Headline */}
+              <p className="text-sm font-semibold text-gray-800 dark:text-zinc-200 pt-0.5">
+                {(isMe ? currentUser?.marketplaceStore?.headline : null) || storeProfile.headline || (storeProfile.bio && !storeProfile.bio.includes("Hey there") ? storeProfile.bio : "Specialized in home culinary meals cooked fresh at home with local delivery!")}
+              </p>
             </div>
 
             {/* Quick Badges Row */}

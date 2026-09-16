@@ -224,7 +224,11 @@ export function Sidebar() {
                   : "text-gray-800 hover:bg-gray-100 dark:text-zinc-200 dark:hover:bg-zinc-800/60 font-medium"
               )}
             >
-              <Store size={19} className="relative z-10 pointer-events-none" />
+              {currentUser?.avatar ? (
+                <img src={currentUser.avatar} alt="Store Profile" className="w-5 h-5 rounded-full object-cover shrink-0 relative z-10 pointer-events-none border border-emerald-400/40" />
+              ) : (
+                <Store size={19} className="relative z-10 pointer-events-none" />
+              )}
               <span className="text-sm relative z-10 pointer-events-none">Store / Profile</span>
             </Link>
           );
@@ -415,15 +419,26 @@ export function BottomNav() {
               )}
             >
               <div className="w-5 h-5 relative flex items-center justify-center pointer-events-none z-10">
-                <Icon
-                  size={21}
-                  strokeWidth={isActive ? 2.5 : 2}
-                  className={clsx(
-                    "shrink-0 transition-transform",
-                    hasMissedCalls && "animate-pulse text-rose-500",
-                    hasNewMarket && "animate-bounce-magnify text-emerald-500"
-                  )}
-                />
+                {item.id === "profile" && currentUser?.avatar ? (
+                  <img
+                    src={currentUser.avatar}
+                    alt={currentUser.name || "Store"}
+                    className={clsx(
+                      "w-5 h-5 rounded-full object-cover shrink-0 border",
+                      isActive ? "border-[var(--primary)] ring-2 ring-[var(--primary)]/30" : "border-gray-300 dark:border-zinc-700"
+                    )}
+                  />
+                ) : (
+                  <Icon
+                    size={21}
+                    strokeWidth={isActive ? 2.5 : 2}
+                    className={clsx(
+                      "shrink-0 transition-transform",
+                      hasMissedCalls && "animate-pulse text-rose-500",
+                      hasNewMarket && "animate-bounce-magnify text-emerald-500"
+                    )}
+                  />
+                )}
                 {hasMissedCalls && (
                   <span className="absolute -top-1.5 -right-2 bg-rose-500 text-white text-[9px] font-extrabold h-4 min-w-4 px-1 rounded-full flex items-center justify-center leading-none z-20 animate-pulse shadow-xs">
                     {missedCallsCount}

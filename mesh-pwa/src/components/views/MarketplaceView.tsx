@@ -754,11 +754,13 @@ export default function MarketplaceView() {
             setEditingItem(item);
             setShowCreateModal(true);
           }}
-          onOpenStore={(sellerId, sellerName) => {
+          onOpenStore={(sellerId, sellerName, sellerAvatar, sellerLocation) => {
             setClosingSellerStore(null);
             setActiveSellerStore({
               id: sellerId,
               name: sellerName,
+              avatar: sellerAvatar,
+              location: sellerLocation,
             });
           }}
         />

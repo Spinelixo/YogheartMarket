@@ -31,7 +31,7 @@ interface ItemDetailModalProps {
   feedItems?: MarketplaceItem[];
   onClose: () => void;
   onEdit?: (item: MarketplaceItem) => void;
-  onOpenStore?: (sellerId: string, sellerName?: string) => void;
+  onOpenStore?: (sellerId: string, sellerName?: string, sellerAvatar?: string | null, sellerLocation?: string) => void;
   mode?: "page" | "modal";
   isClosing?: boolean;
   hideSellerInfo?: boolean;
@@ -207,9 +207,9 @@ export function ItemDetailModal({
     }
   };
 
-  const handleOpenStorefront = (sellerId: string, sellerName?: string) => {
+  const handleOpenStorefront = (sellerId: string, sellerName?: string, sellerAvatar?: string | null, sellerLocation?: string) => {
     if (onOpenStore) {
-      onOpenStore(sellerId, sellerName);
+      onOpenStore(sellerId, sellerName, sellerAvatar, sellerLocation);
     } else {
       setShowSellerStorefront(true);
     }
@@ -594,9 +594,9 @@ export function ItemDetailModal({
                 <div className="flex items-center justify-between p-4 rounded-2xl bg-gray-50 dark:bg-zinc-900 border border-gray-150 dark:border-zinc-800 shadow-xs">
                   <div
                     className="flex items-center gap-3 cursor-pointer group flex-1 min-w-0"
-                    onClick={() => handleOpenStorefront(sellerUser.id, curItem.sellerName)}
+                    onClick={() => handleOpenStorefront(curItem.sellerId, curItem.sellerName, curItem.sellerAvatar, curItem.sellerLocation || curItem.location)}
                   >
-                    <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 border border-gray-200 dark:border-zinc-700 flex items-center justify-center bg-zinc-200 dark:bg-zinc-700">
+                    <div className="w-12 h-12 rounded-2xl bg-zinc-100 dark:bg-zinc-800 overflow-hidden shrink-0 border border-gray-150 dark:border-zinc-700 flex items-center justify-center shadow-xs">
                       {curItem.sellerAvatar ? (
                         <img src={curItem.sellerAvatar} alt={curItem.sellerName} className="w-full h-full object-cover" />
                       ) : (
@@ -617,7 +617,7 @@ export function ItemDetailModal({
 
                   <button
                     type="button"
-                    onClick={() => handleOpenStorefront(sellerUser.id, curItem.sellerName)}
+                    onClick={() => handleOpenStorefront(curItem.sellerId, curItem.sellerName, curItem.sellerAvatar, curItem.sellerLocation || curItem.location)}
                     className="text-xs font-bold text-[var(--primary)] hover:underline px-3.5 py-2 rounded-xl bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 transition-colors cursor-pointer shrink-0 ml-2"
                   >
                     View Store

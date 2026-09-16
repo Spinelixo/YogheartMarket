@@ -126,6 +126,7 @@ export interface MarketplaceStoreProfile {
   headline?: string;
   bio?: string;
   bannerImage?: string;
+  avatar?: string | null;
   location?: string;
   fulfillmentOptions?: ("delivery" | "pickup" | "shipping")[];
   businessHours?: string;
@@ -1431,14 +1432,18 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
                     if (mergedSettings.messageTone) localStorage.setItem("mesh_message_tone", mergedSettings.messageTone);
                 }
 
+                const storeData = data.marketplaceStore || {};
+                const effectiveAvatar = storeData.avatar || data.avatar || data.photoURL || null;
+                const effectiveName = storeData.storeName || data.name || "User";
+
                 setCurrentUser({
                     id: docSnap.id,
-                    name: data.name || "User",
+                    name: effectiveName,
                     age: data.age || 24,
                     bio: data.bio || "",
                     color: data.color || "bg-emerald-200",
                     interests: data.interests || [],
-                    avatar: data.avatar || null,
+                    avatar: effectiveAvatar,
                     phoneNumber: data.phoneNumber || "",
                     email: data.email || "",
                     blockedUserIds: data.blockedUserIds || [],
@@ -1458,14 +1463,19 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
                     kids: data.kids || "",
                     smoking: data.smoking || "",
                     drinking: data.drinking || "",
-                    photos: data.photos || [],
+                    photos: data.photos || (effectiveAvatar ? [effectiveAvatar] : []),
                     isBoosted: data.isBoosted || false,
                     boostUntil: data.boostUntil || null,
                     lastSeen: data.lastSeen || null,
-                    location: data.location || "",
+                    location: storeData.location || data.location || "",
                     radiusPreference: (data.radiusPreference || "Local") as "Local" | "Global",
                     countryCode: data.countryCode || "",
-                    isAdmin: data.isAdmin || isSuperAdmin || false
+                    isAdmin: data.isAdmin || isSuperAdmin || false,
+                    marketplaceStore: {
+                        ...storeData,
+                        storeName: effectiveName,
+                        avatar: effectiveAvatar
+                    }
                 });
                 setIsProfileLoaded(true);
             } else {
@@ -3358,7 +3368,8 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
         const updates: any /* eslint-disable-line @typescript-eslint/no-explicit-any */ = {
             name,
             bio,
-            interests
+            interests,
+            "marketplaceStore.storeName": name
         };
         if (age !== undefined) updates.age = age;
         if (phoneNumber !== undefined) updates.phoneNumber = phoneNumber;
@@ -3434,8 +3445,18 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
                 addNotification("Photo upload failed");
             }
         }
+        setCurrentUser(prev => prev ? {
+            ...prev,
+            avatar: finalUrl,
+            marketplaceStore: {
+                ...(prev.marketplaceStore || {}),
+                avatar: finalUrl || undefined
+            }
+        } : prev);
         await updateDoc(doc(db, "users", currentUserId), {
-            avatar: finalUrl
+            avatar: finalUrl,
+            photoURL: finalUrl,
+            "marketplaceStore.avatar": finalUrl
         });
         addNotification("Profile photo updated!");
     };
@@ -4832,12 +4853,22 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
         if (!currentUser) return;
         const currentStore = currentUser.marketplaceStore || {};
         const updatedStore: MarketplaceStoreProfile = { ...currentStore, ...storeData };
+        const effectiveAvatar = updatedStore.avatar || currentUser.avatar || null;
+        const effectiveName = updatedStore.storeName || currentUser.name || "User";
         
-        setCurrentUser(prev => prev ? { ...prev, marketplaceStore: updatedStore } : prev);
+        setCurrentUser(prev => prev ? { 
+            ...prev, 
+            name: effectiveName,
+            avatar: effectiveAvatar,
+            marketplaceStore: updatedStore 
+        } : prev);
         
         if (currentUserId) {
             try {
                 await updateDoc(doc(db, "users", currentUserId), {
+                    name: effectiveName,
+                    avatar: effectiveAvatar,
+                    photoURL: effectiveAvatar,
                     marketplaceStore: updatedStore
                 });
             } catch (err) {

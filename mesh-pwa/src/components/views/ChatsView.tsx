@@ -1166,7 +1166,7 @@ export default function ChatsView() {
                                         {cand.name}
                                       </h4>
                                       <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                                        {cand.bio || "Hey there! I'm using Yogheart."}
+                                        {(cand as any).marketplaceStore?.headline || (cand.bio && !cand.bio.includes("Hey there") ? cand.bio : "Verified local seller on Yogheart Marketplace.")}
                                       </p>
                                     </div>
                                   </div>
@@ -1320,7 +1320,7 @@ export default function ChatsView() {
                                   {m.contactName}
                                 </h4>
                                 <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                                  {m.user.bio || "Hey there! I'm using Yogheart."}
+                                  {m.user.marketplaceStore?.headline || (m.user.bio && !m.user.bio.includes("Hey there") ? m.user.bio : "Verified local seller on Yogheart Marketplace.")}
                                 </p>
                               </div>
                             </div>
@@ -1874,7 +1874,7 @@ export default function ChatsView() {
                             <span className="text-xs text-[var(--primary)] font-semibold">Start Chat</span>
                           </div>
                           <p className="text-sm truncate text-[var(--secondary)]">
-                            {profile.bio || "Hey there! I'm using Yogheart."}
+                            {profile.marketplaceStore?.headline || (profile.bio && !profile.bio.includes("Hey there") ? profile.bio : "Verified local seller on Yogheart Marketplace.")}
                           </p>
                         </div>
                       </div>

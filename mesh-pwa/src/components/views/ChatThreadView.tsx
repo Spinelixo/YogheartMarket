@@ -4641,7 +4641,7 @@ export default function ChatThreadView({ threadId, onClose }: { threadId: string
                                                          )}
                                                          <div className="flex-1 min-w-0">
                                                              <span className="font-semibold text-xs text-black dark:text-white block truncate">{member.name}</span>
-                                                             <span className="text-[10px] text-zinc-400 dark:text-zinc-500 block truncate">{member.bio || "Hey there! I'm using Yogheart."}</span>
+                                                             <span className="text-[10px] text-zinc-400 dark:text-zinc-500 block truncate">{member.marketplaceStore?.headline || (member.bio && !member.bio.includes("Hey there") ? member.bio : "Verified local seller on Yogheart Marketplace.")}</span>
                                                          </div>
                                                      </button>
                                                  ))}
@@ -4913,7 +4913,7 @@ export default function ChatThreadView({ threadId, onClose }: { threadId: string
                                                 )}
                                                 <div className="min-w-0">
                                                     <span className="font-semibold text-xs text-black dark:text-white block truncate">{cand.name}</span>
-                                                    <span className="text-[10px] text-zinc-450 dark:text-zinc-500 block truncate">{cand.bio || "Hey there! I'm using Yogheart."}</span>
+                                                    <span className="text-[10px] text-zinc-450 dark:text-zinc-500 block truncate">{(cand as any).marketplaceStore?.headline || (cand.bio && !cand.bio.includes("Hey there") ? cand.bio : "Verified local seller on Yogheart Marketplace.")}</span>
                                                 </div>
                                             </div>
                                             <input 
@@ -5409,7 +5409,7 @@ export default function ChatThreadView({ threadId, onClose }: { threadId: string
                                                         {memberUser.name} {isSelfMember && <span className="text-xs text-zinc-400 font-normal ml-1">(You)</span>}
                                                     </span>
                                                     <span className="text-[11px] text-zinc-400 block truncate">
-                                                        {memberUser.bio || "Hey there! I'm using Yogheart."}
+                                                        {memberUser.marketplaceStore?.headline || (memberUser.bio && !memberUser.bio.includes("Hey there") ? memberUser.bio : "Verified local seller on Yogheart Marketplace.")}
                                                     </span>
                                                 </div>
                                                 {isCreator && !isSelfMember && (

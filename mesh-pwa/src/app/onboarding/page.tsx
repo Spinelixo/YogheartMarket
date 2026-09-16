@@ -235,21 +235,57 @@ export default function OnboardingPage() {
         }
       }
 
+      const trimmedName = name.trim() || "User";
+
       if (uid) {
         await setDoc(
           doc(db, "users", uid),
           {
-            name: name.trim() || "User",
+            name: trimmedName,
             age,
             dob: dobString,
             avatar: mainAvatar,
+            photoURL: mainAvatar,
             photos: validPhotos,
             avatarPosY: mainPhotoPosY,
             onboardingComplete: true,
             updatedAt: new Date().toISOString(),
+            marketplaceStore: {
+              storeName: trimmedName,
+              avatar: mainAvatar,
+              bio: "Active seller on Yogheart Marketplace.",
+              joinedYear: new Date().getFullYear().toString(),
+              rating: 5.0,
+              reviewCount: 0,
+              responseRate: "Fast Replies (~10m)"
+            }
           },
           { merge: true }
         );
+
+        // Automatically create Store Feed posts for all extra photos uploaded
+        const extraPhotos = validPhotos.slice(1);
+        for (let i = 0; i < extraPhotos.length; i++) {
+          const extraPhoto = extraPhotos[i];
+          if (!extraPhoto) continue;
+          try {
+            const moodId = crypto.randomUUID();
+            await setDoc(doc(db, "moods", moodId), {
+              userId: uid,
+              userName: trimmedName,
+              userAvatar: mainAvatar,
+              userColor: "bg-emerald-100",
+              type: "photo",
+              mediaUrl: extraPhoto,
+              caption: "Store feed update ✨",
+              createdAt: new Date(Date.now() - (extraPhotos.length - i) * 2000).toISOString(),
+              likes: [],
+              comments: [],
+            });
+          } catch (postErr) {
+            console.warn("Failed to create storefront feed post for extra photo:", postErr);
+          }
+        }
       }
 
       if (typeof window !== "undefined") {
