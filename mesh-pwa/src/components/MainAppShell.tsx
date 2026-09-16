@@ -449,16 +449,13 @@ function MainAppShellContent() {
                                   document.activeElement.blur();
                             }
                             const fromParam = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("from") : null;
-                            const isFromMarketplace = fromParam === "marketplace";
                             const isCurrentlyArchived = typeof window !== "undefined" && (window.location.pathname.startsWith("/archived") || fromParam === "archived");
 
                             setActiveThreadId(null);
-                            if (isFromMarketplace) {
-                                setActiveTab("marketplace");
-                                window.history.pushState(null, "", "/marketplace");
-                            } else if (isCurrentlyArchived) {
+                            if (isCurrentlyArchived) {
                                 window.history.pushState(null, "", "/archived");
                             } else {
+                                setActiveTab("chats");
                                 window.history.pushState(null, "", "/");
                             }
                         }} 
@@ -497,14 +494,10 @@ function MainAppShellContent() {
 
                             if (fromThreadId) {
                                 setActiveThreadId(fromThreadId);
-                                if (fromParam === "marketplace") {
-                                    setActiveTab("marketplace");
-                                    window.history.pushState(null, "", `/inbox?id=${fromThreadId}&from=marketplace`);
-                                } else if (fromParam === "archived") {
-                                    setActiveTab("chats");
+                                setActiveTab("chats");
+                                if (fromParam === "archived") {
                                     window.history.pushState(null, "", `/inbox?id=${fromThreadId}&from=archived`);
                                 } else {
-                                    setActiveTab("chats");
                                     window.history.pushState(null, "", `/inbox?id=${fromThreadId}`);
                                 }
                             } else if (fromParam === "chats") {

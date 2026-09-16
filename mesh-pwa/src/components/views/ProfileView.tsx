@@ -654,9 +654,9 @@ export default function ProfileView({ userId: propUserId, onClose }: { userId?: 
                 setActiveThreadId(fromThreadIdParam);
                 window.history.replaceState(null, "", `/inbox?id=${fromThreadIdParam}&from=carpool`);
             } else if (isMarket) {
-                setGlobalActiveTab("marketplace");
+                setGlobalActiveTab("chats");
                 setActiveThreadId(fromThreadIdParam);
-                window.history.replaceState(null, "", `/inbox?id=${fromThreadIdParam}&from=marketplace`);
+                window.history.replaceState(null, "", `/inbox?id=${fromThreadIdParam}`);
             } else {
                 setActiveThreadId(fromThreadIdParam);
                 window.history.replaceState(null, "", `/inbox?id=${fromThreadIdParam}`);
@@ -760,7 +760,7 @@ export default function ProfileView({ userId: propUserId, onClose }: { userId?: 
 
     // Unified Post Modal States
     const [showPostModal, setShowPostModal] = useState(false);
-    const [postType, setPostType] = useState<"status" | "tweet" | "moods" | "clips">("status");
+    const [postType, setPostType] = useState<"status" | "moods" | "clips">("status");
     const [newStatusText, setNewStatusText] = useState("");
     const [statusMediaUrl, setStatusMediaUrl] = useState<string | null>(null);
     const [statusMediaType, setStatusMediaType] = useState<"photo" | "video" | null>(null);
@@ -1788,12 +1788,6 @@ export default function ProfileView({ userId: propUserId, onClose }: { userId?: 
                         }
                     }
                 }
-            } else if (postType === "tweet") {
-                if (!newStatusText.trim()) {
-                    setIsPosting(false);
-                    return;
-                }
-                await postDraft(newStatusText, isGroupProfile ? groupThread?.id : undefined);
             } else if (postType === "moods" || postType === "clips") {
                 if (!statusMediaUrl) {
                     setIsPosting(false);
@@ -2423,7 +2417,7 @@ export default function ProfileView({ userId: propUserId, onClose }: { userId?: 
                             </div>
                             <h3 className="font-bold text-base dark:text-white mb-1">Private Feed</h3>
                             <p className="text-xs text-[var(--secondary)] dark:text-zinc-400 max-w-xs leading-relaxed">
-                                {"This user's feed is private. Add them to your contacts to see their moods, clips, and glimpses."}
+                                {"This user's feed is private. Add them to your contacts to see their posts and clips."}
                             </p>
                         </div>
                     ) : (
@@ -2431,9 +2425,8 @@ export default function ProfileView({ userId: propUserId, onClose }: { userId?: 
                             {/* Icon Tab Switcher */}
                     <div className="flex border-b border-gray-100 dark:border-gray-700/50">
                         {([
-                            { key: "moods" as const, icon: <LayoutGrid size={20} />, label: "Moods" },
+                            { key: "moods" as const, icon: <LayoutGrid size={20} />, label: "Posts" },
                             { key: "clips" as const, icon: <Play size={20} />, label: "Clips" },
-                            { key: "tweet" as const, icon: <MessageSquare size={20} />, label: "Glimpses" },
                         ]).map((tab) => (
                             <button
                                 key={tab.key}
@@ -2456,243 +2449,6 @@ export default function ProfileView({ userId: propUserId, onClose }: { userId?: 
 
                     {/* Tab Content Panels */}
                     <div className="space-y-4">
-                            <div className={clsx("space-y-4", activeTab !== "tweet" && "hidden")}>
-                                {/* Quick Compose Draft for self or group admin */}
-                                {(isSelf || (isGroupProfile && isGroupAdmin)) && (
-                                    <div className="flex gap-3 items-start border-b border-gray-50 dark:border-gray-700/50 pb-4">
-                                        <div className={clsx("w-9 h-9 rounded-full flex items-center justify-center text-sm relative shrink-0", currentUser.color)}>
-                                            {currentUser.avatar ? (
-                                                <img src={currentUser.avatar} className="w-full h-full rounded-full object-cover" alt="Avatar" />
-                                            ) : (
-                                                <span>{currentUser.name.charAt(0)}</span>
-                                            )}
-                                        </div>
-                                        <div className="flex-1 relative">
-                                            <textarea
-                                                value={quickDraftText}
-                                                onChange={handleQuickDraftChange}
-                                                placeholder="What's on your mind? Tag user profile with @Name..."
-                                                className="w-full py-2 bg-transparent text-sm resize-none outline-none dark:text-white min-h-[60px] leading-relaxed"
-                                                maxLength={280}
-                                            />
-                                            
-                                            {/* Autocomplete Popup */}
-                                            {showSuggestions && filteredSuggestions.length > 0 && (
-                                                <div className="absolute left-0 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-150 dark:border-gray-700 rounded-xl shadow-lg w-64 max-h-[160px] overflow-y-auto z-40 py-1">
-                                                    {filteredSuggestions.map((u) => (
-                                                        <button
-                                                            key={u.id}
-                                                            onClick={() => selectSuggestion(u)}
-                                                            className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 text-left text-xs text-gray-805 dark:text-gray-200"
-                                                        >
-                                                            <div className={clsx("w-6 h-6 rounded-full flex items-center justify-center text-[10px] relative font-semibold shrink-0", u.color)}>
-                                                                {u.avatar ? (
-                                                                    <img src={u.avatar} className="w-full h-full rounded-full object-cover" />
-                                                                ) : (
-                                                                    <span>{u.name.charAt(0)}</span>
-                                                                )}
-                                                            </div>
-                                                            <span className="font-semibold truncate">{u.name}</span>
-                                                            <span className="text-[10px] text-gray-400 dark:text-gray-500 truncate">@{u.name.toLowerCase()}</span>
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            )}
-                                            
-                                            <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-50 dark:border-gray-700/20">
-                                                <span className="text-[10px] text-gray-400 dark:text-gray-500">
-                                                    {280 - quickDraftText.length} characters left
-                                                </span>
-                                                <button
-                                                    onClick={submitQuickDraft}
-                                                    disabled={!quickDraftText.trim()}
-                                                    className="px-4 py-1 bg-[var(--primary)] text-white text-xs font-semibold rounded-full hover:bg-blue-600 transition-colors disabled:opacity-50"
-                                                >
-                                                    Post Glimpse
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Drafts List */}
-                                {(() => {
-                                    const userDrafts = drafts.filter(d => d.userId === user.id);
-                                    if (userDrafts.length === 0) {
-                                        return (
-                                            <div className="text-center py-8">
-                                                <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-blue-900/30 dark:to-indigo-900/30 flex items-center justify-center">
-                                                    <MessageSquare size={28} className="text-blue-400" />
-                                                </div>
-                                                <p className="text-sm text-[var(--secondary)] mb-1">No glimpses yet</p>
-                                                {isSelf && (
-                                                    <p className="text-xs text-[var(--secondary)] opacity-70">Share a glimpse of your day!</p>
-                                                )}
-                                            </div>
-                                        );
-                                    }
-                                    return (
-                                        <div className="space-y-4">
-                                            {userDrafts.map((draft) => {
-                                                const isLiked = draft.likes?.includes(currentUser.id);
-                                                const commentsCount = draft.comments?.length || 0;
-                                                const isCommentsExpanded = !!expandedDraftComments[draft.id];
-                                                const commentInputVal = draftCommentText[draft.id] || "";
-                                                
-                                                return (
-                                                    <div key={draft.id} className="bg-gray-50/50 dark:bg-gray-800/40 rounded-xl p-4 border border-gray-100 dark:border-gray-700/60 space-y-3">
-                                                        {/* Header */}
-                                                        <div className="flex items-center justify-between">
-                                                            <div className="flex items-center gap-3">
-                                                                <div className={clsx("w-9 h-9 rounded-full flex items-center justify-center text-sm relative shrink-0", draft.userColor)}>
-                                                                    {draft.userAvatar ? (
-                                                                        <img src={draft.userAvatar} alt={draft.userName} className="w-full h-full rounded-full object-cover" />
-                                                                    ) : (
-                                                                        <span>{draft.userName.charAt(0)}</span>
-                                                                    )}
-                                                                </div>
-                                                                <div className="text-left">
-                                                                    <div className="font-semibold text-sm dark:text-white flex items-center gap-1.5">
-                                                                        {draft.userName}
-                                                                        <span className="text-[10px] text-gray-400 dark:text-gray-500 font-normal">@{draft.userName.toLowerCase()}</span>
-                                                                    </div>
-                                                                    <span className="text-[10px] text-gray-400 dark:text-gray-500 block">
-                                                                        {(() => {
-                                                                            try {
-                                                                                const diff = Date.now() - new Date(draft.createdAt).getTime();
-                                                                                const mins = Math.floor(diff / 60000);
-                                                                                if (mins < 1) return "Just now";
-                                                                                if (mins < 60) return `${mins}m ago`;
-                                                                                const hrs = Math.floor(mins / 60);
-                                                                                if (hrs < 24) return `${hrs}h ago`;
-                                                                                return new Date(draft.createdAt).toLocaleDateString();
-                                                                            } catch {
-                                                                                return "Recently";
-                                                                            }
-                                                                        })()}
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-                                                            {isSelf && (
-                                                                <button 
-                                                                    onClick={() => deleteDraft(draft.id)}
-                                                                    className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-full transition-colors"
-                                                                    title="Delete Post"
-                                                                >
-                                                                    <Trash2 size={16} />
-                                                                </button>
-                                                            )}
-                                                        </div>
-                                                        
-                                                        {/* Body */}
-                                                        <div className="text-sm text-gray-800 dark:text-gray-255 text-left break-words whitespace-pre-wrap leading-relaxed">
-                                                            {renderDraftText(draft.text, allDatingUsers, currentUser)}
-                                                        </div>
-                                                        
-                                                        {/* Footer actions */}
-                                                        <div className="flex items-center gap-6 pt-2 border-t border-gray-100/50 dark:border-gray-700/50 text-gray-500 dark:text-gray-400">
-                                                            <button 
-                                                                onClick={() => likeDraft(draft.id)}
-                                                                className="flex items-center gap-1.5 hover:text-red-500 transition-colors group"
-                                                            >
-                                                                <Heart size={16} className={clsx("transition-transform group-active:scale-125", isLiked && "fill-red-500 text-red-500")} />
-                                                                <span className="text-xs">{draft.likes?.length || 0}</span>
-                                                            </button>
-                                                            
-                                                            <button 
-                                                                onClick={() => setExpandedDraftComments(prev => ({ ...prev, [draft.id]: !prev[draft.id] }))}
-                                                                className="flex items-center gap-1.5 hover:text-[var(--primary)] transition-colors"
-                                                            >
-                                                                <MessageSquare size={16} />
-                                                                <span className="text-xs">{commentsCount}</span>
-                                                            </button>
-                                                            
-                                                            <div className="ml-auto flex items-center gap-1 text-[10px] text-gray-450 dark:text-gray-500">
-                                                                <Globe size={11} />
-                                                                <span>Public</span>
-                                                            </div>
-                                                        </div>
-                                                        
-                                                        {/* Comments Area */}
-                                                        {isCommentsExpanded && (
-                                                            <div className="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700 space-y-3 animate-in fade-in duration-200">
-                                                                {/* Add Comment */}
-                                                                <div className="flex gap-2">
-                                                                    <input
-                                                                        type="text"
-                                                                        value={commentInputVal}
-                                                                        onChange={(e) => setDraftCommentText(prev => ({ ...prev, [draft.id]: e.target.value }))}
-                                                                        placeholder="Write a public comment..."
-                                                                        className="flex-1 px-3 py-2 text-xs bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-700 rounded-lg outline-none focus:ring-1 focus:ring-[var(--primary)] dark:text-white"
-                                                                        onKeyDown={(e) => {
-                                                                            if (e.key === "Enter" && commentInputVal.trim()) {
-                                                                                commentOnDraft(draft.id, commentInputVal);
-                                                                                setDraftCommentText(prev => ({ ...prev, [draft.id]: "" }));
-                                                                            }
-                                                                        }}
-                                                                    />
-                                                                    <button
-                                                                        onClick={() => {
-                                                                            if (commentInputVal.trim()) {
-                                                                                commentOnDraft(draft.id, commentInputVal);
-                                                                                setDraftCommentText(prev => ({ ...prev, [draft.id]: "" }));
-                                                                            }
-                                                                        }}
-                                                                        disabled={!commentInputVal.trim()}
-                                                                        className="px-3 py-1.5 bg-[var(--primary)] text-white text-xs font-semibold rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 shrink-0"
-                                                                    >
-                                                                        Reply
-                                                                    </button>
-                                                                </div>
-                                                                
-                                                                {/* Comments List */}
-                                                                <div className="space-y-2 max-h-[200px] overflow-y-auto pr-1">
-                                                                    {commentsCount === 0 ? (
-                                                                        <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-2">No comments yet. Be the first to comment!</p>
-                                                                    ) : (
-                                                                        draft.comments.map((comment) => (
-                                                                            <div key={comment.id} className="flex gap-2.5 items-start text-xs text-left p-2 rounded-lg bg-white/40 dark:bg-gray-900/40">
-                                                                                <div className={clsx("w-6 h-6 shrink-0 rounded-full flex items-center justify-center text-[10px] relative font-semibold", comment.userColor || "bg-gray-250")}>
-                                                                                    {comment.userAvatar ? (
-                                                                                        <img src={comment.userAvatar} className="w-full h-full rounded-full object-cover" alt="User" />
-                                                                                    ) : (
-                                                                                        <span>{comment.userName.charAt(0)}</span>
-                                                                                    )}
-                                                                                </div>
-                                                                                <div className="flex-1 min-w-0">
-                                                                                    <div className="flex items-baseline justify-between mb-0.5">
-                                                                                        <span className="font-semibold dark:text-white text-gray-900">{comment.userName}</span>
-                                                                                        <span className="text-[8px] text-gray-400 dark:text-gray-550">
-                                                                                            {(() => {
-                                                                                                try {
-                                                                                                    const diff = Date.now() - new Date(comment.createdAt).getTime();
-                                                                                                    const mins = Math.floor(diff / 60000);
-                                                                                                    if (mins < 1) return "Now";
-                                                                                                    if (mins < 60) return `${mins}m ago`;
-                                                                                                    const hrs = Math.floor(mins / 60);
-                                                                                                    if (hrs < 24) return `${hrs}h ago`;
-                                                                                                    return new Date(comment.createdAt).toLocaleDateString();
-                                                                                                } catch {
-                                                                                                    return "";
-                                                                                                }
-                                                                                            })()}
-                                                                                        </span>
-                                                                                    </div>
-                                                                                    <p className="text-gray-600 dark:text-gray-300 break-words leading-relaxed">{comment.text}</p>
-                                                                                </div>
-                                                                            </div>
-                                                                        ))
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    );
-                                })()}
-                            </div>
 
                         {/* ──── MOODS TAB (Photos/Images) ──── */}
                             <div className={clsx(activeTab !== "moods" && "hidden")}>
@@ -3635,7 +3391,7 @@ export default function ProfileView({ userId: propUserId, onClose }: { userId?: 
                             <div className="w-10 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full" />
                         </div>
                         <div className="flex items-center justify-between mb-3 shrink-0">
-                            <h2 className="text-lg font-bold text-gray-900 dark:text-white capitalize">Create {postType === "moods" ? "Mood" : postType === "clips" ? "Clip" : postType === "tweet" ? "Glimpse" : "Status"}</h2>
+                            <h2 className="text-lg font-bold text-gray-900 dark:text-white capitalize">Create {postType === "moods" ? "Mood" : postType === "clips" ? "Clip" : "Status"}</h2>
                             <button
                                 onClick={() => { setShowPostModal(false); setNewStatusText(""); clearSelectedMedia(); setPostType("status"); }}
                                 className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
@@ -3646,7 +3402,7 @@ export default function ProfileView({ userId: propUserId, onClose }: { userId?: 
 
                         {/* Segmented Picker */}
                         <div className="flex bg-gray-100 dark:bg-gray-700 rounded-xl p-1 text-xs font-semibold mb-4 shrink-0">
-                            {(["status", "moods", "clips", "tweet"] as const).map((type) => (
+                            {(["status", "moods", "clips"] as const).map((type) => (
                                 <button
                                     key={type}
                                     onClick={() => {
@@ -3663,7 +3419,7 @@ export default function ProfileView({ userId: propUserId, onClose }: { userId?: 
                                     )}
                                     type="button"
                                 >
-                                    {type === "moods" ? "Moods" : type === "clips" ? "Clips" : type === "tweet" ? "Glimpse" : "Status"}
+                                    {type === "moods" ? "Moods" : type === "clips" ? "Clips" : "Status"}
                                 </button>
                             ))}
                         </div>
@@ -3826,45 +3582,7 @@ export default function ProfileView({ userId: propUserId, onClose }: { userId?: 
                                 </div>
                             )}
 
-                            {postType === "tweet" && (
-                                <div className="space-y-3 relative">
-                                    <textarea
-                                        value={newStatusText}
-                                        onChange={handleDraftTextChange}
-                                        placeholder="Share a new glimpse! Tag user profile with @Name..."
-                                        className="w-full px-4 py-3 bg-gray-55 dark:bg-gray-900 border border-gray-150 dark:border-gray-700 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 dark:text-white min-h-[140px] resize-none text-sm leading-relaxed"
-                                        maxLength={280}
-                                    />
-                                    
-                                    {/* Suggestions popup */}
-                                    {showDraftSuggestions && filteredDraftSuggestions.length > 0 && (
-                                        <div className="absolute left-0 bottom-full mb-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg w-full max-h-[160px] overflow-y-auto z-[60] py-1">
-                                            {filteredDraftSuggestions.map((u) => (
-                                                <button
-                                                    key={u.id}
-                                                    onClick={() => selectDraftSuggestion(u)}
-                                                    className="w-full flex items-center gap-2.5 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 text-left text-xs text-gray-805 dark:text-gray-200"
-                                                    type="button"
-                                                >
-                                                    <div className={clsx("w-6 h-6 rounded-full flex items-center justify-center text-[10px] relative font-semibold shrink-0", u.color)}>
-                                                        {u.avatar ? (
-                                                            <img src={u.avatar} className="w-full h-full rounded-full object-cover" />
-                                                        ) : (
-                                                            <span>{u.name.charAt(0)}</span>
-                                                        )}
-                                                    </div>
-                                                    <span className="font-semibold truncate">{u.name}</span>
-                                                    <span className="text-[10px] text-gray-400 dark:text-gray-500 truncate">@{u.name.toLowerCase()}</span>
-                                                </button>
-                                            ))}
-                                        </div>
-                                    )}
 
-                                    <div className="flex justify-end text-xs text-gray-400 dark:text-gray-500 mt-1">
-                                        {280 - newStatusText.length} characters left
-                                    </div>
-                                </div>
-                            )}
 
                             {(postType === "moods" || postType === "clips") && (
                                 <div className="space-y-4">
@@ -3960,14 +3678,13 @@ export default function ProfileView({ userId: propUserId, onClose }: { userId?: 
                                 onClick={handlePost}
                                 disabled={
                                     (postType === "status" && (!newStatusText.trim() && !statusMediaUrl)) ||
-                                    (postType === "tweet" && !newStatusText.trim()) ||
                                     ((postType === "moods" || postType === "clips") && !statusMediaUrl) ||
                                     isPosting
                                 }
                                 className="btn-post-status w-full py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-xl font-bold text-sm disabled:opacity-40 hover:shadow-lg transition-all active:scale-[0.98]"
                                 style={{ background: "linear-gradient(135deg, #3b82f6, #a855f7)", color: "#ffffff", WebkitTextFillColor: "#ffffff" }}
                             >
-                                {isPosting ? "Posting..." : postType === "status" ? "Share Status" : postType === "tweet" ? "Post Glimpse" : postType === "moods" ? "Post Mood" : "Post Clip"}
+                                {isPosting ? "Posting..." : postType === "status" ? "Share Status" : postType === "moods" ? "Post Mood" : "Post Clip"}
                             </button>
                         </div>
                     </div>

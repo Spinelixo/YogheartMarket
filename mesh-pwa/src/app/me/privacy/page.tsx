@@ -222,8 +222,8 @@ export default function PrivacyPage() {
                         <div className="flex items-center gap-4">
                             <Sparkles size={20} className="text-[var(--secondary)]" />
                             <div>
-                                <span className="font-medium block dark:text-white">Menus (Toppings, Clips, Glimpses)</span>
-                                <span className="text-xs text-[var(--secondary)]">Who can see your toppings, clips, and glimpses</span>
+                                <span className="font-medium block dark:text-white">Media (Posts & Clips)</span>
+                                <span className="text-xs text-[var(--secondary)]">Who can see your posts and clips</span>
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -421,8 +421,8 @@ export default function PrivacyPage() {
                         >
                             <div className="w-10 h-1.5 bg-gray-300 dark:bg-zinc-700 rounded-full" />
                         </div>
-                        <h2 className="text-lg font-bold mb-1 dark:text-white">Menus Privacy</h2>
-                        <p className="text-xs text-[var(--secondary)] mb-4">Who can see your toppings, clips, and glimpses?</p>
+                        <h2 className="text-lg font-bold mb-1 dark:text-white">Media Privacy</h2>
+                        <p className="text-xs text-[var(--secondary)] mb-4">Who can see your posts and video clips?</p>
                         <div className="space-y-1.5">
                             {([
                                 { value: "everyone", label: "Everyone", desc: "Anyone on Yogheart can see your menus" },

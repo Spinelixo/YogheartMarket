@@ -182,9 +182,9 @@ export function ItemDetailModal({
 
     try {
       const threadId = await sendMarketplaceInquiry(sellerUser, targetItem, message);
-      setActiveTab("marketplace");
+      setActiveTab("chats");
       setActiveThreadId(threadId);
-      window.history.pushState(null, "", `/inbox?id=${threadId}&from=marketplace`);
+      window.history.pushState(null, "", `/inbox?id=${threadId}`);
       onClose();
     } catch (err) {
       console.error("Failed to send inquiry:", err);
@@ -574,7 +574,7 @@ export function ItemDetailModal({
                   Show someone in your inbox
                 </h4>
                 <p className="text-[11px] text-gray-500 dark:text-zinc-400">
-                  Send to a friend or match & ask them to buy it for you!
+                  Send to a friend & ask them to buy it for you!
                 </p>
               </div>
             </div>
@@ -704,7 +704,7 @@ export function ItemDetailModal({
           onClick={(e) => e.stopPropagation()}
           className={clsx(
             "bg-white dark:bg-zinc-950 w-full sm:max-w-xl h-full sm:h-auto sm:max-h-[90%] rounded-none sm:rounded-3xl overflow-hidden flex flex-col shadow-2xl border border-gray-150 dark:border-zinc-800 antialiased subpixel-antialiased text-gray-900 dark:text-zinc-100",
-            isClosing && activeTab === "marketplace"
+            isClosing
               ? "animate-slide-out-to-right-edge"
               : animPhase === "entering"
               ? "animate-slide-in-from-right-edge"
@@ -784,7 +784,7 @@ export function ItemDetailModal({
       data-item-detail-page="true"
       className={clsx(
         "absolute inset-0 z-40 h-full w-full bg-white dark:bg-zinc-950 flex flex-col overflow-hidden antialiased subpixel-antialiased text-gray-900 dark:text-zinc-100",
-        isClosing && activeTab === "marketplace"
+        isClosing
           ? "animate-slide-out-to-right-edge"
           : animPhase === "entering"
           ? "animate-slide-in-from-right-edge"

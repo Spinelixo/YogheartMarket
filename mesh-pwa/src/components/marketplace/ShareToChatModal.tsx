@@ -69,7 +69,7 @@ export function ShareToChatModal({ item, onClose }: ShareToChatModalProps) {
       }
     });
 
-    // Then add other users / matches who don't have an active thread yet
+    // Then add other users / contacts who don't have an active thread yet
     (allDatingUsers || []).concat(suggestions || []).forEach((u) => {
       if (u.id !== currentUser?.id && u.id !== "me" && !seenUserIds.has(u.id)) {
         seenUserIds.add(u.id);
@@ -174,7 +174,7 @@ export function ShareToChatModal({ item, onClose }: ShareToChatModalProps) {
                 Share to Chat
               </h3>
               <p className="text-[11px] text-gray-500 dark:text-zinc-400 mt-0.5">
-                Send this listing to friends or matches in your inbox
+                Send this listing to friends or contacts in your inbox
               </p>
             </div>
           </div>

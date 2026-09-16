@@ -44,8 +44,7 @@ import {
   StatusStoriesRow,
   StatusViewerModal,
   UnifiedPostModal,
-  StoreFeedView,
-  StoreGlimpsesView
+  StoreFeedView
 } from "./StorefrontSocialFeed";
 import { Status } from "@/context/MockContext";
 
@@ -77,9 +76,9 @@ export function SellerStorefrontModal({
     sendMarketplaceInquiry,
     addNotification,
     setActiveThreadId,
+    setActiveTab,
     getStatusesForUser,
-    getMoodsForUser,
-    drafts
+    getMoodsForUser
   } = useMockData();
 
   const isMe = sellerId === "me" || sellerId === currentUser?.id;
@@ -169,10 +168,10 @@ export function SellerStorefrontModal({
   }, [isMe, currentUser, marketplaceItems]);
   const savedCount = savedItems.length;
 
-  const [statusTab, setStatusTab] = useState<"all" | "active" | "sold" | "free" | "saved" | "feed" | "glimpses">("all");
+  const [statusTab, setStatusTab] = useState<"all" | "active" | "sold" | "free" | "saved" | "feed">("all");
   const [viewingStatus, setViewingStatus] = useState<Status | null>(null);
   const [showPostModal, setShowPostModal] = useState(false);
-  const [postModalType, setPostModalType] = useState<"status" | "feed" | "glimpse">("status");
+  const [postModalType, setPostModalType] = useState<"status" | "feed">("status");
 
   const userStatuses = useMemo(() => {
     return getStatusesForUser ? getStatusesForUser(sellerUser.id) : [];
@@ -189,10 +188,6 @@ export function SellerStorefrontModal({
   const userFeedCount = useMemo(() => {
     return getMoodsForUser ? (getMoodsForUser(sellerUser.id) || []).length : 0;
   }, [getMoodsForUser, sellerUser.id]);
-
-  const userGlimpsesCount = useMemo(() => {
-    return (drafts || []).filter((d) => d.userId === sellerUser.id).length;
-  }, [drafts, sellerUser.id]);
 
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState("");
@@ -284,11 +279,12 @@ export function SellerStorefrontModal({
       const customMsg = `Hi ${sellerUser.name}, I'm browsing your marketplace store!`;
       if (firstItem) {
         const threadId = await sendMarketplaceInquiry(sellerUser, firstItem, customMsg);
+        setActiveTab("chats");
         setActiveThreadId(threadId);
-        window.history.pushState(null, "", `/inbox?id=${threadId}&from=marketplace`);
+        window.history.pushState(null, "", `/inbox?id=${threadId}`);
         onClose();
       } else {
-        window.history.pushState(null, "", `/profile?userId=${sellerUser.id}&from=marketplace`);
+        window.history.pushState(null, "", `/profile?userId=${sellerUser.id}`);
         onClose();
       }
     } catch (err) {
@@ -308,7 +304,7 @@ export function SellerStorefrontModal({
     setSelectedItem(null);
     setTimeout(() => {
       setClosingSelectedItem(null);
-    }, 220);
+    }, 280);
   };
 
   // History sync for seller storefront page itself (only when modal overlay)
@@ -330,7 +326,7 @@ export function SellerStorefrontModal({
       data-seller-storefront-page="true"
       className={clsx(
         isStandaloneView
-          ? "h-full w-full bg-white dark:bg-zinc-950 flex flex-col overflow-hidden text-gray-900 dark:text-zinc-100 pb-16 lg:pb-0"
+          ? "h-full w-full bg-white dark:bg-zinc-950 flex flex-col overflow-hidden text-gray-900 dark:text-zinc-100 pb-16 lg:pb-0 relative"
           : "absolute inset-0 z-50 h-full w-full bg-white dark:bg-zinc-950 shadow-[-12px_0_30px_-5px_rgba(0,0,0,0.25)] border-l border-zinc-200/40 dark:border-zinc-800/40 flex flex-col overflow-hidden antialiased subpixel-antialiased text-gray-900 dark:text-zinc-100",
         !isStandaloneView && (
           isClosing
@@ -591,11 +587,6 @@ export function SellerStorefrontModal({
                         <Sparkles size={18} className="text-amber-500" />
                         <span>Store Feed & Clips</span>
                       </>
-                    ) : statusTab === "glimpses" ? (
-                      <>
-                        <MessageSquare size={18} className="text-sky-500" />
-                        <span>Glimpses & Updates</span>
-                      </>
                     ) : (
                       <>
                         <ShoppingBag size={18} className="text-[var(--primary)]" />
@@ -608,14 +599,12 @@ export function SellerStorefrontModal({
                       ? `Showing ${filteredStoreItems.length} of ${savedCount} saved items`
                       : statusTab === "feed"
                       ? `${userFeedCount} photos & clips shared`
-                      : statusTab === "glimpses"
-                      ? `${userGlimpsesCount} glimpses shared`
                       : `Showing ${filteredStoreItems.length} of ${sellerListings.length} items`}
                   </p>
                 </div>
 
-                {/* Search input in store (hidden on feed/glimpses tabs) */}
-                {statusTab !== "feed" && statusTab !== "glimpses" && (
+                {/* Search input in store (hidden on feed tab) */}
+                {statusTab !== "feed" && (
                   <div className="relative w-36 sm:w-48">
                     <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                     <input
@@ -630,15 +619,15 @@ export function SellerStorefrontModal({
               </div>
 
               {/* Status & Social Filter Tabs */}
-              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
+              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
                 <button
                   type="button"
                   onClick={() => setStatusTab("all")}
                   className={clsx(
-                    "px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer whitespace-nowrap",
+                    "px-4.5 py-2 sm:px-5 sm:py-2.5 rounded-2xl font-bold text-xs sm:text-sm transition-all cursor-pointer whitespace-nowrap",
                     statusTab === "all"
                       ? "bg-[var(--primary)] text-white shadow-xs"
-                      : "bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 hover:bg-gray-200"
+                      : "bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 hover:bg-gray-200 dark:hover:bg-zinc-700"
                   )}
                 >
                   All ({sellerListings.length})
@@ -650,13 +639,13 @@ export function SellerStorefrontModal({
                     type="button"
                     onClick={() => setStatusTab("saved")}
                     className={clsx(
-                      "px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5",
+                      "px-4.5 py-2 sm:px-5 sm:py-2.5 rounded-2xl font-bold text-xs sm:text-sm transition-all cursor-pointer whitespace-nowrap flex items-center gap-2",
                       statusTab === "saved"
                         ? "bg-rose-600 text-white shadow-xs"
-                        : "bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 hover:bg-gray-200"
+                        : "bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 hover:bg-gray-200 dark:hover:bg-zinc-700"
                     )}
                   >
-                    <Bookmark size={12} />
+                    <Bookmark size={15} />
                     <span>Saved ({savedCount})</span>
                   </button>
                 )}
@@ -666,34 +655,19 @@ export function SellerStorefrontModal({
                   type="button"
                   onClick={() => setStatusTab("feed")}
                   className={clsx(
-                    "px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5",
+                    "px-4.5 py-2 sm:px-5 sm:py-2.5 rounded-2xl font-bold text-xs sm:text-sm transition-all cursor-pointer whitespace-nowrap flex items-center gap-2",
                     statusTab === "feed"
                       ? "bg-gradient-to-r from-amber-500 to-rose-500 text-white shadow-xs"
-                      : "bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 hover:bg-gray-200"
+                      : "bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 hover:bg-gray-200 dark:hover:bg-zinc-700"
                   )}
                 >
-                  <Sparkles size={12} />
+                  <Sparkles size={15} />
                   <span>Feed ({userFeedCount})</span>
-                </button>
-
-                {/* Glimpses Tab */}
-                <button
-                  type="button"
-                  onClick={() => setStatusTab("glimpses")}
-                  className={clsx(
-                    "px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5",
-                    statusTab === "glimpses"
-                      ? "bg-sky-600 text-white shadow-xs"
-                      : "bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 hover:bg-gray-200"
-                  )}
-                >
-                  <MessageSquare size={12} />
-                  <span>Glimpses ({userGlimpsesCount})</span>
                 </button>
               </div>
 
-              {/* Category Chips within Store (hidden on Feed / Glimpses tabs) */}
-              {statusTab !== "feed" && statusTab !== "glimpses" && storeCategories.length > 2 && (
+              {/* Category Chips within Store (hidden on Feed tab) */}
+              {statusTab !== "feed" && storeCategories.length > 2 && (
                 <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-0.5">
                   {storeCategories.map((cat) => (
                     <button
@@ -713,22 +687,13 @@ export function SellerStorefrontModal({
                 </div>
               )}
 
-              {/* Content Area: Feed, Glimpses, or Product Listings */}
+              {/* Content Area: Feed or Product Listings */}
               {statusTab === "feed" ? (
                 <StoreFeedView
                   sellerUser={sellerUser}
                   isMe={isMe}
                   onOpenCreatePost={() => {
                     setPostModalType("feed");
-                    setShowPostModal(true);
-                  }}
-                />
-              ) : statusTab === "glimpses" ? (
-                <StoreGlimpsesView
-                  sellerUser={sellerUser}
-                  isMe={isMe}
-                  onOpenCreateGlimpse={() => {
-                    setPostModalType("glimpse");
                     setShowPostModal(true);
                   }}
                 />
@@ -819,7 +784,7 @@ export function SellerStorefrontModal({
         />
       )}
 
-      {/* Unified Post Creator Modal (Status / Feed Post / Glimpse) */}
+      {/* Unified Post Creator Modal (Status / Feed Post) */}
       {showPostModal && (
         <UnifiedPostModal
           initialType={postModalType}

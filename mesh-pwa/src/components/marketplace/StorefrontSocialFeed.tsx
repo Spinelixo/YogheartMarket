@@ -299,16 +299,16 @@ export function StatusViewerModal({ status, onClose }: StatusViewerModalProps) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// 3. UNIFIED POST COMPOSER MODAL (Status, Feed Post, Glimpse)
+// 3. UNIFIED POST COMPOSER MODAL (Status, Feed Post)
 // ─────────────────────────────────────────────────────────────
 interface UnifiedPostModalProps {
-  initialType?: "status" | "feed" | "glimpse";
+  initialType?: "status" | "feed";
   onClose: () => void;
 }
 
 export function UnifiedPostModal({ initialType = "status", onClose }: UnifiedPostModalProps) {
-  const { postStatus, postMood, postDraft, addNotification } = useMockData();
-  const [postType, setPostType] = useState<"status" | "feed" | "glimpse">(initialType);
+  const { postStatus, postMood, addNotification } = useMockData();
+  const [postType, setPostType] = useState<"status" | "feed">(initialType);
   const [isClosing, setIsClosing] = useState(false);
 
   const handleClose = () => {
@@ -329,9 +329,6 @@ export function UnifiedPostModal({ initialType = "status", onClose }: UnifiedPos
   const [feedCaption, setFeedCaption] = useState("");
   const [feedMediaData, setFeedMediaData] = useState<string | null>(null);
   const [feedMediaType, setFeedMediaType] = useState<"photo" | "video">("photo");
-
-  // Glimpse state
-  const [glimpseText, setGlimpseText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -389,7 +386,7 @@ export function UnifiedPostModal({ initialType = "status", onClose }: UnifiedPos
           statusBg
         );
         addNotification("Status shared! ✨");
-      } else if (postType === "feed") {
+      } else {
         if (!feedMediaData) {
           addNotification("Please select a photo or clip for your feed.");
           setIsSubmitting(false);
@@ -397,14 +394,6 @@ export function UnifiedPostModal({ initialType = "status", onClose }: UnifiedPos
         }
         await postMood(feedMediaType, feedMediaData, feedCaption.trim());
         addNotification("Posted to your Store Feed! 📸");
-      } else {
-        if (!glimpseText.trim()) {
-          addNotification("Please write your glimpse.");
-          setIsSubmitting(false);
-          return;
-        }
-        await postDraft(glimpseText.trim());
-        addNotification("Glimpse published! 💭");
       }
       handleClose();
     } catch (err) {
@@ -421,50 +410,50 @@ export function UnifiedPostModal({ initialType = "status", onClose }: UnifiedPos
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       className={clsx(
-        "fixed inset-0 z-[9999] bg-white dark:bg-zinc-950 flex flex-col h-full w-full overflow-hidden select-none",
+        "absolute inset-0 z-50 bg-white dark:bg-zinc-950 flex flex-col h-full w-full overflow-hidden select-none",
         isClosing ? "animate-slide-out-to-right-edge" : "animate-slide-in-from-right-edge"
       )}
     >
       {/* Top Header */}
-      <header className="px-4 py-3 border-b border-gray-150 dark:border-zinc-800 flex items-center justify-between shrink-0 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md sticky top-0 z-20">
-        <div className="flex items-center gap-2.5">
+      <header className="px-4 py-3 border-b border-gray-150 dark:border-zinc-800 shrink-0 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md sticky top-0 z-20">
+        <div className="max-w-xl mx-auto w-full flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <button
+              type="button"
+              onClick={handleClose}
+              className="w-9 h-9 rounded-full bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-200 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
+              title="Back"
+            >
+              <ChevronLeft size={22} />
+            </button>
+            <div>
+              <h2 className="text-base font-bold text-gray-900 dark:text-white leading-tight">
+                {postType === "status" ? "Share New Status" : "New Post / Clip"}
+              </h2>
+              <p className="text-[10px] text-gray-500 dark:text-zinc-400">
+                {postType === "status"
+                  ? "Disappears after 24 hours"
+                  : "Permanent post in your store feed"}
+              </p>
+            </div>
+          </div>
+
           <button
             type="button"
-            onClick={handleClose}
-            className="w-9 h-9 rounded-full bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-200 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
-            title="Back"
+            disabled={isSubmitting}
+            onClick={handleSubmit}
+            className="px-4 py-2 bg-[var(--primary)] hover:bg-emerald-600 text-white font-bold text-xs rounded-xl shadow-xs transition-all active:scale-95 disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
           >
-            <ChevronLeft size={22} />
+            {isSubmitting ? (
+              <span>Publishing...</span>
+            ) : (
+              <>
+                <Sparkles size={14} />
+                <span>Publish</span>
+              </>
+            )}
           </button>
-          <div>
-            <h2 className="text-base font-bold text-gray-900 dark:text-white leading-tight">
-              {postType === "status" ? "Share New Status" : postType === "feed" ? "New Post / Clip" : "Share Glimpse"}
-            </h2>
-            <p className="text-[10px] text-gray-500 dark:text-zinc-400">
-              {postType === "status"
-                ? "Disappears after 24 hours"
-                : postType === "feed"
-                ? "Permanent post in your store feed"
-                : "Quick store announcement"}
-            </p>
-          </div>
         </div>
-
-        <button
-          type="button"
-          disabled={isSubmitting}
-          onClick={handleSubmit}
-          className="px-4 py-2 bg-[var(--primary)] hover:bg-emerald-600 text-white font-bold text-xs rounded-xl shadow-xs transition-all active:scale-95 disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
-        >
-          {isSubmitting ? (
-            <span>Publishing...</span>
-          ) : (
-            <>
-              <Sparkles size={14} />
-              <span>Publish</span>
-            </>
-          )}
-        </button>
       </header>
 
       {/* Hidden File Input */}
@@ -596,19 +585,6 @@ export function UnifiedPostModal({ initialType = "status", onClose }: UnifiedPos
           </div>
         )}
 
-        {/* GLIMPSE VIEW */}
-        {postType === "glimpse" && (
-          <div className="space-y-4">
-            <label className="block text-xs font-bold text-gray-500 dark:text-zinc-400 mb-1.5">Your Announcement</label>
-            <textarea
-              value={glimpseText}
-              onChange={(e) => setGlimpseText(e.target.value)}
-              placeholder="Share a thought, quick store update, or special promotion..."
-              className="w-full bg-gray-100 dark:bg-zinc-800/80 text-gray-900 dark:text-white text-base p-4 rounded-2xl outline-none focus:ring-2 focus:ring-[var(--primary)] resize-none transition-all"
-              rows={6}
-            />
-          </div>
-        )}
       </div>
 
       {/* Bottom Sticky Action Bar */}
@@ -616,21 +592,23 @@ export function UnifiedPostModal({ initialType = "status", onClose }: UnifiedPos
         className="p-4 border-t border-gray-150 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md shrink-0"
         style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom, 1rem))" }}
       >
-        <button
-          type="button"
-          disabled={isSubmitting}
-          onClick={handleSubmit}
-          className="w-full py-3.5 bg-[var(--primary)] hover:bg-emerald-600 text-white font-bold text-sm rounded-2xl shadow-md shadow-emerald-600/20 transition-all active:scale-98 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
-        >
-          {isSubmitting ? (
-            <span>Publishing...</span>
-          ) : (
-            <>
-              <Sparkles size={17} />
-              <span>Publish to Store</span>
-            </>
-          )}
-        </button>
+        <div className="max-w-xl mx-auto w-full">
+          <button
+            type="button"
+            disabled={isSubmitting}
+            onClick={handleSubmit}
+            className="w-full py-3.5 bg-[var(--primary)] hover:bg-emerald-600 text-white font-bold text-sm rounded-2xl shadow-md shadow-emerald-600/20 transition-all active:scale-98 disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+          >
+            {isSubmitting ? (
+              <span>Publishing...</span>
+            ) : (
+              <>
+                <Sparkles size={17} />
+                <span>Publish to Store</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -880,182 +858,3 @@ function FeedDetailModal({ post, isMe, onClose }: FeedDetailModalProps) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-// 6. STORE GLIMPSES VIEW
-// ─────────────────────────────────────────────────────────────
-interface StoreGlimpsesViewProps {
-  sellerUser: User;
-  isMe: boolean;
-  onOpenCreateGlimpse: () => void;
-}
-
-export function StoreGlimpsesView({ sellerUser, isMe, onOpenCreateGlimpse }: StoreGlimpsesViewProps) {
-  const { drafts, postDraft, likeDraft, commentOnDraft, deleteDraft, currentUser } = useMockData();
-  const [newGlimpse, setNewGlimpse] = useState("");
-  const [openCommentsId, setOpenCommentsId] = useState<string | null>(null);
-  const [commentInput, setCommentInput] = useState("");
-
-  const sellerDrafts = useMemo(() => {
-    return (drafts || []).filter((d) => d.userId === sellerUser.id).reverse();
-  }, [drafts, sellerUser.id]);
-
-  const handlePost = async () => {
-    if (!newGlimpse.trim()) return;
-    await postDraft(newGlimpse.trim());
-    setNewGlimpse("");
-  };
-
-  const handleSendComment = async (draftId: string) => {
-    if (!commentInput.trim()) return;
-    await commentOnDraft(draftId, commentInput.trim());
-    setCommentInput("");
-  };
-
-  return (
-    <div className="space-y-4 pt-1">
-      {/* Quick Composer (Owner only) */}
-      {isMe && (
-        <div className="bg-gray-50 dark:bg-zinc-900 p-3.5 rounded-2xl border border-gray-100 dark:border-zinc-800 space-y-2.5">
-          <textarea
-            value={newGlimpse}
-            onChange={(e) => setNewGlimpse(e.target.value)}
-            placeholder="Share a glimpse or thought with your customers..."
-            className="w-full bg-white dark:bg-zinc-800 text-base sm:text-xs text-gray-900 dark:text-white p-3 rounded-xl outline-none focus:ring-1 focus:ring-[var(--primary)] resize-none border border-gray-100 dark:border-zinc-700"
-            style={{ fontSize: "16px" }}
-            rows={2}
-          />
-          <div className="flex justify-end">
-            <button
-              type="button"
-              onClick={handlePost}
-              disabled={!newGlimpse.trim()}
-              className="px-4 py-1.5 bg-[var(--primary)] hover:bg-emerald-600 text-white font-bold text-xs rounded-xl disabled:opacity-40 transition-all cursor-pointer shadow-xs"
-            >
-              Post Glimpse
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Glimpses List */}
-      {sellerDrafts.length === 0 ? (
-        <div className="text-center py-12 px-4 bg-gray-50 dark:bg-zinc-900 rounded-3xl border border-gray-100 dark:border-zinc-800">
-          <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 flex items-center justify-center">
-            <MessageSquare size={24} />
-          </div>
-          <h3 className="font-bold text-sm text-gray-800 dark:text-zinc-200 mb-1">No Glimpses Yet</h3>
-          <p className="text-xs text-gray-500 dark:text-zinc-400 max-w-xs mx-auto">
-            {isMe ? "Write short thoughts, updates, or announcements to keep shoppers informed." : "This seller hasn't shared any glimpses yet."}
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {sellerDrafts.map((draft) => {
-            const isLiked = draft.likes?.includes(currentUser?.id || "");
-            const isCommentsOpen = openCommentsId === draft.id;
-            return (
-              <div
-                key={draft.id}
-                className="bg-white dark:bg-zinc-900 p-4 rounded-2xl border border-gray-100 dark:border-zinc-800 shadow-2xs space-y-2.5"
-              >
-                {/* Author Row */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-zinc-200 dark:bg-zinc-700 overflow-hidden flex items-center justify-center text-xs font-bold">
-                      {draft.userAvatar ? <img src={draft.userAvatar} alt="" className="w-full h-full object-cover" /> : draft.userName?.charAt(0)}
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-gray-900 dark:text-white">{draft.userName}</p>
-                      <p className="text-[10px] text-gray-400">Glimpse</p>
-                    </div>
-                  </div>
-
-                  {isMe && (
-                    <button
-                      type="button"
-                      onClick={() => deleteDraft(draft.id)}
-                      className="p-1.5 text-gray-400 hover:text-red-500 rounded-full transition-colors"
-                    >
-                      <Trash2 size={15} />
-                    </button>
-                  )}
-                </div>
-
-                {/* Content */}
-                <p className="text-xs text-gray-800 dark:text-zinc-200 leading-relaxed whitespace-pre-wrap">
-                  {draft.text}
-                </p>
-
-                {/* Actions */}
-                <div className="flex items-center gap-4 pt-1 text-xs text-gray-500 border-t border-gray-50 dark:border-zinc-800/80">
-                  <button
-                    type="button"
-                    onClick={() => likeDraft(draft.id)}
-                    className={clsx(
-                      "flex items-center gap-1 font-semibold hover:text-rose-500 transition-colors",
-                      isLiked ? "text-rose-600 font-bold" : ""
-                    )}
-                  >
-                    <Heart size={14} className={isLiked ? "fill-current" : ""} />
-                    <span>{draft.likes?.length || 0}</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setOpenCommentsId(isCommentsOpen ? null : draft.id)}
-                    className="flex items-center gap-1 font-semibold hover:text-blue-500 transition-colors"
-                  >
-                    <MessageSquare size={14} />
-                    <span>{draft.comments?.length || 0}</span>
-                  </button>
-                  <div className="ml-auto flex items-center gap-1 text-[10px] text-gray-400">
-                    <Globe size={11} />
-                    <span>Public</span>
-                  </div>
-                </div>
-
-                {/* Comments Section */}
-                {isCommentsOpen && (
-                  <div className="pt-2 space-y-2 border-t border-gray-100 dark:border-zinc-800 animate-fade-in">
-                    <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
-                      {draft.comments?.length === 0 ? (
-                        <p className="text-[11px] text-gray-400 text-center py-1">No comments yet</p>
-                      ) : (
-                        draft.comments?.map((c) => (
-                          <div key={c.id} className="text-xs flex items-start gap-2 bg-gray-50 dark:bg-zinc-800/50 p-2 rounded-xl">
-                            <span className="font-bold text-gray-900 dark:text-white">{c.userName}:</span>
-                            <span className="text-gray-700 dark:text-zinc-300 flex-1">{c.text}</span>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={commentInput}
-                        onChange={(e) => setCommentInput(e.target.value)}
-                        placeholder="Write a comment..."
-                        className="flex-1 bg-gray-50 dark:bg-zinc-800 text-base sm:text-xs px-3 py-1.5 rounded-xl outline-none text-gray-900 dark:text-white"
-                        style={{ fontSize: "16px" }}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") handleSendComment(draft.id);
-                        }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => handleSendComment(draft.id)}
-                        disabled={!commentInput.trim()}
-                        className="px-3 py-1 bg-[var(--primary)] text-white text-xs font-bold rounded-xl disabled:opacity-40"
-                      >
-                        Reply
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}

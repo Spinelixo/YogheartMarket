@@ -32,7 +32,7 @@ interface EditMarketplaceProfileModalProps {
 
 const SELLER_TYPES: { id: MarketplaceSellerType; label: string; icon: any; example: string }[] = [
   { id: "chef", label: "Private Chef & Home Culinary", icon: UtensilsCrossed, example: "Cook fresh meals at home & deliver to clients" },
-  { id: "florist", label: "Artisanal Florist & Flower Gifts", icon: Flower2, example: "Fresh bouquets for dates, matches & occasions" },
+  { id: "florist", label: "Artisanal Florist & Flower Gifts", icon: Flower2, example: "Fresh bouquets for gifts, events & special occasions" },
   { id: "real_estate", label: "Real Estate & Rentals Host", icon: Building2, example: "Apartments, lofts, room rentals & housing" },
   { id: "fashion", label: "Fashion Brand & Boutique", icon: Shirt, example: "Clothing, shoes, jewelry, luxury accessories" },
   { id: "restaurant", label: "Restaurant & Catering", icon: UtensilsCrossed, example: "Local dining, takeout, party catering" },
