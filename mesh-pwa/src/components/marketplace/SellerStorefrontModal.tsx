@@ -225,6 +225,20 @@ export function SellerStorefrontModal({
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedItem, setSelectedItem] = useState<MarketplaceItem | null>(null);
   const [showEditStoreModal, setShowEditStoreModal] = useState(false);
+  const [closingEditStoreModal, setClosingEditStoreModal] = useState(false);
+
+  const handleCloseEditStoreModal = () => {
+    if (!showEditStoreModal || closingEditStoreModal) {
+      if (!showEditStoreModal) setClosingEditStoreModal(false);
+      return;
+    }
+    setClosingEditStoreModal(true);
+    setShowEditStoreModal(false);
+    setTimeout(() => {
+      setClosingEditStoreModal(false);
+    }, 280);
+  };
+
   const [showReviewsModal, setShowReviewsModal] = useState(false);
   const [closingReviewsModal, setClosingReviewsModal] = useState(false);
 
@@ -332,7 +346,7 @@ export function SellerStorefrontModal({
     handleCloseSelectedItem();
   });
   useModalHistory(`storefrontEditStore-${sellerId}`, showEditStoreModal, () => {
-    setShowEditStoreModal(false);
+    handleCloseEditStoreModal();
   });
   useModalHistory(`storefrontReviewsModal-${sellerId}`, showReviewsModal, () => {
     handleCloseReviewsModal();
@@ -816,9 +830,10 @@ export function SellerStorefrontModal({
       )}
 
       {/* Edit Marketplace Store Profile Modal */}
-      {showEditStoreModal && (
+      {(showEditStoreModal || closingEditStoreModal) && (
         <EditMarketplaceProfileModal
-          onClose={() => setShowEditStoreModal(false)}
+          isClosing={closingEditStoreModal}
+          onClose={handleCloseEditStoreModal}
         />
       )}
 

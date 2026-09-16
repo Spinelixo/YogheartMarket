@@ -165,6 +165,19 @@ export default function MarketplaceView() {
     location?: string;
   } | null>(null);
   const [showEditMarketplaceProfileModal, setShowEditMarketplaceProfileModal] = useState(false);
+  const [closingEditMarketplaceProfileModal, setClosingEditMarketplaceProfileModal] = useState(false);
+
+  const handleCloseEditMarketplaceProfileModal = () => {
+    if (!showEditMarketplaceProfileModal || closingEditMarketplaceProfileModal) {
+      if (!showEditMarketplaceProfileModal) setClosingEditMarketplaceProfileModal(false);
+      return;
+    }
+    setClosingEditMarketplaceProfileModal(true);
+    setShowEditMarketplaceProfileModal(false);
+    setTimeout(() => {
+      setClosingEditMarketplaceProfileModal(false);
+    }, 280);
+  };
 
   const closeAllOverlays = useCallback((_immediateOrEvent?: boolean | Event) => {
     setSelectedItem(null);
@@ -175,6 +188,7 @@ export default function MarketplaceView() {
     setClosingCreateModal(false);
     setEditingItem(null);
     setShowEditMarketplaceProfileModal(false);
+    setClosingEditMarketplaceProfileModal(false);
     setSharingItem(null);
   }, []);
 
@@ -347,7 +361,7 @@ export default function MarketplaceView() {
     "marketplaceEditProfile",
     showEditMarketplaceProfileModal,
     () => {
-      setShowEditMarketplaceProfileModal(false);
+      handleCloseEditMarketplaceProfileModal();
     }
   );
 
@@ -1322,9 +1336,10 @@ export default function MarketplaceView() {
       )}
 
       {/* Edit Marketplace Store Profile Modal */}
-      {showEditMarketplaceProfileModal && (
+      {(showEditMarketplaceProfileModal || closingEditMarketplaceProfileModal) && (
         <EditMarketplaceProfileModal
-          onClose={() => setShowEditMarketplaceProfileModal(false)}
+          isClosing={closingEditMarketplaceProfileModal}
+          onClose={handleCloseEditMarketplaceProfileModal}
         />
       )}
     </div>

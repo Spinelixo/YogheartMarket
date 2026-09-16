@@ -26,10 +26,10 @@ import {
   ChevronLeft
 } from "lucide-react";
 import { clsx } from "clsx";
-import { useModalHistory } from "@/hooks/useModalHistory";
 
 interface EditMarketplaceProfileModalProps {
   onClose: () => void;
+  isClosing?: boolean;
 }
 
 const SELLER_TYPES: { id: MarketplaceSellerType; label: string; icon: any; example: string }[] = [
@@ -52,7 +52,10 @@ const PRESET_BANNERS = [
   { label: "Tech Minimalist", url: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1200&auto=format&fit=crop&q=80" },
 ];
 
-export function EditMarketplaceProfileModal({ onClose }: EditMarketplaceProfileModalProps) {
+export function EditMarketplaceProfileModal({
+  onClose,
+  isClosing: externalIsClosing = false
+}: EditMarketplaceProfileModalProps) {
   const { currentUser, updateMarketplaceStoreProfile, addNotification } = useMockData();
   const currentStore = currentUser?.marketplaceStore || {};
 
@@ -147,17 +150,16 @@ export function EditMarketplaceProfileModal({ onClose }: EditMarketplaceProfileM
     }
   };
 
-  const [isClosing, setIsClosing] = useState(false);
+  const [internalIsClosing, setInternalIsClosing] = useState(false);
+  const isClosing = externalIsClosing || internalIsClosing;
 
   const handleClose = () => {
     if (isClosing) return;
-    setIsClosing(true);
+    setInternalIsClosing(true);
     setTimeout(() => {
       onClose();
-    }, 240);
+    }, 280);
   };
-
-  useModalHistory("editStoreProfile", !isClosing, handleClose);
 
   if (typeof document === "undefined") return null;
 
@@ -166,8 +168,8 @@ export function EditMarketplaceProfileModal({ onClose }: EditMarketplaceProfileM
       className={clsx(
         "fixed inset-0 z-[180] bg-white dark:bg-zinc-950 flex flex-col h-full overscroll-contain text-gray-900 dark:text-zinc-100",
         isClosing
-          ? "animate-out slide-out-to-right duration-250 fill-mode-forwards"
-          : "animate-in slide-in-from-right duration-250 ease-out"
+          ? "animate-slide-out-to-right-edge"
+          : "animate-slide-in-from-right-edge"
       )}
     >
       {/* Top Navigation Header */}
