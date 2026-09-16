@@ -46,8 +46,8 @@ export function WhatsAppPermissionsModal({ onClose }: WhatsAppPermissionsModalPr
 
   const finishPermissions = () => {
     if (typeof window !== "undefined") {
-      localStorage.setItem("yogheart_permissions_prompted_v3", "true");
-      sessionStorage.setItem("yogheart_permissions_prompted_v3", "true");
+      localStorage.setItem("yogheart_permissions_prompted_v4", "true");
+      sessionStorage.setItem("yogheart_permissions_prompted_v4", "true");
       window.dispatchEvent(new CustomEvent("yogheart_permissions_closed"));
     }
     onClose();
@@ -92,7 +92,7 @@ export function WhatsAppPermissionsModal({ onClose }: WhatsAppPermissionsModalPr
 
   return (
     <div 
-      className="fixed inset-0 z-[120] bg-black/45 backdrop-blur-[2px] flex items-center justify-center p-4 animate-in fade-in duration-200"
+      className="fixed inset-0 z-[120] bg-black/20 flex items-center justify-center p-4 animate-in fade-in duration-200"
       onClick={(e) => {
         // Prevent background clicks from accidentally closing the system dialog prompt flow
         e.stopPropagation();
@@ -101,12 +101,13 @@ export function WhatsAppPermissionsModal({ onClose }: WhatsAppPermissionsModalPr
       <div
         key={currentStep.id}
         className={clsx(
-          "w-[285px] sm:w-[305px] bg-white dark:bg-zinc-900 rounded-[20px] border border-zinc-200/70 dark:border-zinc-800 overflow-hidden flex flex-col items-center select-none",
+          "w-[285px] sm:w-[305px] bg-white dark:bg-zinc-900 rounded-[20px] border border-zinc-200/80 dark:border-zinc-800 overflow-hidden flex flex-col items-center select-none",
+          "translate-y-16 sm:translate-y-20",
           "animate-in fade-in zoom-in-95 duration-150"
         )}
         onClick={(e) => e.stopPropagation()}
         style={{
-          boxShadow: "0 24px 48px -12px rgba(0,0,0,0.32)"
+          boxShadow: "0 20px 45px -10px rgba(0,0,0,0.35)"
         }}
       >
         {/* Content Area */}
