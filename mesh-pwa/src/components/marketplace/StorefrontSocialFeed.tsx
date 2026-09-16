@@ -656,13 +656,23 @@ interface StoreFeedViewProps {
 }
 
 export function StoreFeedView({ sellerUser, isMe, onOpenCreatePost }: StoreFeedViewProps) {
-  const { getMoodsForUser, likeMood } = useMockData();
+  const { getMoodsForUser } = useMockData();
   const [selectedPost, setSelectedPost] = useState<Mood | null>(null);
+  const [closingPost, setClosingPost] = useState<Mood | null>(null);
 
   const moodsList = useMemo(() => {
     const list = getMoodsForUser(sellerUser.id) || [];
     return [...list].reverse();
   }, [getMoodsForUser, sellerUser.id]);
+
+  const handleCloseDetail = () => {
+    if (!selectedPost || closingPost) return;
+    setClosingPost(selectedPost);
+    setSelectedPost(null);
+    setTimeout(() => {
+      setClosingPost(null);
+    }, 280);
+  };
 
   return (
     <div className="space-y-4 pt-1">
@@ -745,12 +755,15 @@ export function StoreFeedView({ sellerUser, isMe, onOpenCreatePost }: StoreFeedV
         </div>
       )}
 
-      {/* Post Detail Viewer */}
-      {selectedPost && (
+      {/* Continuous Sliding Feed Detail Viewer */}
+      {(selectedPost || closingPost) && (
         <FeedDetailModal
-          post={selectedPost}
+          initialPost={selectedPost || closingPost!}
+          allPosts={moodsList}
+          sellerUser={sellerUser}
           isMe={isMe}
-          onClose={() => setSelectedPost(null)}
+          isClosing={!!closingPost}
+          onClose={handleCloseDetail}
         />
       )}
     </div>
@@ -758,132 +771,260 @@ export function StoreFeedView({ sellerUser, isMe, onOpenCreatePost }: StoreFeedV
 }
 
 // ─────────────────────────────────────────────────────────────
-// 5. FEED DETAIL MODAL (Photo/Clip detail with likes & comments)
+// 5. FEED DETAIL MODAL (Sliding Continuous Feed with comments)
 // ─────────────────────────────────────────────────────────────
 interface FeedDetailModalProps {
-  post: Mood;
+  initialPost: Mood;
+  allPosts: Mood[];
+  sellerUser: User;
   isMe: boolean;
+  isClosing: boolean;
   onClose: () => void;
 }
 
-function FeedDetailModal({ post, isMe, onClose }: FeedDetailModalProps) {
-  const { currentUser, likeMood, commentOnMood, deleteMood } = useMockData();
-  const [commentText, setCommentText] = useState("");
-  const isLiked = post.likes?.includes(currentUser?.id || "");
+const formatFeedTime = (timestampString?: string): string => {
+  if (!timestampString) return "Just now";
+  try {
+    const date = new Date(timestampString);
+    const diffMs = Date.now() - date.getTime();
+    const diffMin = Math.floor(diffMs / 60000);
+    if (diffMin < 1) return "Just now";
+    if (diffMin < 60) return `${diffMin}m ago`;
+    const diffHr = Math.floor(diffMin / 60);
+    if (diffHr < 24) return `${diffHr}h ago`;
+    const diffDays = Math.floor(diffHr / 24);
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  } catch {
+    return "Recently";
+  }
+};
 
-  const handleSendComment = async () => {
-    if (!commentText.trim()) return;
-    await commentOnMood(post.id, commentText.trim());
-    setCommentText("");
+function FeedDetailModal({
+  initialPost,
+  allPosts,
+  sellerUser,
+  isMe,
+  isClosing,
+  onClose
+}: FeedDetailModalProps) {
+  const { currentUser, likeMood, commentOnMood, deleteMood } = useMockData();
+  const [commentInputs, setCommentInputs] = useState<Record<string, string>>({});
+
+  useModalHistory(`storeFeedViewer-${initialPost.id}`, !isClosing, () => {
+    onClose();
+  });
+
+  // Multi-post continuous scroll feed starting with the clicked photo/clip
+  const orderedPosts = useMemo(() => {
+    if (!allPosts || allPosts.length <= 1) return [initialPost];
+    const idx = allPosts.findIndex((p) => p.id === initialPost.id);
+    if (idx === -1) return [initialPost, ...allPosts.filter((p) => p.id !== initialPost.id)];
+    return [...allPosts.slice(idx), ...allPosts.slice(0, idx)];
+  }, [allPosts, initialPost.id]);
+
+  const handleSendComment = async (postId: string) => {
+    const text = commentInputs[postId]?.trim();
+    if (!text) return;
+    await commentOnMood(postId, text);
+    setCommentInputs((prev) => ({ ...prev, [postId]: "" }));
   };
+
+  const storeDisplayName =
+    sellerUser?.marketplaceStore?.storeName || sellerUser?.name || "Store";
 
   return (
     <div
-      className="fixed inset-0 z-[120] bg-black/80 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 animate-fade-in"
+      className={clsx(
+        "absolute inset-0 z-[70] flex items-center justify-center p-0 sm:p-4 bg-black/40 backdrop-blur-xs",
+        isClosing ? "pointer-events-none" : ""
+      )}
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg bg-white dark:bg-zinc-900 rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
+        className={clsx(
+          "bg-white dark:bg-zinc-950 w-full sm:max-w-xl h-full sm:h-auto sm:max-h-[92%] rounded-none sm:rounded-3xl overflow-hidden flex flex-col shadow-2xl border border-gray-150 dark:border-zinc-800 antialiased text-gray-900 dark:text-zinc-100",
+          isClosing
+            ? "animate-slide-out-to-right-edge"
+            : "animate-slide-in-from-right-edge"
+        )}
       >
-        {/* Media Container */}
-        <div className="w-full max-h-[50vh] bg-black flex items-center justify-center relative overflow-hidden">
-          {post.type === "video" ? (
-            <video src={post.mediaUrl} className="w-full h-full max-h-[50vh] object-contain" autoPlay loop controls playsInline />
-          ) : (
-            <img src={post.mediaUrl} alt="" className="w-full h-full max-h-[50vh] object-contain" />
-          )}
+        {/* Sticky Header */}
+        <header className="px-3 md:px-5 py-3 flex items-center justify-between border-b border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0 flex-1 mr-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-full transition-colors cursor-pointer shrink-0"
+              title="Back"
+            >
+              <ArrowLeft size={22} className="text-[var(--primary)]" />
+            </button>
+            <div className="w-8 h-8 rounded-full overflow-hidden bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center font-bold text-xs shrink-0">
+              {sellerUser?.avatar ? (
+                <img src={sellerUser.avatar} alt="" className="w-full h-full object-cover" />
+              ) : (
+                storeDisplayName.charAt(0)
+              )}
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-sm font-bold text-gray-900 dark:text-white truncate">
+                {storeDisplayName}&apos;s Feed
+              </h3>
+              <p className="text-[11px] text-gray-500 dark:text-zinc-400 truncate">
+                {orderedPosts.length} {orderedPosts.length === 1 ? "post" : "posts"} • Scroll down for more
+              </p>
+            </div>
+          </div>
+
           <button
             type="button"
             onClick={onClose}
-            className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 transition-colors"
+            className="w-9 h-9 rounded-full bg-gray-100 dark:bg-zinc-800 flex items-center justify-center text-gray-600 dark:text-zinc-300 hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer shrink-0"
+            title="Close"
           >
-            <X size={16} />
+            <X size={18} />
           </button>
-        </div>
+        </header>
 
-        {/* Info & Comments */}
-        <div className="p-4 flex-1 overflow-y-auto space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-zinc-200 dark:bg-zinc-700 overflow-hidden flex items-center justify-center text-xs font-bold">
-                {post.userAvatar ? <img src={post.userAvatar} alt="" className="w-full h-full object-cover" /> : post.userName?.charAt(0)}
-              </div>
-              <div>
-                <p className="text-xs font-bold text-gray-900 dark:text-white leading-tight">{post.userName}</p>
-                <p className="text-[10px] text-gray-400">Store Post</p>
-              </div>
-            </div>
+        {/* Continuous Scroll Feed Body */}
+        <div className="flex-1 overflow-y-auto min-h-0 custom-scrollbar overscroll-contain divide-y divide-gray-150 dark:divide-zinc-800">
+          {orderedPosts.map((post, idx) => {
+            const isLiked = post.likes?.includes(currentUser?.id || "");
+            const isVideo = post.type === "video";
+            const commentVal = commentInputs[post.id] || "";
 
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => likeMood(post.id)}
-                className={clsx(
-                  "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all",
-                  isLiked ? "bg-rose-50 text-rose-600 dark:bg-rose-950/50" : "bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300"
-                )}
-              >
-                <Heart size={14} className={isLiked ? "fill-current" : ""} />
-                <span>{post.likes?.length || 0}</span>
-              </button>
-              {isMe && (
-                <button
-                  type="button"
-                  onClick={async () => {
-                    await deleteMood(post.id);
-                    onClose();
-                  }}
-                  className="p-1.5 text-gray-400 hover:text-red-500 rounded-full transition-colors"
-                  title="Delete post"
-                >
-                  <Trash2 size={16} />
-                </button>
-              )}
-            </div>
-          </div>
+            return (
+              <article key={post.id} className="p-4 sm:p-5 space-y-3.5">
+                {/* Post Creator Info */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-full overflow-hidden bg-zinc-200 dark:bg-zinc-700 flex items-center justify-center text-xs font-bold shrink-0">
+                      {post.userAvatar ? (
+                        <img src={post.userAvatar} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        (post.userName || storeDisplayName).charAt(0)
+                      )}
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-gray-900 dark:text-white leading-tight">
+                        {post.userName || storeDisplayName}
+                      </h4>
+                      <p className="text-[10px] text-gray-400 dark:text-zinc-500">
+                        Store update • {formatFeedTime(post.createdAt)}
+                      </p>
+                    </div>
+                  </div>
 
-          {post.caption && (
-            <p className="text-xs text-gray-800 dark:text-zinc-200 leading-relaxed whitespace-pre-wrap">
-              {post.caption}
-            </p>
-          )}
-
-          {/* Comments List */}
-          <div className="space-y-2 pt-2 border-t border-gray-100 dark:border-zinc-800 max-h-40 overflow-y-auto pr-1">
-            {post.comments?.length === 0 ? (
-              <p className="text-[11px] text-gray-400 text-center py-2">No comments yet. Be the first to comment!</p>
-            ) : (
-              post.comments?.map((c) => (
-                <div key={c.id} className="text-xs flex items-start gap-2">
-                  <span className="font-bold text-gray-900 dark:text-white">{c.userName}:</span>
-                  <span className="text-gray-700 dark:text-zinc-300 flex-1">{c.text}</span>
+                  {isMe && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await deleteMood(post.id);
+                        if (orderedPosts.length <= 1) {
+                          onClose();
+                        }
+                      }}
+                      className="p-2 text-gray-400 hover:text-red-500 rounded-full transition-colors cursor-pointer"
+                      title="Delete post"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
                 </div>
-              ))
-            )}
-          </div>
-        </div>
 
-        {/* Comment Input */}
-        <div className="p-3 border-t border-gray-100 dark:border-zinc-800 flex items-center gap-2">
-          <input
-            type="text"
-            value={commentText}
-            onChange={(e) => setCommentText(e.target.value)}
-            placeholder="Add a comment..."
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleSendComment();
-            }}
-            className="flex-1 bg-gray-100 dark:bg-zinc-800 text-xs px-3 py-2 rounded-xl outline-none focus:ring-1 focus:ring-[var(--primary)] text-gray-900 dark:text-white"
-          />
-          <button
-            type="button"
-            onClick={handleSendComment}
-            disabled={!commentText.trim()}
-            className="px-3 py-2 bg-[var(--primary)] text-white text-xs font-bold rounded-xl disabled:opacity-40 hover:bg-emerald-600 transition-colors"
-          >
-            Send
-          </button>
+                {/* Media (Photo or Video) */}
+                <div className="relative w-full rounded-2xl overflow-hidden bg-black flex items-center justify-center shadow-xs">
+                  {isVideo ? (
+                    <video
+                      src={post.mediaUrl}
+                      controls
+                      loop
+                      playsInline
+                      className="w-full max-h-[60vh] object-contain"
+                    />
+                  ) : (
+                    <img
+                      src={post.mediaUrl}
+                      alt={post.caption || "Store feed photo"}
+                      className="w-full max-h-[60vh] object-contain"
+                    />
+                  )}
+                </div>
+
+                {/* Actions: Like & Comment Counters */}
+                <div className="flex items-center justify-between pt-1">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => likeMood(post.id)}
+                      className={clsx(
+                        "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer",
+                        isLiked
+                          ? "bg-rose-50 text-rose-600 dark:bg-rose-950/50"
+                          : "bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 hover:bg-gray-200"
+                      )}
+                    >
+                      <Heart size={15} className={clsx(isLiked && "fill-rose-600 text-rose-600")} />
+                      <span>{post.likes?.length || 0}</span>
+                    </button>
+
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300">
+                      <MessageSquare size={15} />
+                      <span>{post.comments?.length || 0}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Caption */}
+                {post.caption && (
+                  <p className="text-xs text-gray-800 dark:text-zinc-200 leading-relaxed whitespace-pre-wrap pt-0.5">
+                    <span className="font-bold text-gray-900 dark:text-white mr-1.5">
+                      {post.userName || storeDisplayName}
+                    </span>
+                    {post.caption}
+                  </p>
+                )}
+
+                {/* Comments Thread */}
+                {post.comments && post.comments.length > 0 && (
+                  <div className="space-y-1.5 pt-2 max-h-36 overflow-y-auto pr-1">
+                    {post.comments.map((c) => (
+                      <div key={c.id} className="text-xs flex items-start gap-1.5 leading-relaxed">
+                        <span className="font-bold text-gray-900 dark:text-white">{c.userName}:</span>
+                        <span className="text-gray-700 dark:text-zinc-300 flex-1">{c.text}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Add Comment Input */}
+                <div className="pt-2 flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={commentVal}
+                    onChange={(e) =>
+                      setCommentInputs((prev) => ({ ...prev, [post.id]: e.target.value }))
+                    }
+                    placeholder="Write a comment..."
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleSendComment(post.id);
+                    }}
+                    className="flex-1 bg-gray-100 dark:bg-zinc-800 text-xs px-3.5 py-2.5 rounded-xl outline-none focus:ring-1 focus:ring-[var(--primary)] text-gray-900 dark:text-white"
+                  />
+                  <button
+                    type="button"
+                    disabled={!commentVal.trim()}
+                    onClick={() => handleSendComment(post.id)}
+                    className="px-3.5 py-2.5 bg-[var(--primary)] text-white text-xs font-bold rounded-xl disabled:opacity-40 hover:bg-emerald-600 transition-colors cursor-pointer shrink-0"
+                  >
+                    Send
+                  </button>
+                </div>
+              </article>
+            );
+          })}
         </div>
       </div>
     </div>

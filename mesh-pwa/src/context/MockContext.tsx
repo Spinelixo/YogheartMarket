@@ -4659,23 +4659,26 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
         images: string[];
     }): Promise<string> => {
         const itemId = `mkt_${Date.now()}`;
-        const uploadedImages: string[] = [];
-
-        for (let i = 0; i < data.images.length; i++) {
-            const img = data.images[i];
-            if (img.startsWith("data:") && currentUserId) {
-                try {
-                    const storagePath = `marketplace/${currentUserId}/${itemId}_${i}`;
-                    const url = await uploadImageToStorage(img, storagePath);
-                    uploadedImages.push(url);
-                } catch (err) {
-                    console.warn("Image upload failed, using dataUrl fallback:", err);
-                    uploadedImages.push(img);
+        
+        // Upload images concurrently with timeout safety
+        const uploadedImages = await Promise.all(
+            data.images.map(async (img, i) => {
+                if (img.startsWith("data:") && currentUserId) {
+                    try {
+                        const storagePath = `marketplace/${currentUserId}/${itemId}_${i}`;
+                        const uploadPromise = uploadImageToStorage(img, storagePath);
+                        const timeoutPromise = new Promise<string>((_, reject) =>
+                            setTimeout(() => reject(new Error("Storage timeout")), 3500)
+                        );
+                        return await Promise.race([uploadPromise, timeoutPromise]);
+                    } catch (err) {
+                        console.warn("Storage upload deferred/fallback for listing image:", err);
+                        return img;
+                    }
                 }
-            } else {
-                uploadedImages.push(img);
-            }
-        }
+                return img;
+            })
+        );
 
         const newItem: MarketplaceItem = {
             id: itemId,
@@ -4698,14 +4701,19 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
             viewsCount: 0
         };
 
+        // Optimistically update local state immediately so user sees their listing instantly
         setMarketplaceItems(prev => [newItem, ...prev]);
+        addNotification("Listing published to Marketplace! 🛍️");
 
+        // Save to Firestore with timeout guarantee so user is never blocked
         try {
             const itemRef = doc(db, "marketplace_items", itemId);
-            await setDoc(itemRef, newItem);
-            addNotification("Listing published to Marketplace! 🛍️");
+            await Promise.race([
+                setDoc(itemRef, newItem),
+                new Promise((_, reject) => setTimeout(() => reject(new Error("Firestore write timeout")), 4000))
+            ]);
         } catch (err) {
-            console.error("Failed to save marketplace listing to Firestore:", err);
+            console.warn("Marketplace listing Firestore sync fallback:", err);
         }
 
         return itemId;
@@ -4715,10 +4723,13 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
         setMarketplaceItems(prev => prev.map(item => item.id === id ? { ...item, ...updates } : item));
         try {
             const itemRef = doc(db, "marketplace_items", id);
-            await setDoc(itemRef, updates, { merge: true });
+            await Promise.race([
+                setDoc(itemRef, updates, { merge: true }),
+                new Promise((_, reject) => setTimeout(() => reject(new Error("Firestore write timeout")), 4000))
+            ]);
             addNotification("Listing updated!");
         } catch (err) {
-            console.error("Failed to update listing:", err);
+            console.warn("Failed to update listing:", err);
         }
     };
 

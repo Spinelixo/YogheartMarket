@@ -238,6 +238,23 @@ a, button, [role="button"], .cursor-pointer, input, textarea, select {
 }
 
 /* Desktop layout wrapper */
+@keyframes iosScaleUp {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.ios-entrance {
+  animation: iosScaleUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transform-origin: center center;
+  will-change: transform, opacity;
+}
+
 .app-desktop-wrapper {
   width: 100%;
   height: 100vh;

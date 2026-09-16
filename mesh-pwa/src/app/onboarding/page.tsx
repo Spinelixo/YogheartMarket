@@ -318,7 +318,7 @@ export default function OnboardingPage() {
   const progressPercent = Math.round((step / 4) * 100);
 
   return (
-    <div className="min-h-screen w-full flex flex-col bg-white dark:bg-gray-900 text-gray-900 dark:text-white font-sans relative select-none">
+    <div className="min-h-screen w-full flex flex-col bg-white dark:bg-gray-900 text-gray-900 dark:text-white font-sans relative select-none ios-entrance">
       {/* ── Top Header with Progress Bar ── */}
       <header className="w-full max-w-md mx-auto pt-6 px-6 pb-4 shrink-0">
         <div className="flex items-center justify-between h-10 mb-4">
@@ -371,10 +371,10 @@ export default function OnboardingPage() {
           {step === 1 && (
             <motion.div
               key="step-1"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
               className="flex-1 flex flex-col justify-between py-6"
             >
               <div className="flex-1 flex flex-col justify-center">
@@ -438,10 +438,10 @@ export default function OnboardingPage() {
           {step === 2 && (
             <motion.div
               key="step-2"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
               className="flex-1 flex flex-col justify-between py-6"
             >
               <div className="flex-1 flex flex-col justify-center">
@@ -551,10 +551,10 @@ export default function OnboardingPage() {
           {step === 3 && (
             <motion.div
               key="step-3"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
               className="flex-1 flex flex-col justify-between py-6"
             >
               <div className="flex-1 flex flex-col justify-center">
@@ -617,10 +617,10 @@ export default function OnboardingPage() {
           {step === 4 && (
             <motion.div
               key="step-4"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
               className="flex-1 flex flex-col justify-between py-6"
             >
               <div>
