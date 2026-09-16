@@ -607,69 +607,37 @@ export default function LoginPage() {
                                         
                                         <div className="border-t border-gray-100 dark:border-zinc-800/80 mt-4 pt-4 text-left">
                                             <h3 className="text-sm font-bold dark:text-white mb-3 text-[var(--primary)] flex items-center gap-1.5">
-                                                🍦 How Yogheart Works (The Flavor Guide)
+                                                🛍️ Welcome to Yogheart Market
                                             </h3>
                                             <p className="text-[11px] text-gray-500 dark:text-gray-400 mb-3 leading-relaxed">
-                                                Welcome to the mix! Here is a guide to help you speak the language of Yoghearts and navigate the blender like a pro:
+                                                Yogheart Market is your local marketplace and community commerce hub. Browse items, connect directly with local sellers, and share updates from your storefront:
                                             </p>
                                             
-                                            <div className="space-y-3.5 pr-1">
-                                                {/* Swipe Mechanics */}
+                                            <div className="space-y-3 pr-1">
                                                 <div className="bg-gray-50/50 dark:bg-zinc-850/50 p-3 rounded-xl border border-gray-100/50 dark:border-zinc-800/50">
-                                                    <h4 className="font-bold text-xs text-gray-800 dark:text-zinc-200 mb-2 flex items-center gap-1.5">
-                                                        ⚡ The Swipe Mechanics
+                                                    <h4 className="font-bold text-xs text-gray-800 dark:text-zinc-200 mb-1 flex items-center gap-1.5">
+                                                        🛍️ Marketplace & Storefronts
                                                     </h4>
-                                                    <ul className="space-y-1.5 text-xs text-gray-600 dark:text-zinc-400">
-                                                        <li>• <strong>Right Swipe (Like):</strong> <span className="text-[var(--primary)] font-semibold">Scoop</span> (as in, <em>"I'd scoop that"</em> or <em>"we scooped each other"</em>).</li>
-                                                        <li>• <strong>Left Swipe (Pass):</strong> <span className="text-gray-500 font-semibold">Skip</span> (keeping it on ice, moving on).</li>
-                                                        <li>• <strong>Super Like:</strong> <span className="text-amber-500 font-semibold">Extra Sprinkle</span> (showing they are premium flavor material).</li>
-                                                    </ul>
+                                                    <p className="text-xs text-gray-600 dark:text-zinc-400 leading-relaxed">
+                                                        Discover electronics, furniture, clothing, and local items. Tap any listing to inspect details, check seller availability, and browse the seller&apos;s full catalogue.
+                                                    </p>
                                                 </div>
 
-                                                {/* Profiles, Users, & The Community */}
                                                 <div className="bg-gray-50/50 dark:bg-zinc-850/50 p-3 rounded-xl border border-gray-100/50 dark:border-zinc-800/50">
-                                                    <h4 className="font-bold text-xs text-gray-800 dark:text-zinc-200 mb-2 flex items-center gap-1.5">
-                                                        👥 Profiles, Users, & The Community
+                                                    <h4 className="font-bold text-xs text-gray-800 dark:text-zinc-200 mb-1 flex items-center gap-1.5">
+                                                        💬 Real-Time Buyer & Seller Chat
                                                     </h4>
-                                                    <ul className="space-y-1.5 text-xs text-gray-600 dark:text-zinc-400">
-                                                        <li>• <strong>User Profile:</strong> <span className="text-[var(--primary)] font-semibold">Blend</span> (your unique mix of personality, hobbies, and vibe).</li>
-                                                        <li>• <strong>Verified Profile:</strong> <span className="text-emerald-500 font-semibold">Organic Blend</span> (letting people know they are the real deal).</li>
-                                                        <li>• <strong>User Base:</strong> <span className="text-violet-500 font-semibold">Yoghearts</span> (our built-in community identity).</li>
-                                                    </ul>
+                                                    <p className="text-xs text-gray-600 dark:text-zinc-400 leading-relaxed">
+                                                        Chat directly with sellers about availability, pricing, and meetup locations. Listing status banners show Available, Pending, or Sold in real time.
+                                                    </p>
                                                 </div>
 
-                                                {/* Messaging & Connections */}
                                                 <div className="bg-gray-50/50 dark:bg-zinc-850/50 p-3 rounded-xl border border-gray-100/50 dark:border-zinc-800/50">
-                                                    <h4 className="font-bold text-xs text-gray-800 dark:text-zinc-200 mb-2 flex items-center gap-1.5">
-                                                        💬 Messaging & Connections
+                                                    <h4 className="font-bold text-xs text-gray-800 dark:text-zinc-200 mb-1 flex items-center gap-1.5">
+                                                        📢 Storefront Statuses & Feeds
                                                     </h4>
-                                                    <ul className="space-y-1.5 text-xs text-gray-600 dark:text-zinc-400">
-                                                        <li>• <strong>A Match:</strong> <span className="text-rose-500 font-semibold">Perfect Blend / Swirled</span> (you two go together perfectly).</li>
-                                                        <li>• <strong>Text Message:</strong> <span className="text-[var(--primary)] font-semibold">Sip / Sips</span> (sweet, quick exchanges).</li>
-                                                        <li>• <strong>Active Chat History:</strong> <span className="text-indigo-500 font-semibold">The Counter</span> (where all the active mixing is happening).</li>
-                                                    </ul>
-                                                </div>
-
-                                                {/* Content & Feed */}
-                                                <div className="bg-gray-50/50 dark:bg-zinc-850/50 p-3 rounded-xl border border-gray-100/50 dark:border-zinc-800/50">
-                                                    <h4 className="font-bold text-xs text-gray-800 dark:text-zinc-200 mb-2 flex items-center gap-1.5">
-                                                        📝 Content & Feed
-                                                    </h4>
-                                                    <ul className="space-y-1.5 text-xs text-gray-600 dark:text-zinc-400">
-                                                        <li>• <strong>Photo/Video Post:</strong> <span className="text-teal-500 font-semibold">Fresh Topping</span> (sharing a little bite of your daily life).</li>
-                                                        <li>• <strong>Main Feed:</strong> <span className="text-amber-600 font-semibold">The Main Menu</span> (where you scroll through what's fresh in the community today).</li>
-                                                        <li>• <strong>Likes on a Post:</strong> <span className="text-red-500 font-semibold">Sweeteners</span> (adding a little sugar to someone's post).</li>
-                                                        <li>• <strong>Comments on a Post:</strong> <span className="text-blue-500 font-semibold">Mix-ins</span> (adding your own flavor to their conversation).</li>
-                                                    </ul>
-                                                </div>
-
-                                                {/* How it looks in action */}
-                                                <div className="bg-rose-50/50 dark:bg-rose-950/20 p-3.5 rounded-xl border border-rose-100/30 dark:border-rose-900/20">
-                                                    <h4 className="font-bold text-xs text-rose-700 dark:text-rose-450 mb-1 flex items-center gap-1.5">
-                                                        ✨ In Action on your Interface
-                                                    </h4>
-                                                    <p className="text-xs text-rose-600/90 dark:text-rose-300 italic leading-relaxed">
-                                                        "You’ve Scooped! 🍦 Drop a sip into the blender to get things moving."
+                                                    <p className="text-xs text-gray-600 dark:text-zinc-400 leading-relaxed">
+                                                        Post 24-hour Status updates for quick flash announcements, or permanent photo posts to showcase new arrivals in your store feed.
                                                     </p>
                                                 </div>
                                             </div>

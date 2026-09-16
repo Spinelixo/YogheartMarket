@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Phone, Video, MessageCircle, Ban, Flag, MoreVertical, Send, Check, X, UserPlus, UserCheck, Plus, Heart, MessageSquare, Trash2, Image, Film, Sparkles, Globe, LayoutGrid, Play, Pencil, Lock, Settings, Users, LogOut } from "lucide-react";
 import ZoomedAvatarModal from "@/components/ZoomedAvatarModal";
 import { formatLastSeen } from "@/lib/date";
-import { INITIAL_YOGHEART_CLIPS } from "@/components/clips/clipsData";
 
 // --- NEW INLINE COMPONENT FOR INSTAGRAM-STYLE FEED POST ---
 const FeedPost = ({ 
@@ -770,12 +769,6 @@ export default function ProfileView({ userId: propUserId, onClose }: { userId?: 
     const [isPosting, setIsPosting] = useState(false);
     const statusFileInputRef = useRef<HTMLInputElement>(null);
 
-    // Status Boosting States
-    const [isBoostSelected, setIsBoostSelected] = useState(false);
-    const boostDuration = 1 as number;
-    const paymentMethod = 'simulated';
-    const [showConfetti, setShowConfetti] = useState(false);
-
     // Swipe-to-dismiss states for post modal
     const [postDragY, setPostDragY] = useState(0);
     const [isPostDragging, setIsPostDragging] = useState(false);
@@ -992,31 +985,6 @@ export default function ProfileView({ userId: propUserId, onClose }: { userId?: 
         if (isSelf) return currentUser;
         const found = thread?.user || request?.user || suggestion || allDatingUsers.find(u => u.id === userId);
         if (found) return found;
-
-        // Clip Creator Fallback Profile
-        const clipMatch = INITIAL_YOGHEART_CLIPS.find(c => c.creator.id === userId);
-        if (clipMatch) {
-            return {
-                id: clipMatch.creator.id,
-                name: clipMatch.creator.name,
-                avatar: clipMatch.creator.avatar,
-                color: "bg-emerald-500",
-                age: 24,
-                bio: clipMatch.caption,
-                jobTitle: "Content Creator & Yogi",
-                company: "Yogheart Community",
-                location: "Montreal, QC",
-                distance: "3 km away",
-                interests: ["Yoga", "Clips", "Music", "Photography", "Travel", "Wellness"],
-                photos: [clipMatch.posterUrl, clipMatch.creator.avatar],
-                relationshipGoal: "Long-term partner",
-                education: "B.A. Communications",
-                drinking: "Socially",
-                smoking: "Never",
-                exercise: "Every day",
-                verified: clipMatch.creator.isVerified
-            } as any;
-        }
 
         return null;
     }, [isGroupProfile, groupThread, isSelf, currentUser, thread?.user, request?.user, suggestion, allDatingUsers, userId]);
@@ -1357,25 +1325,6 @@ export default function ProfileView({ userId: propUserId, onClose }: { userId?: 
         }
     }, [isReady, isProfileLoaded, hasMounted, userId]);
 
-    useEffect(() => {
-        if (!currentSearchParams) return;
-        const success = currentSearchParams.get("success");
-        const statusId = currentSearchParams.get("statusId");
-        const duration = currentSearchParams.get("duration");
-
-        if (success === "true" && statusId && duration) {
-            const durationHrs = parseInt(duration, 10) || 1;
-            const amount = durationHrs === 24 ? 19.99 : durationHrs === 6 ? 9.99 : 2.99;
-            boostStatus(statusId, durationHrs, "stripe", amount);
-            setShowConfetti(true);
-            setTimeout(() => {
-                setShowConfetti(false);
-            }, 3000);
-            
-            // Clean up query parameters
-            window.history.replaceState(null, "", "/profile?userId=me");
-        }
-    }, [currentSearchParams, boostStatus, router]);
 
     useEffect(() => {
         if (groupThread) {
@@ -1730,64 +1679,6 @@ export default function ProfileView({ userId: propUserId, onClose }: { userId?: 
                     isGroupProfile ? groupThread?.id : undefined
                 );
 
-                if (newStatusId && isBoostSelected) {
-                    const amount = boostDuration === 24 ? 19.99 : boostDuration === 6 ? 9.99 : 2.99;
-                    if (paymentMethod === "simulated") {
-                        await boostStatus(newStatusId, boostDuration, "simulated", amount);
-                        setShowConfetti(true);
-                        setTimeout(() => {
-                            setShowConfetti(false);
-                            setShowPostModal(false);
-                            setNewStatusText("");
-                            clearSelectedMedia();
-                            setIsBoostSelected(false);
-                        }, 1800);
-                        return;
-                    } else {
-                        try {
-                            const STRIPE_SECRET_KEY = process.env.NEXT_PUBLIC_STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY || "";
-                            const amountCents = Math.round(amount * 100);
-                            const productName = `${boostDuration} Hour Status Boost`;
-                            const successUrl = `${window.location.origin}/profile?userId=me&success=true&duration=${boostDuration}&statusId=${newStatusId}`;
-                            const cancelUrl = `${window.location.origin}/profile?userId=me&cancel=true`;
-
-                            const params = new URLSearchParams();
-                            params.append("payment_method_types[0]", "card");
-                            params.append("line_items[0][price_data][currency]", "usd");
-                            params.append("line_items[0][price_data][product_data][name]", productName);
-                            params.append("line_items[0][price_data][product_data][description]", `Promote your status update for ${boostDuration} hours to the top of the Status Pool.`);
-                            params.append("line_items[0][price_data][unit_amount]", String(amountCents));
-                            params.append("line_items[0][quantity]", "1");
-                            params.append("mode", "payment");
-                            params.append("success_url", successUrl);
-                            params.append("cancel_url", cancelUrl);
-
-                            const response = await fetch("https://api.stripe.com/v1/checkout/sessions", {
-                                method: "POST",
-                                headers: {
-                                    "Authorization": `Bearer ${STRIPE_SECRET_KEY}`,
-                                    "Content-Type": "application/x-www-form-urlencoded",
-                                },
-                                body: params.toString(),
-                            });
-
-                            const data = await response.json();
-                            if (data.url) {
-                                window.location.href = data.url;
-                                return;
-                            } else {
-                                alert(`Stripe Checkout Error: ${data.error?.message || "Unable to create Stripe Checkout session."}`);
-                                setIsPosting(false);
-                                return;
-                            }
-                        } catch (err: any) {
-                            console.error("Stripe redirect failed:", err);
-                            alert(`Stripe Connection Error: ${err?.message || "Failed to connect to Stripe."}`);
-                            setIsPosting(false);
-                            return;
-                        }
-                    }
-                }
             } else if (postType === "moods" || postType === "clips") {
                 if (!statusMediaUrl) {
                     setIsPosting(false);
@@ -1808,9 +1699,7 @@ export default function ProfileView({ userId: propUserId, onClose }: { userId?: 
         } catch (err) {
             console.error("Error creating post:", err);
         } finally {
-            if (!isBoostSelected || paymentMethod === "simulated") {
-                setIsPosting(false);
-            }
+            setIsPosting(false);
         }
     };
 
@@ -2422,179 +2311,80 @@ export default function ProfileView({ userId: propUserId, onClose }: { userId?: 
                         </div>
                     ) : (
                         <>
-                            {/* Icon Tab Switcher */}
-                    <div className="flex border-b border-gray-100 dark:border-gray-700/50">
-                        {([
-                            { key: "moods" as const, icon: <LayoutGrid size={20} />, label: "Posts" },
-                            { key: "clips" as const, icon: <Play size={20} />, label: "Clips" },
-                        ]).map((tab) => (
-                            <button
-                                key={tab.key}
-                                onClick={() => setActiveTab(tab.key)}
-                                className={clsx(
-                                    "flex-1 py-3 flex items-center justify-center gap-1.5 transition-all relative",
-                                    activeTab === tab.key
-                                        ? "text-[var(--primary)]"
-                                        : "text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-                                )}
-                            >
-                                {tab.icon}
-                                <span className="text-[11px] font-semibold uppercase tracking-wide">{tab.label}</span>
-                                {activeTab === tab.key && (
-                                    <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[var(--primary)] rounded-full" />
-                                )}
-                            </button>
-                        ))}
-                    </div>
-
-                    {/* Tab Content Panels */}
+                    {/* Posts Feed */}
                     <div className="space-y-4">
-
-                        {/* ──── MOODS TAB (Photos/Images) ──── */}
-                            <div className={clsx(activeTab !== "moods" && "hidden")}>
-                                {(isSelf || (isGroupProfile && isGroupAdmin)) && (
-                                    <div className="flex justify-end px-4 pt-3 pb-2">
-                                        <button
-                                            onClick={() => { setPostType("moods"); setShowPostModal(true); }}
-                                            className="btn-new-mood flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white text-xs font-semibold rounded-full hover:shadow-lg hover:shadow-violet-500/25 transition-all active:scale-95"
-                                            style={{ background: "linear-gradient(135deg, #8b5cf6, #d946ef)", color: "#ffffff", WebkitTextFillColor: "#ffffff" }}
-                                        >
-                                            <Plus size={14} /> New Mood
-                                        </button>
-                                    </div>
-                                )}
-                                {(() => {
-                                    const moodsList = moodsToShow;
-                                    if (moodsList.length === 0) {
-                                        return (
-                                            <div className="text-center py-12">
-                                                <div className="w-20 h-20 mx-auto mb-4 rounded-full border-2 border-gray-200 dark:border-gray-700 flex items-center justify-center">
-                                                    <Image size={32} className="text-gray-300 dark:text-gray-600" />
-                                                </div>
-                                                <p className="text-sm font-semibold text-gray-800 dark:text-white mb-1">No Photos Yet</p>
-                                                {isSelf ? (
-                                                    <p className="text-xs text-gray-400 dark:text-gray-500">Share photos to fill your feed</p>
-                                                ) : (
-                                                    <p className="text-xs text-gray-400 dark:text-gray-555">No photos shared yet</p>
-                                                )}
-                                            </div>
-                                        );
-                                    }
+                        <div>
+                            {(isSelf || (isGroupProfile && isGroupAdmin)) && (
+                                <div className="flex justify-between items-center px-4 pt-3 pb-2 border-b border-gray-100 dark:border-zinc-800">
+                                    <span className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-zinc-400">
+                                        Feed Posts
+                                    </span>
+                                    <button
+                                        onClick={() => { setPostType("moods"); setShowPostModal(true); }}
+                                        className="btn-new-mood flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white text-xs font-semibold rounded-full hover:shadow-lg hover:shadow-violet-500/25 transition-all active:scale-95"
+                                        style={{ background: "linear-gradient(135deg, #8b5cf6, #d946ef)", color: "#ffffff", WebkitTextFillColor: "#ffffff" }}
+                                    >
+                                        <Plus size={14} /> New Post
+                                    </button>
+                                </div>
+                            )}
+                            {(() => {
+                                const moodsList = moodsToShow;
+                                if (moodsList.length === 0) {
                                     return (
-                                        <div className="grid grid-cols-3 gap-[2px]">
-                                            {moodsList.map((mood) => (
-                                                <div
-                                                    key={mood.id}
-                                                    onClick={() => setViewingMood(mood)}
-                                                    className="relative aspect-square bg-gray-100 dark:bg-gray-700 overflow-hidden group cursor-pointer"
-                                                    role="button"
-                                                    tabIndex={0}
-                                                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { setViewingMood(mood); } }}
-                                                >
-                                                    <img src={mood.mediaUrl} alt={mood.caption} loading="lazy" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
-                                                    {/* Hover overlay */}
-                                                    {!(mood as any).isShared && (
-                                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-4">
-                                                            <span className="flex items-center gap-1.5 text-white text-sm font-bold">
-                                                                <Heart size={16} fill="white" /> {mood.likes?.length || 0}
-                                                            </span>
-                                                            <span className="flex items-center gap-1.5 text-white text-sm font-bold">
-                                                                <MessageSquare size={16} fill="white" /> {mood.comments?.length || 0}
-                                                            </span>
-                                                        </div>
-                                                    )}
-                                                    {/* Delete badge for own moods */}
-                                                    {isSelf && !(mood as any).isShared && (
-                                                        <div className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                                                            <button
-                                                                onClick={(e) => { e.stopPropagation(); deleteMood(mood.id); }}
-                                                                className="w-7 h-7 bg-black/60 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-red-500 transition-colors"
-                                                            >
-                                                                <Trash2 size={13} className="text-white" />
-                                                            </button>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            ))}
+                                        <div className="text-center py-12">
+                                            <div className="w-20 h-20 mx-auto mb-4 rounded-full border-2 border-gray-200 dark:border-gray-700 flex items-center justify-center">
+                                                <Image size={32} className="text-gray-300 dark:text-gray-600" />
+                                            </div>
+                                            <p className="text-sm font-semibold text-gray-800 dark:text-white mb-1">No Photos Yet</p>
+                                            {isSelf ? (
+                                                <p className="text-xs text-gray-400 dark:text-gray-500">Share photos to fill your feed</p>
+                                            ) : (
+                                                <p className="text-xs text-gray-400 dark:text-gray-555">No photos shared yet</p>
+                                            )}
                                         </div>
                                     );
-                                })()}
-                            </div>
-
-                            <div className={clsx(activeTab !== "clips" && "hidden")}>
-                                {(isSelf || (isGroupProfile && isGroupAdmin)) && (
-                                    <div className="flex justify-end px-4 pt-3 pb-2">
-                                        <button
-                                            onClick={() => { setPostType("clips"); setShowPostModal(true); }}
-                                            className="btn-new-clip flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-rose-500 to-orange-500 text-white text-xs font-semibold rounded-full hover:shadow-lg hover:shadow-rose-500/25 transition-all active:scale-95"
-                                            style={{ background: "linear-gradient(135deg, #f43f5e, #f97316)", color: "#ffffff", WebkitTextFillColor: "#ffffff" }}
-                                        >
-                                            <Plus size={14} /> New Clip
-                                        </button>
-                                    </div>
-                                )}
-                                {(() => {
-                                    const clipsList = clipsToShow;
-                                    if (clipsList.length === 0) {
-                                        return (
-                                            <div className="text-center py-12">
-                                                <div className="w-20 h-20 mx-auto mb-4 rounded-full border-2 border-gray-200 dark:border-gray-700 flex items-center justify-center">
-                                                    <Play size={32} className="text-gray-300 dark:text-gray-600" />
-                                                </div>
-                                                <p className="text-sm font-semibold text-gray-800 dark:text-white mb-1">No Clips Yet</p>
-                                                {isSelf ? (
-                                                    <p className="text-xs text-gray-400 dark:text-gray-550">Upload short videos to share</p>
-                                                ) : (
-                                                    <p className="text-xs text-gray-400 dark:text-gray-555">No clips shared yet</p>
-                                                )}
-                                            </div>
-                                        );
-                                    }
-                                    return (
-                                        <div className="grid grid-cols-3 gap-[2px]">
-                                            {clipsList.map((clip) => (
-                                                <div
-                                                    key={clip.id}
-                                                    onClick={() => setViewingMood(clip)}
-                                                    className="relative aspect-[9/16] bg-gray-900 overflow-hidden group cursor-pointer"
-                                                    role="button"
-                                                    tabIndex={0}
-                                                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { setViewingMood(clip); } }}
-                                                >
-                                                    <video src={clip.mediaUrl} className="w-full h-full object-cover pointer-events-none" />
-                                                    {/* Video icon overlay */}
-                                                    <div className="absolute top-2 right-2 text-white bg-black/45 p-1 rounded-full backdrop-blur-sm z-10">
-                                                        <Play size={12} fill="white" />
+                                }
+                                return (
+                                    <div className="grid grid-cols-3 gap-[2px]">
+                                        {moodsList.map((mood) => (
+                                            <div
+                                                key={mood.id}
+                                                onClick={() => setViewingMood(mood)}
+                                                className="relative aspect-square bg-gray-100 dark:bg-gray-700 overflow-hidden group cursor-pointer"
+                                                role="button"
+                                                tabIndex={0}
+                                                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { setViewingMood(mood); } }}
+                                            >
+                                                <img src={mood.mediaUrl} alt={mood.caption} loading="lazy" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                                                {/* Hover overlay */}
+                                                {!(mood as any).isShared && (
+                                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-4">
+                                                        <span className="flex items-center gap-1.5 text-white text-sm font-bold">
+                                                            <Heart size={16} fill="white" /> {mood.likes?.length || 0}
+                                                        </span>
+                                                        <span className="flex items-center gap-1.5 text-white text-sm font-bold">
+                                                            <MessageSquare size={16} fill="white" /> {mood.comments?.length || 0}
+                                                        </span>
                                                     </div>
-                                                    {/* Hover overlay */}
-                                                    {!(clip as any).isShared && (
-                                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center gap-4">
-                                                            <span className="flex items-center gap-1.5 text-white text-sm font-bold">
-                                                                <Heart size={16} fill="white" /> {clip.likes?.length || 0}
-                                                            </span>
-                                                            <span className="flex items-center gap-1.5 text-white text-sm font-bold">
-                                                                <MessageSquare size={16} fill="white" /> {clip.comments?.length || 0}
-                                                            </span>
-                                                        </div>
-                                                    )}
-                                                    {/* Delete badge for own clips */}
-                                                    {isSelf && !(clip as any).isShared && (
-                                                        <div className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                                                            <button
-                                                                onClick={(e) => { e.stopPropagation(); deleteMood(clip.id); }}
-                                                                className="w-7 h-7 bg-black/60 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-red-500 transition-colors"
-                                                            >
-                                                                <Trash2 size={13} className="text-white" />
-                                                            </button>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    );
-                                })()}
-                            </div>
-
+                                                )}
+                                                {/* Delete badge for own moods */}
+                                                {isSelf && !(mood as any).isShared && (
+                                                    <div className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); deleteMood(mood.id); }}
+                                                            className="w-7 h-7 bg-black/60 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-red-500 transition-colors"
+                                                        >
+                                                            <Trash2 size={13} className="text-white" />
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                );
+                            })()}
+                        </div>
                     </div>
 
                         </>
@@ -4196,94 +3986,6 @@ export default function ProfileView({ userId: propUserId, onClose }: { userId?: 
                             );
                         })()}
                     </div>
-                </div>
-            )}
-
-            {showConfetti && (
-                <div className="fixed inset-0 z-[200] pointer-events-none flex items-center justify-center bg-black/20 backdrop-blur-[1px]">
-                    <div className="relative w-full h-full overflow-hidden flex items-center justify-center">
-                        {/* Confetti particles */}
-                        {CONFETTI_PARTICLES.map((particle, i) => {
-                            return (
-                                <div
-                                    key={i}
-                                    className={`absolute rounded-full opacity-90 ${particle.randomColor} animate-confetti`}
-                                    style={{
-                                        width: `${particle.size}px`,
-                                        height: `${particle.size}px`,
-                                        left: `${particle.left}%`,
-                                        top: `-10px`,
-                                        animationDelay: `${particle.delay}s`,
-                                        animationDuration: `${particle.duration}s`,
-                                    }}
-                                />
-                            );
-                        })}
-                        <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 flex flex-col items-center gap-3 animate-[zoomIn_0.3s_ease-out] max-w-xs mx-4 text-center">
-                            <div className="w-16 h-16 bg-gradient-to-r from-amber-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg text-white text-3xl animate-bounce">
-                                🔥
-                            </div>
-                            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Status Boosted!</h3>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">Your status is now promoted to the top of the pool for everyone to see.</p>
-                        </div>
-                    </div>
-                    <style jsx global>{`
-                        @keyframes confetti-fall {
-                            0% {
-                                transform: translateY(0) rotate(0deg);
-                                opacity: 1;
-                            }
-                            100% {
-                                transform: translateY(105vh) rotate(720deg);
-                                opacity: 0;
-                            }
-                        }
-                        .animate-confetti {
-                            animation: confetti-fall linear (infinite or whatever is fine) 1;
-                            animation-iteration-count: 1;
-                            animation-fill-mode: forwards;
-                        }
-                        @keyframes pfpZoomIn {
-                            from {
-                                transform: scale(0.4);
-                                opacity: 0;
-                            }
-                            to {
-                                transform: scale(1);
-                                opacity: 1;
-                            }
-                        }
-                        @keyframes pfpZoomOut {
-                            from {
-                                transform: scale(1);
-                                opacity: 1;
-                            }
-                            to {
-                                transform: scale(0.4);
-                                opacity: 0;
-                            }
-                        }
-                        @keyframes fadeIn {
-                            from { opacity: 0; }
-                            to { opacity: 1; }
-                        }
-                        @keyframes fadeOut {
-                            from { opacity: 1; }
-                            to { opacity: 0; }
-                        }
-                        .animate-pfp-in {
-                            animation: pfpZoomIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-                        }
-                        .animate-pfp-out {
-                            animation: pfpZoomOut 0.25s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards;
-                        }
-                        .animate-fade-in-overlay {
-                            animation: fadeIn 0.3s ease-out forwards;
-                        }
-                        .animate-fade-out-overlay {
-                            animation: fadeOut 0.25s ease-in forwards;
-                        }
-                    `}</style>
                 </div>
             )}
         </div>
