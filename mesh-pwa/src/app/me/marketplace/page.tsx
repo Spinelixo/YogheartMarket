@@ -311,20 +311,6 @@ export default function MarketplaceSettingsPage({
             />
           </div>
 
-          {/* Store Bio / Description */}
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-[var(--border)] dark:border-zinc-800 shadow-xs space-y-2">
-            <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 uppercase tracking-wider">
-              About Your Store & Catalogue
-            </label>
-            <textarea
-              rows={3}
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
-              placeholder="Describe what you specialize in, cooking styles, delivery areas, rental terms, or product details..."
-              className="w-full bg-gray-50 dark:bg-zinc-800/80 text-gray-900 dark:text-white px-4 py-3 rounded-xl border border-gray-200 dark:border-zinc-700 focus:ring-2 focus:ring-[var(--primary)] outline-none text-sm resize-none"
-            />
-          </div>
-
           {/* Location & Business Hours */}
           <div className="bg-white dark:bg-zinc-900 rounded-2xl p-4 border border-[var(--border)] dark:border-zinc-800 shadow-xs space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

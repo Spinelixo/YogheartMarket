@@ -295,20 +295,6 @@ export function EditMarketplaceProfileModal({ onClose }: EditMarketplaceProfileM
             />
           </div>
 
-          {/* Store Bio / Description */}
-          <div>
-            <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 uppercase tracking-wider mb-2">
-              About Your Store & Catalogue
-            </label>
-            <textarea
-              rows={3}
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
-              placeholder="Describe what you specialize in, cooking styles, delivery areas, rental terms, or product details..."
-              className="w-full bg-gray-50 dark:bg-zinc-800/80 text-gray-900 dark:text-white px-4 py-3 rounded-2xl border border-gray-200 dark:border-zinc-700 focus:ring-2 focus:ring-[var(--primary)] outline-none text-sm resize-none"
-            />
-          </div>
-
           {/* Location & Business Hours */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>

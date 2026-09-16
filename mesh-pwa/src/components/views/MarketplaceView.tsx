@@ -517,65 +517,74 @@ export default function MarketplaceView() {
       {/* ────────────────── BROWSE MARKET ────────────────── */}
       <div className="flex-1 flex flex-col overflow-hidden">
           {/* Search & Main Filter Line */}
-          <div className="bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md border-b border-gray-150 dark:border-zinc-800 px-4 py-2.5 shrink-0">
-            {/* Single clean line: Quick Filters (All, Rentals, Foods, Electronics) & Right Edge: Search + Filters */}
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex bg-gray-100 dark:bg-zinc-800/80 p-1 rounded-xl shrink-0 overflow-x-auto no-scrollbar gap-1">
-                {[
-                  { label: "All", icon: Layers },
-                  { label: "Rentals", icon: Building2 },
-                  { label: "Foods", icon: UtensilsCrossed },
-                  { label: "Electronics", icon: Tv },
-                ].map((item) => {
-                  const isAll = item.label === "All";
-                  const isSelected = isAll
-                    ? selectedCategories.length === 0
-                    : selectedCategories.includes(item.label);
-                  const Icon = item.icon;
-                  return (
-                    <button
-                      key={item.label}
-                      type="button"
-                      onClick={() => {
-                        if (isAll) {
-                          setSelectedCategories([]);
-                        } else {
-                          setSelectedCategories((prev) =>
-                            prev.includes(item.label) ? [] : [item.label]
-                          );
-                        }
-                      }}
-                      className={clsx(
-                        "px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5",
-                        isSelected
-                          ? "bg-white dark:bg-zinc-700 text-[var(--primary)] shadow-xs"
-                          : "text-gray-600 dark:text-zinc-400 hover:text-gray-900"
-                      )}
-                    >
-                      <Icon size={13} />
-                      <span>{item.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
+          <div className="bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md border-b border-gray-150 dark:border-zinc-800 px-4 py-2 shrink-0">
+            {/* Single clean line: All button, inline expandable search input, and Filters button */}
+            <div className="flex items-center justify-between gap-2 h-9">
+              {/* Left Edge: All Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedCategories([]);
+                }}
+                className={clsx(
+                  "px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 shrink-0 shadow-xs",
+                  selectedCategories.length === 0
+                    ? "bg-white dark:bg-zinc-800 text-[var(--primary)] border border-gray-200 dark:border-zinc-700"
+                    : "bg-gray-100 dark:bg-zinc-800/80 text-gray-600 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white"
+                )}
+              >
+                <Layers size={14} />
+                <span>All</span>
+              </button>
 
-              {/* Right Edge: Search Toggle & Filters button */}
+              {/* Center: Inline Extended Search Input when active */}
+              {showSearchBar ? (
+                <div className="flex-1 relative flex items-center min-w-0 transition-all duration-200 animate-fade-in">
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 shrink-0 pointer-events-none" />
+                  <input
+                    type="text"
+                    autoFocus
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search marketplace items..."
+                    className="w-full bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white pl-8 pr-7 py-1.5 rounded-xl border-0 text-xs sm:text-sm focus:ring-2 focus:ring-[var(--primary)] outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery("");
+                      setShowSearchBar(false);
+                    }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer p-0.5"
+                    title="Close search"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex-1" />
+              )}
+
+              {/* Right Edge: Search Toggle Icon (when not expanded) & Filters Button */}
               <div className="flex items-center gap-1.5 shrink-0">
+                {!showSearchBar && (
+                  <button
+                    type="button"
+                    onClick={() => setShowSearchBar(true)}
+                    className={clsx(
+                      "p-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center shadow-xs",
+                      searchQuery
+                        ? "bg-[var(--primary)] text-white shadow-emerald-500/20"
+                        : "bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 hover:bg-gray-200 dark:hover:bg-zinc-700"
+                    )}
+                    title="Search items"
+                  >
+                    <Search size={15} />
+                  </button>
+                )}
+
                 <button
                   type="button"
-                  onClick={() => setShowSearchBar(!showSearchBar)}
-                  className={clsx(
-                    "p-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center shadow-xs",
-                    showSearchBar || searchQuery
-                      ? "bg-[var(--primary)] text-white shadow-emerald-500/20"
-                      : "bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 hover:bg-gray-200 dark:hover:bg-zinc-700"
-                  )}
-                  title={showSearchBar ? "Close search" : "Search items"}
-                >
-                  <Search size={15} />
-                </button>
-
-                <button
                   onClick={() => {
                     setFilterSubscreen("main");
                     setMinPriceInput(filterMinPrice !== null ? String(filterMinPrice) : "");
@@ -599,36 +608,6 @@ export default function MarketplaceView() {
                 </button>
               </div>
             </div>
-
-            {/* Expandable Search Input Bar when Search Icon is active */}
-            {showSearchBar && (
-              <div className="relative animate-fade-in pt-2">
-                <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  autoFocus
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search items, electronics, furniture, clothing..."
-                  className="w-full bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white pl-9 pr-8 py-2 rounded-xl border-0 text-xs sm:text-sm focus:ring-2 focus:ring-[var(--primary)] outline-none"
-                />
-                {searchQuery ? (
-                  <button
-                    onClick={() => setSearchQuery("")}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer p-1"
-                  >
-                    <X size={14} />
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => setShowSearchBar(false)}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer p-1"
-                  >
-                    <X size={14} />
-                  </button>
-                )}
-              </div>
-            )}
           </div>
 
           {/* Listings Cards Grid */}

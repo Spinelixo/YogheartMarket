@@ -511,17 +511,12 @@ export function SellerStorefrontModal({
                 </p>
               )}
 
-              {/* Headline */}
-              {storeProfile.headline && (
+              {/* Tagline / Headline */}
+              {(storeProfile.headline || storeProfile.bio || sellerUser.bio) && (
                 <p className="text-sm font-semibold text-gray-800 dark:text-zinc-200 pt-0.5">
-                  {storeProfile.headline}
+                  {storeProfile.headline || storeProfile.bio || sellerUser.bio}
                 </p>
               )}
-
-              {/* Bio / Description */}
-              <p className="text-xs sm:text-sm text-gray-600 dark:text-zinc-400 leading-relaxed pt-1 whitespace-pre-line">
-                {storeProfile.bio || sellerUser.bio || "Active seller on Yogheart Market. Welcome to my store!"}
-              </p>
             </div>
 
             {/* Quick Badges Row */}
