@@ -717,19 +717,20 @@ export function SellerStorefrontModal({
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2">
-                  {filteredStoreItems.map((item) => {
-                    const coverImg =
-                      item.images && item.images.length > 0
-                        ? item.images[0]
-                        : "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop&q=80";
+                <div className="bg-white dark:bg-zinc-900 rounded-3xl overflow-hidden border border-gray-200/90 dark:border-zinc-800 shadow-xs pt-0">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-px bg-gray-200/90 dark:bg-zinc-800">
+                    {filteredStoreItems.map((item) => {
+                      const coverImg =
+                        item.images && item.images.length > 0
+                          ? item.images[0]
+                          : "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop&q=80";
 
-                    return (
-                      <div
-                        key={item.id}
-                        onClick={() => setSelectedItem(item)}
-                        className="group bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden border border-gray-150 dark:border-zinc-800 shadow-xs hover:shadow-md transition-all flex flex-col cursor-pointer relative"
-                      >
+                      return (
+                        <div
+                          key={item.id}
+                          onClick={() => setSelectedItem(item)}
+                          className="group bg-white dark:bg-zinc-900 hover:bg-gray-50/80 dark:hover:bg-zinc-800/60 transition-colors flex flex-col cursor-pointer relative"
+                        >
                         {/* Image & Badges */}
                         <div className="relative w-full aspect-square bg-zinc-100 dark:bg-zinc-800 overflow-hidden select-none">
                           <img
@@ -779,6 +780,7 @@ export function SellerStorefrontModal({
                       </div>
                     );
                   })}
+                  </div>
                 </div>
               )}
             </div>

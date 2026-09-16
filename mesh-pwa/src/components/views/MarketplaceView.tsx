@@ -614,21 +614,22 @@ export default function MarketplaceView() {
           <div className="flex-1 overflow-y-auto p-3 sm:p-4 pb-28 lg:pb-6">
 
               {filteredItems.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
-                  {filteredItems.map((item) => {
-                    const isSaved = currentUser ? item.savedBy?.includes(currentUser.id) : false;
-                    const itemDist = calculateItemDistanceKm(item, currentUser?.location);
-                    const coverImg =
-                      item.images && item.images.length > 0
-                        ? item.images[0]
-                        : "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop&q=80";
+                <div className="bg-white dark:bg-zinc-900 rounded-3xl overflow-hidden border border-gray-200/90 dark:border-zinc-800 shadow-xs">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-px bg-gray-200/90 dark:bg-zinc-800">
+                    {filteredItems.map((item) => {
+                      const isSaved = currentUser ? item.savedBy?.includes(currentUser.id) : false;
+                      const itemDist = calculateItemDistanceKm(item, currentUser?.location);
+                      const coverImg =
+                        item.images && item.images.length > 0
+                          ? item.images[0]
+                          : "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop&q=80";
 
-                    return (
-                      <div
-                        key={item.id}
-                        onClick={() => setSelectedItem(item)}
-                        className="group bg-white dark:bg-zinc-900 rounded-2xl sm:rounded-3xl overflow-hidden border border-gray-150 dark:border-zinc-800 shadow-xs hover:shadow-md transition-all flex flex-col cursor-pointer hover:-translate-y-0.5 relative"
-                      >
+                      return (
+                        <div
+                          key={item.id}
+                          onClick={() => setSelectedItem(item)}
+                          className="group bg-white dark:bg-zinc-900 hover:bg-gray-50/80 dark:hover:bg-zinc-800/60 transition-colors flex flex-col cursor-pointer relative"
+                        >
                         {/* Item Image & Action Buttons */}
                         <div className="relative w-full aspect-square bg-zinc-100 dark:bg-zinc-800 overflow-hidden select-none">
                           <img
@@ -707,6 +708,7 @@ export default function MarketplaceView() {
                       </div>
                     );
                   })}
+                  </div>
                 </div>
               ) : (
                 /* Empty Browse State */
