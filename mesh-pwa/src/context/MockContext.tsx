@@ -354,7 +354,7 @@ export type MarketplaceItem = {
     description: string;
     images: string[];
     location: string;
-    status: "active" | "sold" | "reserved";
+    status: "active" | "sold" | "pending" | "reserved";
     createdAt: string;
     savedBy: string[]; // user IDs who favorited
     viewsCount?: number;
@@ -4717,7 +4717,13 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
                         viewsCount: data.viewsCount || 0,
                     } as MarketplaceItem;
                 }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-                setMarketplaceItems(itemsList);
+                
+                // Merge snapshot items with INITIAL_MARKETPLACE_ITEMS so demo items are preserved and updated
+                const itemMap = new Map<string, MarketplaceItem>();
+                INITIAL_MARKETPLACE_ITEMS.forEach(i => itemMap.set(i.id, i));
+                itemsList.forEach(i => itemMap.set(i.id, i));
+                const combined = Array.from(itemMap.values()).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+                setMarketplaceItems(combined);
             } else {
                 setMarketplaceItems(INITIAL_MARKETPLACE_ITEMS);
             }
@@ -4738,14 +4744,12 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
         location?: string;
         images: string[];
     }): Promise<string> => {
-        if (!currentUserId) throw new Error("Must be logged in to create a listing");
-
-        const itemId = crypto.randomUUID();
+        const itemId = `mkt_${Date.now()}`;
         const uploadedImages: string[] = [];
 
         for (let i = 0; i < data.images.length; i++) {
             const img = data.images[i];
-            if (img.startsWith("data:")) {
+            if (img.startsWith("data:") && currentUserId) {
                 try {
                     const storagePath = `marketplace/${currentUserId}/${itemId}_${i}`;
                     const url = await uploadImageToStorage(img, storagePath);
@@ -4761,32 +4765,32 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
 
         const newItem: MarketplaceItem = {
             id: itemId,
-            sellerId: currentUserId,
-            sellerName: currentUser.name || "Me",
-            sellerAvatar: currentUser.avatar || null,
-            sellerColor: currentUser.color || "bg-blue-200",
-            sellerLocation: currentUser.location || "",
-            title: data.title.trim(),
-            price: Number(data.price) || 0,
-            category: data.category || "Other",
-            condition: data.condition || "Good",
-            description: data.description.trim(),
+            sellerId: currentUserId || "me",
+            sellerName: currentUser?.name || "Me",
+            sellerAvatar: currentUser?.avatar || null,
+            sellerColor: currentUser?.color || "bg-emerald-200",
+            sellerLocation: currentUser?.location || "Local",
+            title: data.title,
+            price: Number(data.price),
+            category: data.category,
+            condition: data.condition,
+            description: data.description,
             images: uploadedImages.length > 0 ? uploadedImages : ["https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop&q=80"],
-            location: data.location?.trim() || currentUser.location || "Local",
+            location: data.location || currentUser?.location || "Local",
             status: "active",
             createdAt: new Date().toISOString(),
             savedBy: [],
-            viewsCount: 1,
+            viewsCount: 0
         };
 
-        setMarketplaceItems(prev => [newItem, ...prev.filter(item => item.id !== itemId)]);
+        setMarketplaceItems(prev => [newItem, ...prev]);
 
         try {
-            await setDoc(doc(db, "marketplace_items", itemId), newItem);
-            addNotification("Listing published to Marketplace! 🎉");
+            const itemRef = doc(db, "marketplace_items", itemId);
+            await setDoc(itemRef, newItem);
+            addNotification("Listing published to Marketplace! 🛍️");
         } catch (err) {
             console.error("Failed to save marketplace listing to Firestore:", err);
-            addNotification("Listing saved locally.");
         }
 
         return itemId;
@@ -4796,7 +4800,7 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
         setMarketplaceItems(prev => prev.map(item => item.id === id ? { ...item, ...updates } : item));
         try {
             const itemRef = doc(db, "marketplace_items", id);
-            await updateDoc(itemRef, updates);
+            await setDoc(itemRef, updates, { merge: true });
             addNotification("Listing updated!");
         } catch (err) {
             console.error("Failed to update listing:", err);

@@ -730,14 +730,20 @@ export function SellerStorefrontModal({
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                           />
 
-                          {/* Sold Overlay */}
-                          {item.status === "sold" && (
+                          {/* Sold or Pending Overlay */}
+                          {item.status === "sold" ? (
                             <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                               <span className="bg-red-600 text-white font-black text-xs px-2.5 py-1 rounded-lg uppercase tracking-wider shadow-md">
                                 SOLD
                               </span>
                             </div>
-                          )}
+                          ) : (item.status === "pending" || item.status === "reserved") ? (
+                            <div className="absolute top-2 right-2 z-10">
+                              <span className="bg-amber-500 text-white font-bold text-[10px] px-2 py-0.5 rounded-md shadow-md uppercase tracking-wider">
+                                PENDING
+                              </span>
+                            </div>
+                          ) : null}
 
                           {/* Price Badge */}
                           <div className="absolute bottom-2 left-2 bg-black/75 backdrop-blur-md text-white font-black text-xs px-2 py-0.5 rounded-lg shadow-xs">

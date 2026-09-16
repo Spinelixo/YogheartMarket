@@ -435,27 +435,74 @@ export function ItemDetailModal({
                   <Sparkles size={14} /> You manage this listing
                 </span>
                 <span className={clsx(
-                  "text-xs font-bold px-2 py-0.5 rounded-full uppercase",
-                  curItem.status === "sold" ? "bg-red-500 text-white" : "bg-emerald-500 text-white"
+                  "text-xs font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider text-[11px]",
+                  curItem.status === "sold"
+                    ? "bg-red-500 text-white"
+                    : (curItem.status === "pending" || curItem.status === "reserved")
+                    ? "bg-amber-500 text-white"
+                    : "bg-emerald-500 text-white"
                 )}>
-                  {curItem.status}
+                  {curItem.status === "reserved" ? "pending" : (curItem.status || "active")}
                 </span>
               </div>
 
+              {/* Status Switcher */}
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-amber-950 dark:text-amber-200 uppercase tracking-wider">
+                  Listing Status
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => updateMarketplaceListing(curItem.id, { status: "active" })}
+                    className={clsx(
+                      "py-2 px-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer border",
+                      curItem.status === "active" || !curItem.status
+                        ? "bg-emerald-500 text-white border-emerald-600 shadow-xs shadow-emerald-500/25"
+                        : "bg-white dark:bg-zinc-800 text-gray-700 dark:text-zinc-200 border-gray-200 dark:border-zinc-700 hover:border-emerald-400 hover:text-emerald-600"
+                    )}
+                  >
+                    <span className={clsx("w-1.5 h-1.5 rounded-full shrink-0", (curItem.status === "active" || !curItem.status) ? "bg-white" : "bg-emerald-500")} />
+                    <span>Available</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => updateMarketplaceListing(curItem.id, { status: "pending" })}
+                    className={clsx(
+                      "py-2 px-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer border",
+                      curItem.status === "pending" || curItem.status === "reserved"
+                        ? "bg-amber-500 text-white border-amber-600 shadow-xs shadow-amber-500/25"
+                        : "bg-white dark:bg-zinc-800 text-gray-700 dark:text-zinc-200 border-gray-200 dark:border-zinc-700 hover:border-amber-400 hover:text-amber-600"
+                    )}
+                  >
+                    <span className={clsx("w-1.5 h-1.5 rounded-full shrink-0", (curItem.status === "pending" || curItem.status === "reserved") ? "bg-white" : "bg-amber-500 animate-pulse")} />
+                    <span>Pending</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => updateMarketplaceListing(curItem.id, { status: "sold" })}
+                    className={clsx(
+                      "py-2 px-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer border",
+                      curItem.status === "sold"
+                        ? "bg-red-500 text-white border-red-600 shadow-xs shadow-red-500/25"
+                        : "bg-white dark:bg-zinc-800 text-gray-700 dark:text-zinc-200 border-gray-200 dark:border-zinc-700 hover:border-red-400 hover:text-red-600"
+                    )}
+                  >
+                    <span className={clsx("w-1.5 h-1.5 rounded-full shrink-0", curItem.status === "sold" ? "bg-white" : "bg-red-500")} />
+                    <span>Sold</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Secondary Actions */}
               <div className="flex flex-wrap gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={() => handleToggleSold(curItem)}
-                  className="flex-1 py-2.5 px-3 bg-white dark:bg-zinc-800 text-gray-800 dark:text-zinc-100 font-bold text-xs rounded-xl border border-gray-200 dark:border-zinc-700 flex items-center justify-center gap-1.5 hover:bg-gray-50 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
-                >
-                  <CheckCircle size={15} className="text-emerald-500" />
-                  {curItem.status === "sold" ? "Mark as Available" : "Mark as Sold"}
-                </button>
                 {onEdit && (
                   <button
                     type="button"
                     onClick={() => onEdit(curItem)}
-                    className="py-2.5 px-4 bg-white dark:bg-zinc-800 text-gray-800 dark:text-zinc-100 font-bold text-xs rounded-xl border border-gray-200 dark:border-zinc-700 flex items-center justify-center gap-1.5 hover:bg-gray-50 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
+                    className="flex-1 py-2 px-3 bg-white dark:bg-zinc-800 text-gray-800 dark:text-zinc-100 font-bold text-xs rounded-xl border border-gray-200 dark:border-zinc-700 flex items-center justify-center gap-1.5 hover:bg-gray-50 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
                   >
                     <Edit3 size={15} /> Edit
                   </button>
@@ -463,7 +510,7 @@ export function ItemDetailModal({
                 <button
                   type="button"
                   onClick={() => setDeleteConfirmItemId(curItem.id)}
-                  className="py-2.5 px-3 bg-red-50 dark:bg-red-950/30 text-red-600 font-bold text-xs rounded-xl border border-red-200 dark:border-red-900/40 flex items-center justify-center gap-1.5 hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors cursor-pointer"
+                  className="py-2 px-3 bg-red-50 dark:bg-red-950/30 text-red-600 font-bold text-xs rounded-xl border border-red-200 dark:border-red-900/40 flex items-center justify-center gap-1.5 hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors cursor-pointer"
                 >
                   <Trash2 size={15} /> Delete
                 </button>
@@ -473,8 +520,24 @@ export function ItemDetailModal({
 
           {/* Inquire Bar (If buyer) */}
           {!isOwner && (
-            <div className="space-y-2.5">
-              <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
+            curItem.status === "sold" ? (
+              <div className="p-4 rounded-2xl bg-red-50 dark:bg-red-950/25 border border-red-200 dark:border-red-900/40 text-center space-y-1">
+                <span className="inline-block px-3 py-0.5 rounded-full bg-red-500 text-white font-bold text-xs uppercase tracking-wider mb-1">
+                  Sold Out
+                </span>
+                <p className="text-xs text-red-600 dark:text-red-400 font-medium">
+                  This item has been marked as sold by the seller.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                {(curItem.status === "pending" || curItem.status === "reserved") && (
+                  <div className="px-3 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/40 flex items-center gap-2 text-xs text-amber-700 dark:text-amber-300">
+                    <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0 animate-pulse" />
+                    <span><strong>Pending Sale:</strong> This item is reserved, but you can still message the seller.</span>
+                  </div>
+                )}
+                <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar text-xs">
                 {[
                   "Hi, is this still available?",
                   "Is the price negotiable?",
@@ -517,6 +580,7 @@ export function ItemDetailModal({
                 </button>
               </div>
             </div>
+            )
           )}
 
           {/* 4. Seller Information Card (Below message input - only shown when not already viewing the storefront) */}

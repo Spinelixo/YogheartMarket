@@ -1317,7 +1317,7 @@ function MediaGroupBubble({ msg, isMe, theme, setFullscreenMedia }: MediaGroupBu
 }
 
 export default function ChatThreadView({ threadId, onClose }: { threadId: string | null; onClose: () => void }) {
-    const { threads, archivedThreads, currentUser, allDatingUsers, marketplaceItems = [], rides = [], sendMessage, editMessage, deleteMessage, votePoll, addNotification, deleteThread, addReaction, removeReaction, markThreadRead, clearChat, archiveChat, muteChat, blockUser, reportUser, isProfileLoaded, togglePinThread, callLogs, setActiveThreadId, startDirectChat, leaveGroup, removeUserFromGroup, addUsersToGroup, sendIcebreaker, acceptThread, declineRequest, requests } = useMockData();
+    const { threads, archivedThreads, currentUser, allDatingUsers, marketplaceItems = [], rides = [], updateMarketplaceListing, sendMessage, editMessage, deleteMessage, votePoll, addNotification, deleteThread, addReaction, removeReaction, markThreadRead, clearChat, archiveChat, muteChat, blockUser, reportUser, isProfileLoaded, togglePinThread, callLogs, setActiveThreadId, startDirectChat, leaveGroup, removeUserFromGroup, addUsersToGroup, sendIcebreaker, acceptThread, declineRequest, requests } = useMockData();
     const { initiateCall } = useCall();
 
     const [currentThreadId, setCurrentThreadId] = useState<string | null>(() => threadId);
@@ -1343,7 +1343,20 @@ export default function ChatThreadView({ threadId, onClose }: { threadId: string
     // Marketplace item associated with this chat thread
     const marketplaceItem = useMemo(() => {
         if (!thread) return null;
-        for (const m of thread.messages || []) {
+        if ((thread as any).marketplaceItemId) {
+            const found = (marketplaceItems || []).find(i => i.id === (thread as any).marketplaceItemId);
+            if (found) return found;
+        }
+        if (thread.id.startsWith("mkt_")) {
+            const parts = thread.id.split("_");
+            if (parts.length >= 4) {
+                const potentialItemId = parts.slice(3).join("_");
+                const found = (marketplaceItems || []).find(i => i.id === potentialItemId);
+                if (found) return found;
+            }
+        }
+        const reversedMessages = [...(thread.messages || [])].reverse();
+        for (const m of reversedMessages) {
             if (m.replyTo?.id) {
                 const found = (marketplaceItems || []).find(i => i.id === m.replyTo?.id);
                 if (found) return found;
@@ -1373,8 +1386,20 @@ export default function ChatThreadView({ threadId, onClose }: { threadId: string
         return (marketplaceItems || []).filter(i => i.sellerId === sid || (marketplaceItem?.sellerName && i.sellerName?.toLowerCase() === marketplaceItem.sellerName.toLowerCase()));
     }, [marketplaceItem, thread?.user?.id, marketplaceItems]);
 
+    const isCurrentUserSeller = !!(marketplaceItem && (
+        currentUser?.id === marketplaceItem.sellerId || 
+        marketplaceItem.sellerId === "me" ||
+        (currentUser?.name && marketplaceItem.sellerName?.toLowerCase() === currentUser.name.toLowerCase())
+    ));
+    const [showSellerStatusMenu, setShowSellerStatusMenu] = useState(false);
+
     const [selectedMarketplaceItem, setSelectedMarketplaceItem] = useState<MarketplaceItem | null>(null);
     const [closingMarketplaceItem, setClosingMarketplaceItem] = useState<MarketplaceItem | null>(null);
+
+    const liveSelectedMarketplaceItem = useMemo(() => {
+        if (!selectedMarketplaceItem) return null;
+        return (marketplaceItems || []).find(i => i.id === selectedMarketplaceItem.id) || selectedMarketplaceItem;
+    }, [selectedMarketplaceItem, marketplaceItems]);
 
     const handleCloseMarketplaceItem = () => {
         if (!selectedMarketplaceItem || closingMarketplaceItem) {
@@ -3544,14 +3569,19 @@ export default function ChatThreadView({ threadId, onClose }: { threadId: string
             {isFromMarketplace && marketplaceItem && (
                 <div
                     onClick={() => setSelectedMarketplaceItem(marketplaceItem)}
-                    className="px-3.5 py-2.5 bg-gray-50/95 dark:bg-zinc-900/95 border-b border-[var(--border)] dark:border-zinc-800 flex items-center justify-between gap-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-zinc-850 transition-colors shrink-0 shadow-xs z-20"
+                    className="px-3.5 py-2.5 bg-gray-50/95 dark:bg-zinc-900/95 border-b border-[var(--border)] dark:border-zinc-800 flex items-center justify-between gap-3 cursor-pointer hover:bg-gray-100/80 dark:hover:bg-zinc-850/80 transition-colors shrink-0 shadow-xs z-20 relative"
                 >
                     <div className="flex items-center gap-3 min-w-0 flex-1">
-                        <div className="w-11 h-11 rounded-xl overflow-hidden bg-zinc-200 dark:bg-zinc-800 shrink-0 border border-gray-200 dark:border-zinc-700 flex items-center justify-center">
+                        <div className="w-11 h-11 rounded-xl overflow-hidden bg-zinc-200 dark:bg-zinc-800 shrink-0 border border-gray-200 dark:border-zinc-700 flex items-center justify-center relative shadow-2xs">
                             {marketplaceItem.images?.[0] ? (
                                 <img src={marketplaceItem.images[0]} alt={marketplaceItem.title} className="w-full h-full object-cover" />
                             ) : (
                                 <ShoppingBag size={18} className="text-gray-400" />
+                            )}
+                            {marketplaceItem.status === "sold" && (
+                                <div className="absolute inset-0 bg-black/60 backdrop-blur-[0.5px] flex items-center justify-center">
+                                    <span className="text-[9px] font-black text-white uppercase tracking-wider">SOLD</span>
+                                </div>
                             )}
                         </div>
                         <div className="min-w-0 flex-1">
@@ -3559,33 +3589,155 @@ export default function ChatThreadView({ threadId, onClose }: { threadId: string
                                 <span className="text-[10px] font-bold text-gray-500 dark:text-zinc-400 uppercase tracking-wider">
                                     Marketplace listing
                                 </span>
-                                <span className={clsx(
-                                    "text-[10px] font-bold px-1.5 py-0.2 rounded-full leading-tight",
-                                    marketplaceItem.status === "sold" ? "bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-400" : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400"
-                                )}>
-                                    {marketplaceItem.status === "sold" ? "Sold" : "Available"}
-                                </span>
                             </div>
                             <h4 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white truncate">
                                 {marketplaceItem.title}
                             </h4>
-                            <p className="text-[11px] text-[var(--primary)] font-semibold truncate">
+                            <p className={clsx(
+                                "text-[11px] font-semibold truncate",
+                                marketplaceItem.status === "sold"
+                                    ? "text-gray-400 dark:text-zinc-500 line-through"
+                                    : "text-[var(--primary)]"
+                            )}>
                                 {marketplaceItem.price === 0 ? "FREE" : `$${marketplaceItem.price.toLocaleString()}`}
                             </p>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-1 shrink-0">
+                    <div className="flex items-center gap-1.5 shrink-0 relative">
+                        {/* Status / View button with backlight glow */}
                         <button
                             type="button"
                             onClick={(e) => {
                                 e.stopPropagation();
-                                setSelectedMarketplaceItem(marketplaceItem);
+                                if (isCurrentUserSeller) {
+                                    setShowSellerStatusMenu(prev => !prev);
+                                } else {
+                                    setSelectedMarketplaceItem(marketplaceItem);
+                                }
                             }}
-                            className="text-xs font-bold text-[var(--primary)] hover:bg-blue-50 dark:hover:bg-blue-950/60 px-3 py-1.5 rounded-xl border border-blue-200 dark:border-blue-900/50 transition-colors flex items-center gap-1 cursor-pointer"
+                            className={clsx(
+                                "text-xs font-bold px-3 py-1.5 rounded-xl border transition-all duration-200 flex items-center gap-1.5 cursor-pointer shadow-xs",
+                                marketplaceItem.status === "sold"
+                                    ? "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/40 hover:bg-red-500/20 shadow-[0_0_12px_rgba(239,68,68,0.22)] dark:shadow-[0_0_14px_rgba(239,68,68,0.35)]"
+                                    : (marketplaceItem.status === "pending" || marketplaceItem.status === "reserved")
+                                    ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/40 hover:bg-amber-500/20 shadow-[0_0_12px_rgba(245,158,11,0.25)] dark:shadow-[0_0_14px_rgba(245,158,11,0.35)]"
+                                    : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/40 hover:bg-emerald-500/20 shadow-[0_0_12px_rgba(16,185,129,0.22)] dark:shadow-[0_0_14px_rgba(16,185,129,0.35)]"
+                            )}
+                            title={isCurrentUserSeller ? "Click to manage status" : "Click to view listing details"}
                         >
-                            <span>View Item</span>
+                            {marketplaceItem.status === "sold" ? (
+                                <>
+                                    <span className="w-2 h-2 rounded-full bg-red-500 shrink-0 shadow-[0_0_6px_rgba(239,68,68,0.9)]" />
+                                    <span>Sold</span>
+                                </>
+                            ) : (marketplaceItem.status === "pending" || marketplaceItem.status === "reserved") ? (
+                                <>
+                                    <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0 animate-pulse shadow-[0_0_6px_rgba(245,158,11,0.9)]" />
+                                    <span>Pending</span>
+                                </>
+                            ) : (
+                                <>
+                                    <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0 shadow-[0_0_6px_rgba(16,185,129,0.9)]" />
+                                    <span>Available</span>
+                                </>
+                            )}
+                            <ChevronRight size={13} className="opacity-60 -mr-0.5 shrink-0" />
                         </button>
+
+                        {/* Seller Quick Status Popover */}
+                        {isCurrentUserSeller && showSellerStatusMenu && (
+                            <>
+                                <div 
+                                    className="fixed inset-0 z-40" 
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setShowSellerStatusMenu(false);
+                                    }} 
+                                />
+                                <div 
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-zinc-900 rounded-2xl shadow-xl border border-gray-200 dark:border-zinc-800 p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150"
+                                >
+                                    <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-zinc-500">
+                                        Update Status
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            updateMarketplaceListing(marketplaceItem.id, { status: "active" });
+                                            setShowSellerStatusMenu(false);
+                                        }}
+                                        className={clsx(
+                                            "w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer",
+                                            marketplaceItem.status === "active" || !marketplaceItem.status
+                                                ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400"
+                                                : "hover:bg-gray-100 dark:hover:bg-zinc-850 text-gray-700 dark:text-zinc-300"
+                                        )}
+                                    >
+                                        <span className="flex items-center gap-2">
+                                            <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.8)]" />
+                                            Available
+                                        </span>
+                                        {(marketplaceItem.status === "active" || !marketplaceItem.status) && <Check size={14} className="text-emerald-600" />}
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            updateMarketplaceListing(marketplaceItem.id, { status: "pending" });
+                                            setShowSellerStatusMenu(false);
+                                        }}
+                                        className={clsx(
+                                            "w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer",
+                                            marketplaceItem.status === "pending" || marketplaceItem.status === "reserved"
+                                                ? "bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400"
+                                                : "hover:bg-gray-100 dark:hover:bg-zinc-850 text-gray-700 dark:text-zinc-300"
+                                        )}
+                                    >
+                                        <span className="flex items-center gap-2">
+                                            <span className="w-2 h-2 rounded-full bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.8)]" />
+                                            Pending
+                                        </span>
+                                        {(marketplaceItem.status === "pending" || marketplaceItem.status === "reserved") && <Check size={14} className="text-amber-600" />}
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            updateMarketplaceListing(marketplaceItem.id, { status: "sold" });
+                                            setShowSellerStatusMenu(false);
+                                        }}
+                                        className={clsx(
+                                            "w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer",
+                                            marketplaceItem.status === "sold"
+                                                ? "bg-red-50 text-red-700 dark:bg-red-950/50 dark:text-red-400"
+                                                : "hover:bg-gray-100 dark:hover:bg-zinc-850 text-gray-700 dark:text-zinc-300"
+                                        )}
+                                    >
+                                        <span className="flex items-center gap-2">
+                                            <span className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.8)]" />
+                                            Sold
+                                        </span>
+                                        {marketplaceItem.status === "sold" && <Check size={14} className="text-red-600" />}
+                                    </button>
+
+                                    <div className="my-1 border-t border-gray-100 dark:border-zinc-800" />
+
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setShowSellerStatusMenu(false);
+                                            setSelectedMarketplaceItem(marketplaceItem);
+                                        }}
+                                        className="w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-semibold text-gray-600 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-850 transition-colors cursor-pointer"
+                                    >
+                                        <span>View Listing Details</span>
+                                        <ChevronRight size={13} className="opacity-50" />
+                                    </button>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
             )}
@@ -5788,9 +5940,9 @@ export default function ChatThreadView({ threadId, onClose }: { threadId: string
              {(selectedMarketplaceItem || closingMarketplaceItem) && (
                  <ItemDetailModal
                      mode="modal"
-                     item={selectedMarketplaceItem || closingMarketplaceItem!}
+                     item={liveSelectedMarketplaceItem || closingMarketplaceItem!}
                      isClosing={!!closingMarketplaceItem}
-                     feedItems={[selectedMarketplaceItem || closingMarketplaceItem!]}
+                     feedItems={[liveSelectedMarketplaceItem || closingMarketplaceItem!]}
                      onClose={handleCloseMarketplaceItem}
                      onOpenStore={(sellerId, sellerName) => {
                          setSelectedMarketplaceItem(null);
