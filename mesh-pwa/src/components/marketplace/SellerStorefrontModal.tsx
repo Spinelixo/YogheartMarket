@@ -701,7 +701,7 @@ export function SellerStorefrontModal({
                   }}
                 />
               ) : filteredStoreItems.length === 0 ? (
-                <div className="py-12 text-center space-y-2 bg-gray-50 dark:bg-zinc-900/50 rounded-2xl border border-dashed border-gray-200 dark:border-zinc-800">
+                <div className="py-12 text-center space-y-2 bg-gray-50/40 dark:bg-zinc-900/30 rounded-2xl border border-dashed border-gray-200/60 dark:border-zinc-800">
                   {statusTab === "saved" ? (
                     <Bookmark size={32} className="mx-auto text-rose-400 dark:text-rose-600" />
                   ) : (
@@ -717,8 +717,8 @@ export function SellerStorefrontModal({
                   </p>
                 </div>
               ) : (
-                <div className="bg-white dark:bg-zinc-900 rounded-3xl overflow-hidden border border-gray-200/90 dark:border-zinc-800 shadow-xs pt-0">
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-px bg-gray-200/90 dark:bg-zinc-800">
+                <div className="bg-white dark:bg-zinc-900 rounded-3xl overflow-hidden border border-gray-100 dark:border-zinc-800 shadow-xs pt-0">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 bg-white dark:bg-zinc-900">
                     {filteredStoreItems.map((item) => {
                       const coverImg =
                         item.images && item.images.length > 0
@@ -729,7 +729,7 @@ export function SellerStorefrontModal({
                         <div
                           key={item.id}
                           onClick={() => setSelectedItem(item)}
-                          className="group bg-white dark:bg-zinc-900 hover:bg-gray-50/80 dark:hover:bg-zinc-800/60 transition-colors flex flex-col cursor-pointer relative"
+                          className="group bg-white dark:bg-zinc-900 hover:bg-gray-50/80 dark:hover:bg-zinc-800/60 transition-colors flex flex-col cursor-pointer relative border-b border-r border-gray-100 dark:border-zinc-800/80"
                         >
                         {/* Image & Badges */}
                         <div className="relative w-full aspect-square bg-zinc-100 dark:bg-zinc-800 overflow-hidden select-none">

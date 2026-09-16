@@ -680,7 +680,7 @@ export function StoreFeedView({ sellerUser, isMe, onOpenCreatePost }: StoreFeedV
     <div className="pt-1">
       {/* Grid of Feed Items */}
       {moodsList.length === 0 ? (
-        <div className="text-center py-12 px-4 bg-gray-50 dark:bg-zinc-900 rounded-3xl border border-gray-100 dark:border-zinc-800">
+        <div className="text-center py-12 px-4 bg-gray-50/40 dark:bg-zinc-900/30 rounded-3xl border border-gray-100/70 dark:border-zinc-800">
           <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-[var(--primary)] flex items-center justify-center">
             <Film size={26} />
           </div>

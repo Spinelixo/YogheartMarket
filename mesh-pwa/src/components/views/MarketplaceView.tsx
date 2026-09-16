@@ -632,8 +632,8 @@ export default function MarketplaceView() {
           <div className="flex-1 overflow-y-auto p-0 pb-28 lg:pb-6">
 
               {filteredItems.length > 0 ? (
-                <div className="bg-white dark:bg-zinc-900 rounded-none overflow-hidden border-b border-gray-200/90 dark:border-zinc-800">
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-px bg-gray-200/90 dark:bg-zinc-800">
+                <div className="bg-white dark:bg-zinc-900 rounded-none overflow-hidden border-b border-gray-100 dark:border-zinc-800/80">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 bg-white dark:bg-zinc-900">
                     {filteredItems.map((item) => {
                       const isSaved = currentUser ? item.savedBy?.includes(currentUser.id) : false;
                       const itemDist = calculateItemDistanceKm(item, currentUser?.location);
@@ -646,7 +646,7 @@ export default function MarketplaceView() {
                         <div
                           key={item.id}
                           onClick={() => setSelectedItem(item)}
-                          className="group bg-white dark:bg-zinc-900 hover:bg-gray-50/80 dark:hover:bg-zinc-800/60 transition-colors flex flex-col cursor-pointer relative"
+                          className="group bg-white dark:bg-zinc-900 hover:bg-gray-50/80 dark:hover:bg-zinc-800/60 transition-colors flex flex-col cursor-pointer relative border-b border-r border-gray-100 dark:border-zinc-800/80"
                         >
                         {/* Item Image & Action Buttons */}
                         <div className="relative w-full aspect-square bg-zinc-100 dark:bg-zinc-800 overflow-hidden select-none">

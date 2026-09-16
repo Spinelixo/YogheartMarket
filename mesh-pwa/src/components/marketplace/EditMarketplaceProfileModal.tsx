@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import {
   useMockData,
@@ -145,16 +145,25 @@ export function EditMarketplaceProfileModal({ onClose }: EditMarketplaceProfileM
     }
   };
 
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setIsMounted(true), 250);
+    return () => clearTimeout(t);
+  }, []);
+
   if (typeof document === "undefined") return null;
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[180] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-fade-in"
+      className="fixed inset-0 z-[180] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-fade-in overscroll-contain"
       onClick={onClose}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full sm:max-w-xl bg-white dark:bg-zinc-950 rounded-t-[32px] sm:rounded-3xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-gray-100 dark:border-zinc-800 animate-in slide-in-from-bottom duration-200"
+        className={clsx(
+          "w-full sm:max-w-xl bg-white dark:bg-zinc-950 rounded-t-[32px] sm:rounded-3xl max-h-[88dvh] sm:max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-gray-100 dark:border-zinc-800 overscroll-contain",
+          !isMounted && "animate-in slide-in-from-bottom duration-200"
+        )}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 shrink-0">
@@ -241,7 +250,7 @@ export function EditMarketplaceProfileModal({ onClose }: EditMarketplaceProfileM
               value={ownerName}
               onChange={(e) => setOwnerName(e.target.value)}
               placeholder="e.g. Ishimwe, Lionel"
-              className="w-full bg-gray-50 dark:bg-zinc-800/80 text-gray-900 dark:text-white px-4 py-3 rounded-2xl border border-gray-200 dark:border-zinc-700 focus:ring-2 focus:ring-[var(--primary)] outline-none text-sm font-semibold"
+              className="w-full bg-gray-50 dark:bg-zinc-800/80 text-gray-900 dark:text-white px-4 py-3 rounded-2xl border border-gray-200 dark:border-zinc-700 focus:ring-2 focus:ring-[var(--primary)] outline-none text-[16px] sm:text-sm font-semibold"
             />
             <p className="text-[11px] text-gray-500 dark:text-zinc-400 mt-1">
               Your personal name shown in chats, feed, and on your storefront as &quot;By {ownerName || "Name"}&quot;
@@ -258,7 +267,7 @@ export function EditMarketplaceProfileModal({ onClose }: EditMarketplaceProfileM
               value={storeName}
               onChange={(e) => setStoreName(e.target.value)}
               placeholder="e.g. Chef Lionel's Gourmet Kitchen, Maya's Flower Boutique"
-              className="w-full bg-gray-50 dark:bg-zinc-800/80 text-gray-900 dark:text-white px-4 py-3 rounded-2xl border border-gray-200 dark:border-zinc-700 focus:ring-2 focus:ring-[var(--primary)] outline-none text-sm font-semibold"
+              className="w-full bg-gray-50 dark:bg-zinc-800/80 text-gray-900 dark:text-white px-4 py-3 rounded-2xl border border-gray-200 dark:border-zinc-700 focus:ring-2 focus:ring-[var(--primary)] outline-none text-[16px] sm:text-sm font-semibold"
             />
           </div>
 
@@ -314,7 +323,7 @@ export function EditMarketplaceProfileModal({ onClose }: EditMarketplaceProfileM
               value={headline}
               onChange={(e) => setHeadline(e.target.value)}
               placeholder="e.g. Cooking home culinary meals fresh for less than restaurant prices!"
-              className="w-full bg-gray-50 dark:bg-zinc-800/80 text-gray-900 dark:text-white px-4 py-3 rounded-2xl border border-gray-200 dark:border-zinc-700 focus:ring-2 focus:ring-[var(--primary)] outline-none text-sm"
+              className="w-full bg-gray-50 dark:bg-zinc-800/80 text-gray-900 dark:text-white px-4 py-3 rounded-2xl border border-gray-200 dark:border-zinc-700 focus:ring-2 focus:ring-[var(--primary)] outline-none text-[16px] sm:text-sm"
             />
           </div>
 
@@ -331,7 +340,7 @@ export function EditMarketplaceProfileModal({ onClose }: EditMarketplaceProfileM
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   placeholder="e.g., Austin, TX"
-                  className="w-full bg-gray-50 dark:bg-zinc-800/80 text-gray-900 dark:text-white pl-9 pr-3 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-700 text-xs font-semibold outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                  className="w-full bg-gray-50 dark:bg-zinc-800/80 text-gray-900 dark:text-white pl-9 pr-3 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-700 text-[16px] sm:text-xs font-semibold outline-none focus:ring-2 focus:ring-[var(--primary)]"
                 />
               </div>
               <label className="flex items-center gap-2 mt-2 cursor-pointer select-none">
@@ -358,7 +367,7 @@ export function EditMarketplaceProfileModal({ onClose }: EditMarketplaceProfileM
                   value={businessHours}
                   onChange={(e) => setBusinessHours(e.target.value)}
                   placeholder="e.g., Daily 10 AM - 9 PM"
-                  className="w-full bg-gray-50 dark:bg-zinc-800/80 text-gray-900 dark:text-white pl-9 pr-3 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-700 text-xs font-semibold outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                  className="w-full bg-gray-50 dark:bg-zinc-800/80 text-gray-900 dark:text-white pl-9 pr-3 py-2.5 rounded-xl border border-gray-200 dark:border-zinc-700 text-[16px] sm:text-xs font-semibold outline-none focus:ring-2 focus:ring-[var(--primary)]"
                 />
               </div>
             </div>

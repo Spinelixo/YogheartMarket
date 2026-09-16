@@ -3313,7 +3313,7 @@ export default function ChatThreadView({ threadId, onClose }: { threadId: string
             <input ref={videoCameraInputRef} type="file" accept="video/*" capture="environment" className="hidden" onChange={handleVideoCameraCaptureUpload} />
 
             {/* Header */}
-            <header className="flex items-center justify-between px-3 md:px-4 py-3 border-b border-[var(--border)] dark:border-zinc-800 bg-white dark:bg-zinc-950 shrink-0 z-20">
+            <header className="flex items-center justify-between px-3 md:px-4 py-3 border-b border-[var(--border)] dark:border-zinc-800 bg-white dark:bg-zinc-950 shrink-0 relative z-30">
                 <div className="flex items-center gap-3">
                     <button 
                         onPointerDown={(e) => {
@@ -3471,7 +3471,7 @@ export default function ChatThreadView({ threadId, onClose }: { threadId: string
             {showMoreMenu && (
                 <>
                     <div className="fixed inset-0 z-40" onClick={() => setShowMoreMenu(false)} />
-                    <div className="absolute right-0 top-full mt-1 bg-white dark:bg-zinc-900 rounded-xl shadow-lg border border-[var(--border)] dark:border-zinc-800 py-2 min-w-[180px] z-50">
+                    <div className="absolute right-0 top-full mt-1 bg-white dark:bg-zinc-900 rounded-xl shadow-xl border border-[var(--border)] dark:border-zinc-800 py-2 min-w-[180px] z-50">
                         {!thread.isGroup && (
                             <button
                                 onClick={() => {
@@ -3569,7 +3569,7 @@ export default function ChatThreadView({ threadId, onClose }: { threadId: string
             {isFromMarketplace && marketplaceItem && (
                 <div
                     onClick={() => setSelectedMarketplaceItem(marketplaceItem)}
-                    className="px-3.5 py-2.5 bg-gray-50/95 dark:bg-zinc-900/95 border-b border-[var(--border)] dark:border-zinc-800 flex items-center justify-between gap-3 cursor-pointer hover:bg-gray-100/80 dark:hover:bg-zinc-850/80 transition-colors shrink-0 shadow-xs z-20 relative"
+                    className="px-3.5 py-2.5 bg-gray-50/95 dark:bg-zinc-900/95 border-b border-[var(--border)] dark:border-zinc-800 flex items-center justify-between gap-3 cursor-pointer hover:bg-gray-100/80 dark:hover:bg-zinc-850/80 transition-colors shrink-0 shadow-xs z-10 relative"
                 >
                     <div className="flex items-center gap-3 min-w-0 flex-1">
                         <div className="w-11 h-11 rounded-xl overflow-hidden bg-zinc-200 dark:bg-zinc-800 shrink-0 border border-gray-200 dark:border-zinc-700 flex items-center justify-center relative shadow-2xs">

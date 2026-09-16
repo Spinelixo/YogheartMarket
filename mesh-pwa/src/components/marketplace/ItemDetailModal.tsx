@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { MarketplaceItem, useMockData } from "@/context/MockContext";
 import {
   ArrowLeft,
   X,
-  Heart,
+  Bookmark,
   Share2,
   MapPin,
   Clock,
@@ -45,11 +45,12 @@ export function ItemDetailModal({
   onEdit,
   onOpenStore,
   mode = "page",
-  isClosing: externalIsClosing = false,
+  isClosing: externalIsClosing,
   hideSellerInfo = false
 }: ItemDetailModalProps) {
   const {
     currentUser,
+    marketplaceItems,
     allDatingUsers,
     suggestions,
     toggleSaveMarketplaceItem,
@@ -61,6 +62,17 @@ export function ItemDetailModal({
     setActiveThreadId,
     addNotification
   } = useMockData();
+
+  // Instant reactive saved checker linked to live marketplaceItems state
+  const isItemSaved = useCallback(
+    (targetId: string, fallbackSavedBy?: string[]) => {
+      if (!currentUser) return false;
+      const live = marketplaceItems.find((i) => i.id === targetId);
+      const list = live?.savedBy ?? fallbackSavedBy ?? [];
+      return list.includes(currentUser.id);
+    },
+    [currentUser, marketplaceItems]
+  );
 
   // Multi-item feed list starting with the tapped item (only for storefront feed)
   const orderedFeedItems = useMemo(() => {
@@ -225,7 +237,7 @@ export function ItemDetailModal({
   // Helper to render a single listing section in the feed
   const renderSingleListing = (curItem: MarketplaceItem, index: number) => {
     const isOwner = currentUser?.id === curItem.sellerId || curItem.sellerId === "me";
-    const isSaved = currentUser ? curItem.savedBy?.includes(currentUser.id) : false;
+    const isSaved = isItemSaved(curItem.id, curItem.savedBy);
     const activeImgIdx = activeImageIndexes[curItem.id] || 0;
     const curMessage = customMessages[curItem.id] ?? `Hi ${curItem.sellerName}, is this still available?`;
     const isSending = sendingStates[curItem.id] || false;
@@ -276,11 +288,11 @@ export function ItemDetailModal({
                 onClick={() => toggleSaveMarketplaceItem(curItem.id)}
                 className={clsx(
                   "w-8 h-8 rounded-full flex items-center justify-center shadow-xs cursor-pointer",
-                  isSaved ? "bg-rose-50 text-rose-500" : "bg-white dark:bg-zinc-800 text-gray-700 dark:text-zinc-200"
+                  isSaved ? "bg-rose-50 dark:bg-rose-950/40 text-rose-500" : "bg-white dark:bg-zinc-800 text-gray-700 dark:text-zinc-200"
                 )}
-                title={isSaved ? "Saved" : "Save"}
+                title={isSaved ? "Saved" : "Save Item"}
               >
-                <Heart size={15} className={clsx(isSaved && "fill-rose-500 text-rose-500")} />
+                <Bookmark size={15} className={clsx(isSaved ? "fill-rose-500 text-rose-500" : "text-gray-700 dark:text-zinc-200")} />
               </button>
             </div>
           </div>
@@ -762,7 +774,7 @@ export function ItemDetailModal({
   // MODE 1: POP-UP MODAL (Feed scrolling when clicked from within Seller's Storefront)
   // ═══════════════════════════════════════════════════════════════
   if (mode === "modal") {
-    const isSavedTop = currentUser ? item.savedBy?.includes(currentUser.id) : false;
+    const isSavedTop = isItemSaved(item.id, item.savedBy);
 
     return (
       <div
@@ -833,7 +845,7 @@ export function ItemDetailModal({
                     : "bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-200 hover:bg-gray-200 dark:hover:bg-zinc-700"
                 )}
               >
-                <Heart size={16} className={clsx(isSavedTop && "fill-rose-500 text-rose-500")} />
+                <Bookmark size={17} className={clsx(isSavedTop ? "fill-rose-500 text-rose-500" : "text-gray-700 dark:text-zinc-200")} />
               </button>
             </div>
           </div>
@@ -849,7 +861,7 @@ export function ItemDetailModal({
   // ═══════════════════════════════════════════════════════════════
   // MODE 2: FULL SLIDING PAGE (In Marketplace View)
   // ═══════════════════════════════════════════════════════════════
-  const isSavedMain = currentUser ? item.savedBy?.includes(currentUser.id) : false;
+  const isSavedMain = isItemSaved(item.id, item.savedBy);
 
   return (
     <div
@@ -909,7 +921,7 @@ export function ItemDetailModal({
                 : "bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-200 hover:bg-gray-200 dark:hover:bg-zinc-700"
             )}
           >
-            <Heart size={18} className={clsx(isSavedMain && "fill-rose-500 text-rose-500")} />
+            <Bookmark size={18} className={clsx(isSavedMain ? "fill-rose-500 text-rose-500" : "text-gray-700 dark:text-zinc-200")} />
           </button>
         </div>
       </header>
