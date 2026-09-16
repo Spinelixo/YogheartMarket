@@ -12,13 +12,7 @@ import ZoomedAvatarModal from "@/components/ZoomedAvatarModal";
 import { useCall } from "@/context/CallContext";
 import { triggerRipple } from "@/utils/ui";
 
-const MOCK_DEVICE_CONTACTS = [
-  { name: "Sarah Chen", phoneNumber: "+15551112222" },
-  { name: "Mike Johnson", phoneNumber: "+15553334444" },
-  { name: "Emma Davis", phoneNumber: "+15555556666" },
-  { name: "Alex Wong", phoneNumber: "+15557778888" },
-  { name: "Jessica Smith", phoneNumber: "+15559990000" }
-];
+const MOCK_DEVICE_CONTACTS: { name: string; phoneNumber: string }[] = [];
 
 export default function ChatsView() {
   const router = useRouter();
@@ -310,12 +304,7 @@ export default function ChatsView() {
 
   // Drawer Contacts Sync States
   const [showMockPicker, setShowMockPicker] = useState(false);
-  const [selectedMockContacts, setSelectedMockContacts] = useState<Record<string, boolean>>({
-    "+15551112222": true,
-    "+15552223333": true,
-    "+15553334444": true,
-    "+15555556666": true,
-  });
+  const [selectedMockContacts, setSelectedMockContacts] = useState<Record<string, boolean>>({});
   const [customMockName, setCustomMockName] = useState("");
   const [customMockPhone, setCustomMockPhone] = useState("");
 
@@ -412,8 +401,49 @@ export default function ChatsView() {
   }, [isPopupDragging]);
 
   const handleSyncContactsInDrawer = async () => {
-    const isCapacitor = typeof window !== "undefined" && (window as any).Capacitor;
-    const isSupported = typeof window !== "undefined" && 'contacts' in navigator && 'ContactsManager' in window && !isCapacitor;
+    const isCapacitor = typeof window !== "undefined" && !!(window as any).Capacitor;
+    if (isCapacitor) {
+      try {
+        const { Contacts } = await import("@capacitor-community/contacts");
+        let permission = await Contacts.checkPermissions();
+        if (permission.contacts !== "granted") {
+          permission = await Contacts.requestPermissions();
+        }
+        if (permission.contacts === "granted") {
+          const res = await Contacts.getContacts({
+            projection: {
+              name: true,
+              phones: true
+            }
+          });
+          if (res && res.contacts && res.contacts.length > 0) {
+            const contactsList = res.contacts.map((c: any) => {
+              const name = c.name?.display || [c.name?.given, c.name?.family].filter(Boolean).join(" ") || "Contact";
+              const phoneNumber = c.phones?.[0]?.number || "";
+              return { name, phoneNumber };
+            }).filter((c: any) => c.phoneNumber && c.phoneNumber.trim().length > 0);
+
+            if (contactsList.length > 0) {
+              await syncDeviceContacts(contactsList);
+              return;
+            } else {
+              addNotification("No contacts with phone numbers found on device");
+              return;
+            }
+          } else {
+            addNotification("No contacts found on device");
+            return;
+          }
+        } else {
+          addNotification("Contacts permission was not granted");
+          return;
+        }
+      } catch (err) {
+        console.error("Capacitor Contacts error in drawer:", err);
+      }
+    }
+
+    const isSupported = typeof window !== "undefined" && 'contacts' in navigator && 'ContactsManager' in window;
     if (isSupported) {
       try {
         const props = ['name', 'tel'];
@@ -431,7 +461,6 @@ export default function ChatsView() {
         }
       } catch (err: any /* eslint-disable-line @typescript-eslint/no-explicit-any */) {
         console.error("Contacts Picker error:", err);
-        addNotification("Native contacts picker not available. Opening manual contact syncing...");
         setShowMockPicker(true);
       }
     } else {
@@ -440,8 +469,7 @@ export default function ChatsView() {
   };
 
   const handleImportMockContacts = async () => {
-    const combinedMockList = [...MOCK_DEVICE_CONTACTS, ...customMockList];
-    const selectedList = combinedMockList.filter(c => selectedMockContacts[c.phoneNumber]);
+    const selectedList = customMockList.filter(c => selectedMockContacts[c.phoneNumber]);
     if (selectedList.length === 0) {
       addNotification("Please select at least one contact");
       return;
@@ -460,6 +488,26 @@ export default function ChatsView() {
     setCustomMockPhone("");
   };
 
+
+  const handleInviteContact = async (contact: { contactName: string; phoneNumber: string }) => {
+    setInviteSentPhone(contact.phoneNumber);
+    const inviteMessage = `Hey ${contact.contactName}! Connect with me on Yogheart: https://yogheartmarket.web.app`;
+    try {
+      if (typeof window !== "undefined" && !!(window as any).Capacitor) {
+        const { Share } = await import("@capacitor/share");
+        await Share.share({
+          title: "Join Yogheart",
+          text: inviteMessage,
+          dialogTitle: `Invite ${contact.contactName} to Yogheart`
+        });
+      } else {
+        window.open(`sms:${contact.phoneNumber}?body=${encodeURIComponent(inviteMessage)}`, "_blank");
+      }
+    } catch (_) {
+      window.open(`sms:${contact.phoneNumber}?body=${encodeURIComponent(inviteMessage)}`, "_blank");
+    }
+    setTimeout(() => setInviteSentPhone(null), 4000);
+  };
 
   const handleMatchedClick = async (user: User) => {
     setIsNewChatOpen(false);
@@ -510,10 +558,6 @@ export default function ChatsView() {
 
     const savedPhones = new Set<string>();
     (currentUser.localContacts || []).forEach(c => {
-      const p = norm(c.phoneNumber);
-      if (p) savedPhones.add(p);
-    });
-    MOCK_DEVICE_CONTACTS.forEach(c => {
       const p = norm(c.phoneNumber);
       if (p) savedPhones.add(p);
     });
@@ -1363,10 +1407,7 @@ export default function ChatsView() {
                                 </div>
                               </div>
                               <button
-                                onClick={() => {
-                                  setInviteSentPhone(u.phoneNumber);
-                                  setTimeout(() => setInviteSentPhone(null), 3000);
-                                }}
+                                onClick={() => handleInviteContact(u)}
                                 disabled={isInvited}
                                 className={clsx(
                                   "px-3 py-1.5 text-xs font-bold rounded-full transition-all shrink-0",
@@ -2372,44 +2413,50 @@ export default function ChatsView() {
 
             {/* Checklist */}
             <div className="flex-1 overflow-y-auto p-4 space-y-2">
-              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-1">Selectable Device Contacts</p>
-              <div className="space-y-1">
-                {[...MOCK_DEVICE_CONTACTS, ...customMockList].map((contact, index) => {
-                  const isSelected = !!selectedMockContacts[contact.phoneNumber];
-                  const isDatabaseMatch = ["+15551112222", "+15552223333", "+15553334444"].includes(contact.phoneNumber);
-                  
-                  return (
-                    <div
-                      key={index}
-                      onClick={() => setSelectedMockContacts(prev => ({ ...prev, [contact.phoneNumber]: !isSelected }))}
-                      className={clsx(
-                        "flex items-center justify-between p-3 rounded-xl cursor-pointer border transition-all",
-                        isSelected 
-                          ? "bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800/40" 
-                          : "bg-white dark:bg-zinc-950 border-gray-150 dark:border-gray-800"
-                      )}
-                    >
-                      <div className="min-w-0 flex items-center gap-3">
-                        <div className={clsx(
-                          "w-4 h-4 rounded flex items-center justify-center border transition-all shrink-0",
-                          isSelected ? "bg-blue-500 border-blue-500 text-white" : "border-gray-300 dark:border-gray-700 bg-white dark:bg-transparent"
-                        )}>
-                          {isSelected && <Check size={11} strokeWidth={3} />}
-                        </div>
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold text-xs text-gray-900 dark:text-white truncate">{contact.name}</span>
-                            {isDatabaseMatch && (
-                              <span className="text-[8px] font-bold bg-emerald-500/10 text-emerald-500 px-1 py-0.5 rounded uppercase tracking-wide">On Yogheart (Seed)</span>
-                            )}
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-1">Added Contacts</p>
+              {customMockList.length > 0 ? (
+                <div className="space-y-1">
+                  {customMockList.map((contact, index) => {
+                    const isSelected = !!selectedMockContacts[contact.phoneNumber];
+                    const isDatabaseMatch = (allDatingUsers || []).some(u => u.phoneNumber && normalizePhone(u.phoneNumber) === normalizePhone(contact.phoneNumber));
+                    
+                    return (
+                      <div
+                        key={index}
+                        onClick={() => setSelectedMockContacts(prev => ({ ...prev, [contact.phoneNumber]: !isSelected }))}
+                        className={clsx(
+                          "flex items-center justify-between p-3 rounded-xl cursor-pointer border transition-all",
+                          isSelected 
+                            ? "bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800/40" 
+                            : "bg-white dark:bg-zinc-950 border-gray-150 dark:border-gray-800"
+                        )}
+                      >
+                        <div className="min-w-0 flex items-center gap-3">
+                          <div className={clsx(
+                            "w-4 h-4 rounded flex items-center justify-center border transition-all shrink-0",
+                            isSelected ? "bg-blue-500 border-blue-500 text-white" : "border-gray-300 dark:border-gray-700 bg-white dark:bg-transparent"
+                          )}>
+                            {isSelected && <Check size={11} strokeWidth={3} />}
                           </div>
-                          <span className="text-[10px] text-gray-400 dark:text-gray-500">{contact.phoneNumber}</span>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-xs text-gray-900 dark:text-white truncate">{contact.name}</span>
+                              {isDatabaseMatch && (
+                                <span className="text-[8px] font-bold bg-emerald-500/10 text-emerald-500 px-1 py-0.5 rounded uppercase tracking-wide">On Yogheart</span>
+                              )}
+                            </div>
+                            <span className="text-[10px] text-gray-400 dark:text-gray-500">{contact.phoneNumber}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="p-4 text-center text-xs text-gray-400 dark:text-gray-500">
+                  No contacts entered yet. Type a name and phone number above, then click + Add.
+                </div>
+              )}
             </div>
 
             {/* Footer */}

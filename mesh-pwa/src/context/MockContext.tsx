@@ -574,351 +574,16 @@ const INITIAL_USER: User = {
     avatar: null,
     photos: [],
     settings: DEFAULT_SETTINGS,
-    phoneNumber: "+15550001234",
-    savedContactIds: ["demo_maya", "demo_lucas", "demo_elena"],
+    phoneNumber: "",
+    savedContactIds: [],
     isBoosted: false,
 };
 
-const DEFAULT_DATING_PROFILES: User[] = [
-    {
-        id: "demo_maya",
-        name: "Maya Chen",
-        age: 24,
-        bio: "Coffee enthusiast, vintage thrifter, and weekend ceramicist. Let's trade favorite playlists or discover secret pastry spots 🥐☕",
-        color: "bg-amber-200",
-        interests: ["Fashion", "Design", "Art", "Coffee", "Thrifting", "Travel"],
-        avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop&q=80",
-        photos: [
-            "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80",
-            "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800&auto=format&fit=crop&q=80",
-            "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=800&auto=format&fit=crop&q=80"
-        ],
-        settings: DEFAULT_SETTINGS,
-        phoneNumber: "+15551112222",
-        location: "Toronto, ON",
-        relationshipGoal: "Long-term relationship",
-        jobTitle: "Fashion Designer & Stylist",
-        company: "Studio Chen",
-        education: "Ryerson University",
-        onboardingComplete: true,
-        isBoosted: false
-    },
-    {
-        id: "demo_lucas",
-        name: "Lucas Vance",
-        age: 27,
-        bio: "Rock climbing, indie rock concerts, and perfecting homemade sourdough. Looking for someone to join midnight gelato runs 🧗‍♂️🍦",
-        color: "bg-blue-200",
-        interests: ["Bouldering", "Indie Music", "Cooking", "Outdoors", "Tech", "Running"],
-        avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=500&auto=format&fit=crop&q=80",
-        photos: [
-            "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800&auto=format&fit=crop&q=80",
-            "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=800&auto=format&fit=crop&q=80",
-            "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=800&auto=format&fit=crop&q=80"
-        ],
-        settings: DEFAULT_SETTINGS,
-        phoneNumber: "+15553334444",
-        location: "Montreal, QC",
-        relationshipGoal: "Dating & Romance",
-        jobTitle: "Software Engineer",
-        company: "Vance Interactive",
-        education: "McGill University",
-        onboardingComplete: true,
-        isBoosted: true,
-        boostUntil: new Date(Date.now() + 86400000).toISOString()
-    },
-    {
-        id: "demo_elena",
-        name: "Elena Rostova",
-        age: 25,
-        bio: "Film cameras, modern architecture, and scenic coastal road trips. Tell me about the best meal you've ever had in your life 📸🌊",
-        color: "bg-rose-200",
-        interests: ["Photography", "Architecture", "Road Trips", "Wine", "Museums", "Yoga"],
-        avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=500&auto=format&fit=crop&q=80",
-        photos: [
-            "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&auto=format&fit=crop&q=80",
-            "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=800&auto=format&fit=crop&q=80",
-            "https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=800&auto=format&fit=crop&q=80"
-        ],
-        settings: DEFAULT_SETTINGS,
-        phoneNumber: "+15555556666",
-        location: "Vancouver, BC",
-        relationshipGoal: "Looking for Love",
-        jobTitle: "Architectural Designer",
-        company: "Pacific Modern Studio",
-        education: "UBC",
-        onboardingComplete: true,
-        isBoosted: false
-    },
-    {
-        id: "demo_chloe",
-        name: "Chloe Davis",
-        age: 23,
-        bio: "Baking fresh sourdough & croissants by morning, park walks with my golden retriever by afternoon. Matcha over coffee any day 🐶🥐",
-        color: "bg-emerald-200",
-        interests: ["Baking", "Dogs", "Matcha", "Fitness", "Nature", "Cinema"],
-        avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=500&auto=format&fit=crop&q=80",
-        photos: [
-            "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800&auto=format&fit=crop&q=80",
-            "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=80",
-            "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=800&auto=format&fit=crop&q=80"
-        ],
-        settings: DEFAULT_SETTINGS,
-        phoneNumber: "+15557778888",
-        location: "New York, NY",
-        relationshipGoal: "Serious Relationship",
-        jobTitle: "Head Pastry Chef",
-        company: "L'Aroma Bakery",
-        education: "Culinary Institute",
-        onboardingComplete: true,
-        isBoosted: false
-    },
-    {
-        id: "demo_jordan",
-        name: "Jordan Miller",
-        age: 26,
-        bio: "Late-night studio sessions, vinyl collecting, and rooftop sunset views. Let me make you a personalized Spotify mixtape 🎧✨",
-        color: "bg-purple-200",
-        interests: ["Music", "Vinyl", "Audio", "Concerts", "Urban Exploring"],
-        avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=500&auto=format&fit=crop&q=80",
-        photos: [
-            "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=800&auto=format&fit=crop&q=80",
-            "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&auto=format&fit=crop&q=80",
-            "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800&auto=format&fit=crop&q=80"
-        ],
-        settings: DEFAULT_SETTINGS,
-        phoneNumber: "+15559990000",
-        location: "Chicago, IL",
-        relationshipGoal: "Dating & Fun",
-        jobTitle: "Music Producer",
-        company: "Echo Soundworks",
-        education: "Columbia College",
-        onboardingComplete: true,
-        isBoosted: false
-    },
-    {
-        id: "demo_sophia",
-        name: "Sophia Rossi",
-        age: 24,
-        bio: "Mid-century modern obsessed, espresso martini lover, always planning my next weekend getaway. Looking for someone who doesn't take life too seriously ✈️🍸",
-        color: "bg-teal-200",
-        interests: ["Design", "Travel", "Cocktails", "Pilates", "Cuisine", "Sailing"],
-        avatar: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=500&auto=format&fit=crop&q=80",
-        photos: [
-            "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=800&auto=format&fit=crop&q=80",
-            "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&auto=format&fit=crop&q=80",
-            "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800&auto=format&fit=crop&q=80"
-        ],
-        settings: DEFAULT_SETTINGS,
-        phoneNumber: "+15552223333",
-        location: "Los Angeles, CA",
-        relationshipGoal: "Long-term relationship",
-        jobTitle: "Interior Designer",
-        company: "Rossi & Co Design",
-        education: "USC",
-        onboardingComplete: true,
-        isBoosted: true,
-        boostUntil: new Date(Date.now() + 86400000).toISOString()
-    }
-];
+const DEFAULT_DATING_PROFILES: User[] = [];
 
-const INITIAL_MARKETPLACE_ITEMS: MarketplaceItem[] = [
-    {
-        id: "item_demo_1",
-        sellerId: "demo_maya",
-        sellerName: "Maya Chen",
-        sellerAvatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop&q=80",
-        sellerColor: "bg-amber-200",
-        sellerLocation: "Toronto, ON",
-        title: "Handmade Ceramic Matcha Bowl & Whisk",
-        price: 38,
-        category: "Home & Living",
-        condition: "Brand New",
-        description: "Wheel-thrown speckled stoneware matcha chawan with bamboo whisk. Never used, beautiful earthy glaze.",
-        images: ["https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?auto=format&fit=crop&w=600&q=80"],
-        location: "Toronto, ON",
-        status: "active",
-        createdAt: new Date().toISOString(),
-        savedBy: [],
-        viewsCount: 14
-    },
-    {
-        id: "item_demo_2",
-        sellerId: "demo_lucas",
-        sellerName: "Lucas Vance",
-        sellerAvatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=500&auto=format&fit=crop&q=80",
-        sellerColor: "bg-blue-200",
-        sellerLocation: "Montreal, QC",
-        title: "Fuji X-T30 Mirrorless Camera + 18-55mm Lens",
-        price: 850,
-        category: "Electronics",
-        condition: "Like New",
-        description: "In pristine condition with original box, strap, and 2 spare batteries. Low shutter count.",
-        images: ["https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=600&q=80"],
-        location: "Montreal, QC",
-        status: "active",
-        createdAt: new Date(Date.now() - 3600000 * 2).toISOString(),
-        savedBy: [],
-        viewsCount: 32
-    },
-    {
-        id: "item_demo_3",
-        sellerId: "demo_elena",
-        sellerName: "Elena Rostova",
-        sellerAvatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=500&auto=format&fit=crop&q=80",
-        sellerColor: "bg-rose-200",
-        sellerLocation: "Vancouver, BC",
-        title: "Mid-Century Modern Teak Coffee Table",
-        price: 195,
-        category: "Furniture",
-        condition: "Good",
-        description: "Authentic vintage 1960s Danish teak coffee table. Solid wood, slight patina on edge but structurally rock solid.",
-        images: ["https://images.unsplash.com/photo-1533090161767-e6ffed986c88?auto=format&fit=crop&w=600&q=80"],
-        location: "Vancouver, BC",
-        status: "active",
-        createdAt: new Date(Date.now() - 3600000 * 5).toISOString(),
-        savedBy: [],
-        viewsCount: 27
-    }
-];
-const INITIAL_RIDES: Ride[] = [
-    {
-        id: "ride_1",
-        driverId: "driver_sarah",
-        driverName: "Sarah Jenkins",
-        driverAvatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80",
-        driverColor: "bg-emerald-200",
-        driverRating: 4.9,
-        driverRatingsCount: 54,
-        driverIsVerified: true,
-        origin: "Montreal, QC (Berri-UQAM)",
-        originCity: "Montreal",
-        destination: "Toronto, ON (Union Station)",
-        destinationCity: "Toronto",
-        departureTime: new Date(Date.now() + 4 * 3600000).toISOString(),
-        estimatedDurationHours: 5.5,
-        price: 45,
-        totalSeats: 4,
-        availableSeats: 3,
-        vehicle: {
-            make: "Toyota",
-            model: "RAV4 Hybrid",
-            year: 2023,
-            color: "Midnight Blue",
-            plate: "E53 XYZ",
-            features: ["WiFi", "AC", "Pets Allowed", "No Smoking", "USB Chargers"]
-        },
-        description: "Heading to Toronto for the weekend. Have plenty of room in the trunk for luggage. Can do drop-offs along Hwy 401 near Kingston.",
-        status: "scheduled",
-        pickupLocationNote: "Metro Berri-UQAM main entrance on Ste-Catherine",
-        dropoffLocationNote: "Toronto Union Station Front St. drop-off",
-        bookings: [],
-        savedBy: [],
-        createdAt: new Date().toISOString()
-    },
-    {
-        id: "ride_2",
-        driverId: "driver_marc",
-        driverName: "Marc-Antoine Roy",
-        driverAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80",
-        driverColor: "bg-blue-200",
-        driverRating: 4.8,
-        driverRatingsCount: 112,
-        driverIsVerified: true,
-        origin: "Boston, MA (Back Bay)",
-        originCity: "Boston",
-        destination: "New York, NY (Penn Station)",
-        destinationCity: "New York",
-        departureTime: new Date(Date.now() + 18 * 3600000).toISOString(),
-        estimatedDurationHours: 4.0,
-        price: 35,
-        totalSeats: 3,
-        availableSeats: 2,
-        vehicle: {
-            make: "Tesla",
-            model: "Model 3",
-            year: 2022,
-            color: "Solid Pearl White",
-            plate: "ELC 4821",
-            features: ["AC", "No Smoking", "No Pets", "Device Charging", "Quiet Ride"]
-        },
-        description: "Direct drive from Boston to Manhattan. Super smooth electric ride, clean passenger space. 1 standard carry-on per passenger.",
-        status: "scheduled",
-        pickupLocationNote: "Boston Back Bay Station entrance",
-        dropoffLocationNote: "Manhattan 34th St / Penn Station",
-        bookings: [],
-        savedBy: [],
-        createdAt: new Date().toISOString()
-    },
-    {
-        id: "ride_3",
-        driverId: "driver_chloe",
-        driverName: "Chloe Chen",
-        driverAvatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=150&q=80",
-        driverColor: "bg-purple-200",
-        driverRating: 4.7,
-        driverRatingsCount: 29,
-        driverIsVerified: true,
-        origin: "Vancouver, BC (Commercial-Broadway)",
-        originCity: "Vancouver",
-        destination: "Seattle, WA (Downtown / Westlake)",
-        destinationCity: "Seattle",
-        departureTime: new Date(Date.now() + 28 * 3600000).toISOString(),
-        estimatedDurationHours: 3.5,
-        price: 28,
-        totalSeats: 4,
-        availableSeats: 4,
-        vehicle: {
-            make: "Subaru",
-            model: "Crosstrek",
-            year: 2021,
-            color: "Desert Khaki",
-            plate: "BC-992-X",
-            features: ["Luggage Rack", "AC", "Winter Tires", "Music Control"]
-        },
-        description: "Driving down to Seattle. Please ensure you have your passport ready for border crossing! Happy to share good indie music.",
-        status: "scheduled",
-        pickupLocationNote: "Commercial-Broadway Station Safeway parking",
-        dropoffLocationNote: "Westlake Center 4th Ave entrance",
-        bookings: [],
-        savedBy: [],
-        createdAt: new Date().toISOString()
-    },
-    {
-        id: "ride_4",
-        driverId: "driver_alex",
-        driverName: "Alexandre Tremblay",
-        driverAvatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80",
-        driverColor: "bg-amber-200",
-        driverRating: 5.0,
-        driverRatingsCount: 41,
-        driverIsVerified: true,
-        origin: "Ottawa, ON (Bayshore)",
-        originCity: "Ottawa",
-        destination: "Montreal, QC (Vendôme)",
-        destinationCity: "Montreal",
-        departureTime: new Date(Date.now() + 8 * 3600000).toISOString(),
-        estimatedDurationHours: 2.2,
-        price: 24,
-        totalSeats: 3,
-        availableSeats: 2,
-        vehicle: {
-            make: "Honda",
-            model: "Civic Touring",
-            year: 2024,
-            color: "Sonic Gray",
-            plate: "OTT 7182",
-            features: ["AC", "Heated Seats", "No Smoking", "USB-C Charging"]
-        },
-        description: "Daily commuter trip from Ottawa to Montreal. Fast, punctual, drop-off near Metro Vendôme.",
-        status: "scheduled",
-        pickupLocationNote: "Bayshore Shopping Centre Transitway",
-        dropoffLocationNote: "Metro Vendôme / Westmount",
-        bookings: [],
-        savedBy: [],
-        createdAt: new Date().toISOString()
-    }
-];
+const INITIAL_MARKETPLACE_ITEMS: MarketplaceItem[] = [];
+
+const INITIAL_RIDES: Ride[] = [];
 
 
 
@@ -2084,7 +1749,7 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
 
     // Expose suggestions using our multi-signal Recommendation Engine
     const suggestions = useMemo(() => {
-        if (!currentUser) return DEFAULT_DATING_PROFILES;
+        if (!currentUser) return [];
         const pool = [...allDatingUsers];
 
         const filtered = pool.filter(u => {
@@ -2098,23 +1763,8 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
             return true;
         });
 
-        // Supplement with DEFAULT_DATING_PROFILES if needed
-        const combined = [...filtered];
-        const existingIds = new Set(combined.map(u => u.id));
-
-        DEFAULT_DATING_PROFILES.forEach(profile => {
-            if (
-                profile.id !== currentUserId &&
-                profile.id !== currentUser?.id &&
-                !existingIds.has(profile.id) &&
-                !currentUser?.blockedUserIds?.includes(profile.id)
-            ) {
-                combined.push(profile);
-            }
-        });
-
         // Run multi-signal ranking pipeline (Elo compatibility, semantic similarity, activity decay, cold-start)
-        const rankedResults = rankCandidates(currentUser as any, combined as any);
+        const rankedResults = rankCandidates(currentUser as any, filtered as any);
         return rankedResults.map(r => r.user as User);
     }, [allDatingUsers, currentUserId, currentUser, threadsList, requestsList]);
 
@@ -3962,10 +3612,14 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
     const syncDeviceContacts = async (contactsList: { name: string; phoneNumber: string }[]) => {
         if (!currentUserId) return;
         try {
+            setCurrentUser(prev => ({
+                ...prev,
+                localContacts: contactsList
+            }));
             await updateDoc(doc(db, "users", currentUserId), {
                 localContacts: contactsList
             });
-            addNotification("Contacts synced!");
+            addNotification(`Synced ${contactsList.length} contacts!`);
         } catch (err) {
             console.error("Failed to sync device contacts:", err);
         }
@@ -3974,6 +3628,10 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
     const addNewLocalContact = async (name: string, phoneNumber: string) => {
         if (!currentUserId) return;
         try {
+            setCurrentUser(prev => ({
+                ...prev,
+                localContacts: [...(prev.localContacts || []), { name, phoneNumber }]
+            }));
             await updateDoc(doc(db, "users", currentUserId), {
                 localContacts: arrayUnion({ name, phoneNumber })
             });
@@ -4190,6 +3848,51 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
 
     const requestContactsPermission = async (): Promise<boolean> => {
         if (typeof window === "undefined") return false;
+
+        // 1. Native Capacitor (Android APK & iOS)
+        const isCapacitor = !!(window as any).Capacitor;
+        if (isCapacitor) {
+            try {
+                const { Contacts } = await import("@capacitor-community/contacts");
+                let permission = await Contacts.checkPermissions();
+                if (permission.contacts !== "granted") {
+                    permission = await Contacts.requestPermissions();
+                }
+                if (permission.contacts === "granted") {
+                    const res = await Contacts.getContacts({
+                        projection: {
+                            name: true,
+                            phones: true
+                        }
+                    });
+                    if (res && res.contacts && res.contacts.length > 0) {
+                        const formatted = res.contacts.map((c: any) => {
+                            const name = c.name?.display || [c.name?.given, c.name?.family].filter(Boolean).join(" ") || "Contact";
+                            const phoneNumber = c.phones?.[0]?.number || "";
+                            return { name, phoneNumber };
+                        }).filter((c: any) => c.phoneNumber && c.phoneNumber.trim().length > 0);
+
+                        if (formatted.length > 0) {
+                            await syncDeviceContacts(formatted);
+                            return true;
+                        } else {
+                            addNotification("No contacts with phone numbers found on device");
+                            return true;
+                        }
+                    } else {
+                        addNotification("No contacts found on device");
+                        return true;
+                    }
+                } else {
+                    addNotification("Contacts permission was not granted");
+                    return false;
+                }
+            } catch (err) {
+                console.error("Capacitor Contacts error in requestContactsPermission:", err);
+            }
+        }
+
+        // 2. Web Contact Picker API (Chrome on Android / PWA)
         if ("contacts" in navigator && "ContactsManager" in window) {
             try {
                 const props = ["name", "tel"];
@@ -4200,13 +3903,13 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
                         phoneNumber: c.tel?.[0] || ""
                     })).filter((c: any) => c.phoneNumber);
                     await syncDeviceContacts(formatted);
-                    addNotification(`Synced ${formatted.length} contacts!`);
                     return true;
                 }
             } catch (e) {
                 console.error("Contacts picker error:", e);
             }
         }
+
         addNotification("Contacts access enabled!");
         return true;
     };
@@ -4638,19 +4341,13 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
                         viewsCount: data.viewsCount || 0,
                     } as MarketplaceItem;
                 }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-                
-                // Merge snapshot items with INITIAL_MARKETPLACE_ITEMS so demo items are preserved and updated
-                const itemMap = new Map<string, MarketplaceItem>();
-                INITIAL_MARKETPLACE_ITEMS.forEach(i => itemMap.set(i.id, i));
-                itemsList.forEach(i => itemMap.set(i.id, i));
-                const combined = Array.from(itemMap.values()).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-                setMarketplaceItems(combined);
+                setMarketplaceItems(itemsList);
             } else {
-                setMarketplaceItems(INITIAL_MARKETPLACE_ITEMS);
+                setMarketplaceItems([]);
             }
         }, (error) => {
             console.error("MockContext: onSnapshot marketplace items error:", error);
-            setMarketplaceItems(INITIAL_MARKETPLACE_ITEMS);
+            setMarketplaceItems([]);
         });
 
         return () => unsubscribe();
@@ -4977,11 +4674,11 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
                 }).sort((a, b) => new Date(a.departureTime).getTime() - new Date(b.departureTime).getTime());
                 setRides(list);
             } else {
-                setRides(INITIAL_RIDES);
+                setRides([]);
             }
         }, (error) => {
             console.error("MockContext: onSnapshot rides error:", error);
-            setRides(INITIAL_RIDES);
+            setRides([]);
         });
 
         return () => unsubscribe();

@@ -704,8 +704,26 @@ export function StoreFeedView({ sellerUser, isMe, onOpenCreatePost }: StoreFeedV
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          {moodsList.map((mood) => {
+        <div className="space-y-3">
+          {/* Action header when posts already exist in feed */}
+          {isMe && (
+            <div className="flex items-center justify-between px-1 py-1">
+              <span className="text-xs font-bold text-gray-500 dark:text-zinc-400">
+                {moodsList.length} {moodsList.length === 1 ? "Post / Clip" : "Posts & Clips"}
+              </span>
+              <button
+                type="button"
+                onClick={onOpenCreatePost}
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[var(--primary)] hover:bg-emerald-600 text-white font-bold text-xs shadow-xs active:scale-95 transition-all cursor-pointer"
+              >
+                <Plus size={14} />
+                <span>New Post / Clip</span>
+              </button>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {moodsList.map((mood) => {
             const isVideo = mood.type === "video";
             return (
               <div
@@ -740,6 +758,7 @@ export function StoreFeedView({ sellerUser, isMe, onOpenCreatePost }: StoreFeedV
               </div>
             );
           })}
+          </div>
         </div>
       )}
 

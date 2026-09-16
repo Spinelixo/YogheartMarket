@@ -18,7 +18,9 @@ import {
   Trash2,
   Edit3,
   Gift,
-  ShoppingBag
+  ShoppingBag,
+  Play,
+  Film
 } from "lucide-react";
 import { clsx } from "clsx";
 import { useModalHistory } from "@/hooks/useModalHistory";
@@ -298,15 +300,26 @@ export function ItemDetailModal({
           </div>
         )}
 
-        {/* Main Image Carousel */}
+        {/* Main Image/Video Carousel */}
         <div className="relative w-full aspect-[4/3] bg-zinc-950 flex items-center justify-center overflow-hidden group select-none">
-          <img
-            src={images[activeImgIdx]}
-            alt={curItem.title}
-            loading={index === 0 ? "eager" : "lazy"}
-            decoding="async"
-            className="w-full h-full object-contain sm:object-cover"
-          />
+          {images[activeImgIdx]?.startsWith("data:video") || /\.(mp4|mov|webm|m4v|3gp)/i.test(images[activeImgIdx]) ? (
+            <video
+              src={images[activeImgIdx]}
+              controls
+              playsInline
+              autoPlay
+              muted
+              className="w-full h-full object-contain"
+            />
+          ) : (
+            <img
+              src={images[activeImgIdx]}
+              alt={curItem.title}
+              loading={index === 0 ? "eager" : "lazy"}
+              decoding="async"
+              className="w-full h-full object-contain sm:object-cover"
+            />
+          )}
 
           {curItem.status === "sold" && (
             <div className="absolute inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center">
@@ -365,21 +378,33 @@ export function ItemDetailModal({
         {/* Thumbnails Row if multiple images */}
         {images.length > 1 && (
           <div className="flex gap-2 p-3 bg-gray-50 dark:bg-zinc-950/50 border-b border-gray-100 dark:border-zinc-800 overflow-x-auto no-scrollbar">
-            {images.map((img, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onClick={() =>
-                  setActiveImageIndexes((prev) => ({ ...prev, [curItem.id]: idx }))
-                }
-                className={clsx(
-                  "w-16 h-16 rounded-xl overflow-hidden shrink-0 border-2 transition-all cursor-pointer",
-                  activeImgIdx === idx ? "border-[var(--primary)] scale-95 shadow-sm" : "border-transparent opacity-60 hover:opacity-100"
-                )}
-              >
-                <img src={img} alt="thumb" loading="lazy" decoding="async" className="w-full h-full object-cover" />
-              </button>
-            ))}
+            {images.map((img, idx) => {
+              const isThumbVideo = img?.startsWith("data:video") || /\.(mp4|mov|webm|m4v|3gp)/i.test(img);
+              return (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() =>
+                    setActiveImageIndexes((prev) => ({ ...prev, [curItem.id]: idx }))
+                  }
+                  className={clsx(
+                    "w-16 h-16 rounded-xl overflow-hidden shrink-0 border-2 transition-all cursor-pointer relative bg-zinc-950",
+                    activeImgIdx === idx ? "border-[var(--primary)] scale-95 shadow-sm" : "border-transparent opacity-60 hover:opacity-100"
+                  )}
+                >
+                  {isThumbVideo ? (
+                    <>
+                      <video src={img} className="w-full h-full object-cover" muted playsInline />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                        <Play size={14} fill="currentColor" className="text-white" />
+                      </div>
+                    </>
+                  ) : (
+                    <img src={img} alt="thumb" loading="lazy" decoding="async" className="w-full h-full object-cover" />
+                  )}
+                </button>
+              );
+            })}
           </div>
         )}
 

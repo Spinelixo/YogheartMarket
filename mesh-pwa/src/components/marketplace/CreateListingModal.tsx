@@ -13,7 +13,9 @@ import {
   Sparkles,
   Info,
   Check,
-  Loader2
+  Loader2,
+  Film,
+  Play
 } from "lucide-react";
 import { clsx } from "clsx";
 import { useModalHistory } from "@/hooks/useModalHistory";
@@ -88,33 +90,67 @@ export function CreateListingModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isProcessingPhotos, setIsProcessingPhotos] = useState(false);
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMediaUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
     setIsProcessingPhotos(true);
     try {
       const fileList = Array.from(files).filter(
-        (f) => f.type.startsWith("image/") || /\.(jpe?g|png|webp|heic|heif)$/i.test(f.name)
+        (f) =>
+          f.type.startsWith("image/") ||
+          f.type.startsWith("video/") ||
+          /\.(jpe?g|png|webp|heic|heif|mp4|mov|webm|m4v|3gp)$/i.test(f.name)
       );
 
       for (const file of fileList) {
         if (images.length >= 8) break;
-        try {
-          const { dataUrl } = await processImageFile(file);
-          setImages((prev) => {
-            if (prev.length >= 8) return prev;
-            return [...prev, dataUrl];
+
+        const isVideo =
+          file.type.startsWith("video/") ||
+          /\.(mp4|mov|webm|m4v|3gp)$/i.test(file.name);
+
+        if (isVideo) {
+          // Read video file as Data URL
+          await new Promise<void>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (loadEvt) => {
+              if (loadEvt.target?.result) {
+                setImages((prev) => {
+                  if (prev.length >= 8) return prev;
+                  return [...prev, loadEvt.target!.result as string];
+                });
+              }
+              resolve();
+            };
+            reader.onerror = () => resolve();
+            reader.readAsDataURL(file);
           });
-        } catch (err) {
-          console.warn("processImageFile fallback for listing:", err);
-          const reader = new FileReader();
-          reader.onload = (loadEvt) => {
-            if (loadEvt.target?.result) {
-              setImages((prev) => [...prev, loadEvt.target!.result as string]);
-            }
-          };
-          reader.readAsDataURL(file);
+        } else {
+          // Process photo
+          try {
+            const { dataUrl } = await processImageFile(file);
+            setImages((prev) => {
+              if (prev.length >= 8) return prev;
+              return [...prev, dataUrl];
+            });
+          } catch (err) {
+            console.warn("processImageFile fallback for listing:", err);
+            await new Promise<void>((resolve) => {
+              const reader = new FileReader();
+              reader.onload = (loadEvt) => {
+                if (loadEvt.target?.result) {
+                  setImages((prev) => {
+                    if (prev.length >= 8) return prev;
+                    return [...prev, loadEvt.target!.result as string];
+                  });
+                }
+                resolve();
+              };
+              reader.onerror = () => resolve();
+              reader.readAsDataURL(file);
+            });
+          }
         }
       }
     } finally {
@@ -140,7 +176,7 @@ export function CreateListingModal({
     }
 
     if (images.length === 0) {
-      addNotification("Please add at least one photo of your item.");
+      addNotification("Please add at least one photo or video of your item.");
       return;
     }
 
@@ -228,33 +264,57 @@ export function CreateListingModal({
       <div className="flex-1 overflow-y-auto min-h-0 custom-scrollbar overscroll-contain">
         <div className="max-w-2xl mx-auto w-full p-4 sm:p-6 md:p-8">
           <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6 pb-12 sm:pb-8">
-          {/* Photo Uploader */}
+          {/* Photo & Video Uploader */}
           <div>
-            <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 uppercase tracking-wider mb-2">
-              Photos ({images.length}/8) <span className="text-red-500">*</span>
+            <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 uppercase tracking-wider mb-1">
+              Photos & Videos ({images.length}/8) <span className="text-red-500">*</span>
             </label>
+            <p className="text-[11px] text-gray-500 dark:text-zinc-400 mb-2.5">
+              Select photos and video clips in one go. First item serves as your listing cover.
+            </p>
 
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
-              {images.map((img, idx) => (
-                <div
-                  key={idx}
-                  className="relative aspect-square rounded-2xl overflow-hidden border border-gray-200 dark:border-zinc-700 group bg-zinc-100 dark:bg-zinc-800"
-                >
-                  <img src={img} alt="preview" className="w-full h-full object-cover" />
-                  {idx === 0 && (
-                    <span className="absolute bottom-1 left-1 text-[9px] font-bold bg-black/70 text-white px-1.5 py-0.5 rounded-md">
-                      Cover
-                    </span>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => removeImage(idx)}
-                    className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-red-600 transition-colors cursor-pointer"
+              {images.map((img, idx) => {
+                const isVideo = img.startsWith("data:video") || /\.(mp4|mov|webm|m4v|3gp)/i.test(img);
+                return (
+                  <div
+                    key={idx}
+                    className="relative aspect-square rounded-2xl overflow-hidden border border-gray-200 dark:border-zinc-700 group bg-zinc-950 select-none"
                   >
-                    <X size={14} />
-                  </button>
-                </div>
-              ))}
+                    {isVideo ? (
+                      <video
+                        src={img}
+                        className="w-full h-full object-cover"
+                        muted
+                        playsInline
+                        autoPlay
+                        loop
+                      />
+                    ) : (
+                      <img src={img} alt="preview" className="w-full h-full object-cover" />
+                    )}
+
+                    {isVideo && (
+                      <div className="absolute top-1.5 left-1.5 w-6 h-6 rounded-full bg-black/70 text-white flex items-center justify-center backdrop-blur-xs">
+                        <Play size={10} fill="currentColor" />
+                      </div>
+                    )}
+
+                    {idx === 0 && (
+                      <span className="absolute bottom-1.5 left-1.5 text-[9px] font-bold bg-black/75 text-white px-2 py-0.5 rounded-md backdrop-blur-xs">
+                        Cover
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => removeImage(idx)}
+                      className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-red-600 transition-colors cursor-pointer"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                );
+              })}
 
               {isProcessingPhotos && (
                 <div className="aspect-square rounded-2xl border-2 border-dashed border-gray-300 dark:border-zinc-700 flex flex-col items-center justify-center gap-1.5 bg-gray-50/50 dark:bg-zinc-850/40">
@@ -267,10 +327,14 @@ export function CreateListingModal({
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="aspect-square rounded-2xl border-2 border-dashed border-gray-300 dark:border-zinc-700 hover:border-[var(--primary)] text-gray-500 dark:text-zinc-400 hover:text-[var(--primary)] flex flex-col items-center justify-center gap-1.5 transition-colors bg-gray-50/50 dark:bg-zinc-850/40 cursor-pointer"
+                  className="aspect-square rounded-2xl border-2 border-dashed border-gray-300 dark:border-zinc-700 hover:border-[var(--primary)] text-gray-500 dark:text-zinc-400 hover:text-[var(--primary)] flex flex-col items-center justify-center gap-1 transition-colors bg-gray-50/50 dark:bg-zinc-850/40 cursor-pointer p-2 text-center"
                 >
-                  <Camera size={22} />
-                  <span className="text-[11px] font-bold">Add Photo</span>
+                  <div className="flex items-center gap-1 text-[var(--primary)]">
+                    <Camera size={18} />
+                    <Film size={18} />
+                  </div>
+                  <span className="text-[11px] font-bold">Add Media</span>
+                  <span className="text-[9px] text-gray-400 dark:text-zinc-500">Photo / Video</span>
                 </button>
               )}
             </div>
@@ -278,9 +342,9 @@ export function CreateListingModal({
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/*"
+              accept="image/*,video/*"
               multiple
-              onChange={handleImageUpload}
+              onChange={handleMediaUpload}
               className="hidden"
             />
           </div>

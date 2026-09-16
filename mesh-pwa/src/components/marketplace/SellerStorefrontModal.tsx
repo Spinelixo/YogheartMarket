@@ -30,6 +30,7 @@ import {
   Bookmark,
   Plus,
   Film,
+  Play,
   MessageSquare,
   Settings
 } from "lucide-react";
@@ -614,20 +615,6 @@ export function SellerStorefrontModal({
                       : `Showing ${filteredStoreItems.length} of ${sellerListings.length} items`}
                   </p>
                 </div>
-
-                {/* Search input in store (hidden on feed tab) */}
-                {statusTab !== "feed" && (
-                  <div className="relative w-36 sm:w-48">
-                    <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search catalogue..."
-                      className="w-full bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white pl-8 pr-3 py-1.5 rounded-xl text-xs outline-none focus:ring-1 focus:ring-[var(--primary)] border-0"
-                    />
-                  </div>
-                )}
               </div>
 
               {/* Status & Social Filter Tabs */}
@@ -676,22 +663,6 @@ export function SellerStorefrontModal({
                   <Sparkles size={15} />
                   <span>Feed ({userFeedCount})</span>
                 </button>
-
-                {/* New Post / Clip button placed right next to the Feed button */}
-                {isMe && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setStatusTab("feed");
-                      setPostModalType("feed");
-                      setShowPostModal(true);
-                    }}
-                    className="flex items-center gap-1.5 px-4 py-2 sm:px-4.5 sm:py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold text-xs sm:text-sm shadow-xs hover:scale-105 active:scale-95 transition-all cursor-pointer whitespace-nowrap shrink-0"
-                  >
-                    <Plus size={15} />
-                    <span>New Post / Clip</span>
-                  </button>
-                )}
               </div>
 
               {/* Content Area: Feed or Product Listings */}
@@ -737,11 +708,25 @@ export function SellerStorefrontModal({
                         >
                         {/* Image & Badges */}
                         <div className="relative w-full aspect-square bg-zinc-100 dark:bg-zinc-800 overflow-hidden select-none">
-                          <img
-                            src={coverImg}
-                            alt={item.title}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          />
+                          {coverImg.startsWith("data:video") || /\.(mp4|mov|webm|m4v|3gp)/i.test(coverImg) ? (
+                            <>
+                              <video
+                                src={coverImg}
+                                className="w-full h-full object-cover"
+                                muted
+                                playsInline
+                              />
+                              <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center backdrop-blur-xs">
+                                <Play size={10} fill="currentColor" />
+                              </div>
+                            </>
+                          ) : (
+                            <img
+                              src={coverImg}
+                              alt={item.title}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            />
+                          )}
 
                           {/* Sold or Pending Overlay */}
                           {item.status === "sold" ? (

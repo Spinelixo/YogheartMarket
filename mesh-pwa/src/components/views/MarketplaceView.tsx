@@ -46,7 +46,8 @@ import {
   Building2,
   UtensilsCrossed,
   Store,
-  Edit3
+  Edit3,
+  Play
 } from "lucide-react";
 import { clsx } from "clsx";
 import { useModalHistory } from "@/hooks/useModalHistory";
@@ -664,11 +665,25 @@ export default function MarketplaceView() {
                         >
                         {/* Item Image & Action Buttons */}
                         <div className="relative w-full aspect-square bg-zinc-100 dark:bg-zinc-800 overflow-hidden select-none">
-                          <img
-                            src={coverImg}
-                            alt={item.title}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                          />
+                          {coverImg.startsWith("data:video") || /\.(mp4|mov|webm|m4v|3gp)/i.test(coverImg) ? (
+                            <>
+                              <video
+                                src={coverImg}
+                                className="w-full h-full object-cover"
+                                muted
+                                playsInline
+                              />
+                              <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center backdrop-blur-xs">
+                                <Play size={10} fill="currentColor" />
+                              </div>
+                            </>
+                          ) : (
+                            <img
+                              src={coverImg}
+                              alt={item.title}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            />
+                          )}
 
                           {/* Sold or Pending badge */}
                           {item.status === "sold" ? (

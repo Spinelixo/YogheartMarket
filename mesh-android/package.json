@@ -7,6 +7,7 @@
     "build": "cd android && .\\gradlew.bat assembleDebug"
   },
   "dependencies": {
+    "@capacitor-community/contacts": "^8.0.0",
     "@capacitor/android": "^8.5.2",
     "@capacitor/app": "^8.1.1",
     "@capacitor/browser": "^8.0.4",

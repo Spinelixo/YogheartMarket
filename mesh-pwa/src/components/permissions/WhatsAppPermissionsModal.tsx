@@ -48,8 +48,8 @@ export function WhatsAppPermissionsModal({ onClose }: WhatsAppPermissionsModalPr
 
   const finishPermissions = () => {
     if (typeof window !== "undefined") {
-      localStorage.setItem("yogheart_permissions_prompted_v6", "true");
-      sessionStorage.setItem("yogheart_permissions_prompted_v6", "true");
+      localStorage.setItem("yogheart_permissions_prompted_v7", "true");
+      sessionStorage.setItem("yogheart_permissions_prompted_v7", "true");
       window.dispatchEvent(new CustomEvent("yogheart_permissions_closed"));
     }
     setIsOpen(false);
