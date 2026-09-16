@@ -15,7 +15,6 @@ import {
   ShoppingBag,
   Sparkles,
   Share2,
-  MessageCircle,
   Edit2,
   Search,
   UtensilsCrossed,
