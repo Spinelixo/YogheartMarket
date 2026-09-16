@@ -22,9 +22,11 @@ import {
   Building2,
   Shirt,
   Tv,
-  Image as ImageIcon
+  Image as ImageIcon,
+  ChevronLeft
 } from "lucide-react";
 import { clsx } from "clsx";
+import { useModalHistory } from "@/hooks/useModalHistory";
 
 interface EditMarketplaceProfileModalProps {
   onClose: () => void;
@@ -136,7 +138,7 @@ export function EditMarketplaceProfileModal({ onClose }: EditMarketplaceProfileM
 
     try {
       await updateMarketplaceStoreProfile(updatedProfile);
-      onClose();
+      handleClose();
     } catch (err) {
       console.error(err);
       addNotification("Failed to update store profile.");
@@ -145,53 +147,68 @@ export function EditMarketplaceProfileModal({ onClose }: EditMarketplaceProfileM
     }
   };
 
-  const [isMounted, setIsMounted] = useState(false);
-  useEffect(() => {
-    const t = setTimeout(() => setIsMounted(true), 250);
-    return () => clearTimeout(t);
-  }, []);
+  const [isClosing, setIsClosing] = useState(false);
+
+  const handleClose = () => {
+    if (isClosing) return;
+    setIsClosing(true);
+    setTimeout(() => {
+      onClose();
+    }, 240);
+  };
+
+  useModalHistory("editStoreProfile", !isClosing, handleClose);
 
   if (typeof document === "undefined") return null;
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[180] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-fade-in overscroll-contain"
-      onClick={onClose}
+      className={clsx(
+        "fixed inset-0 z-[180] bg-white dark:bg-zinc-950 flex flex-col h-full overscroll-contain text-gray-900 dark:text-zinc-100",
+        isClosing
+          ? "animate-out slide-out-to-right duration-250 fill-mode-forwards"
+          : "animate-in slide-in-from-right duration-250 ease-out"
+      )}
     >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className={clsx(
-          "w-full sm:max-w-xl bg-white dark:bg-zinc-950 rounded-t-[32px] sm:rounded-3xl max-h-[88dvh] sm:max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-gray-100 dark:border-zinc-800 overscroll-contain",
-          !isMounted && "animate-in slide-in-from-bottom duration-200"
-        )}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-950 shrink-0">
+      {/* Top Navigation Header */}
+      <header className="flex items-center justify-between px-3 md:px-4 py-3 border-b border-gray-150 dark:border-zinc-800 bg-white dark:bg-zinc-950 shrink-0 sticky top-0 z-20">
+        <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={handleClose}
+            className="p-2 -ml-1 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-full text-gray-700 dark:text-zinc-200 transition-colors cursor-pointer"
+            title="Go back"
+          >
+            <ChevronLeft size={24} className="text-gray-900 dark:text-white" />
+          </button>
           <div className="flex items-center gap-2">
-            <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-[var(--primary)]">
-              <Store size={20} />
+            <div className="p-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-[var(--primary)] shrink-0">
+              <Store size={18} />
             </div>
             <div>
-              <h2 className="text-base font-bold text-gray-900 dark:text-white leading-tight">
-                Marketplace Storefront Profile
+              <h2 className="text-sm sm:text-base font-bold text-gray-900 dark:text-white leading-tight">
+                Storefront Profile
               </h2>
-              <p className="text-[11px] text-gray-500 dark:text-zinc-400">
-                Customize your seller brand, catalogue specialty & storefront
+              <p className="text-[10px] sm:text-[11px] text-gray-500 dark:text-zinc-400">
+                Customize your seller brand & storefront
               </p>
             </div>
           </div>
-
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-full text-gray-400 hover:text-gray-700 dark:hover:text-zinc-200 transition-colors cursor-pointer"
-          >
-            <X size={18} />
-          </button>
         </div>
 
-        {/* Scrollable Form */}
-        <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-5 space-y-5 no-scrollbar">
+        <button
+          type="button"
+          onClick={handleClose}
+          className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-full text-gray-400 hover:text-gray-700 dark:hover:text-zinc-200 transition-colors cursor-pointer"
+          title="Close"
+        >
+          <X size={20} />
+        </button>
+      </header>
+
+      {/* Scrollable Form Body */}
+      <div className="flex-1 overflow-y-auto min-h-0 overscroll-contain">
+        <form onSubmit={handleSave} className="max-w-xl mx-auto w-full px-4 py-5 sm:px-6 sm:py-6 space-y-6 pb-28">
           {/* Banner Photo Selector */}
           <div>
             <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 uppercase tracking-wider mb-2">
