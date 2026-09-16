@@ -25,6 +25,7 @@ import { useModalHistory } from "@/hooks/useModalHistory";
 import { ShareToChatModal } from "./ShareToChatModal";
 import { SellerStorefrontModal } from "./SellerStorefrontModal";
 import { calculateItemDistanceKm } from "../views/MarketplaceView";
+import { trackUserViewedCategory } from "@/utils/marketplaceRanking";
 
 interface ItemDetailModalProps {
   item: MarketplaceItem;
@@ -99,6 +100,12 @@ export function ItemDetailModal({
     }, 240);
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    if (item.category) {
+      trackUserViewedCategory(item.category);
+    }
+  }, [item.category]);
 
   // Touch drag-down-to-dismiss gesture state for modal mode
   const [dragY, setDragY] = useState(0);

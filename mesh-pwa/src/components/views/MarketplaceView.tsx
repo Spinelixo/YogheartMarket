@@ -56,6 +56,7 @@ import { ShareToChatModal } from "../marketplace/ShareToChatModal";
 import { SellerStorefrontModal } from "../marketplace/SellerStorefrontModal";
 import { EditMarketplaceProfileModal } from "../marketplace/EditMarketplaceProfileModal";
 import { triggerRipple } from "@/utils/ui";
+import { rankAndDiversifyFeed } from "@/utils/marketplaceRanking";
 
 const CATEGORIES = [
   { label: "All", icon: Layers },
@@ -387,7 +388,7 @@ export default function MarketplaceView() {
 
   // Filtered & Sorted items for Browse subpage
   const filteredItems = useMemo(() => {
-    return marketplaceItems
+    const candidates = marketplaceItems
       .filter((item) => {
         // Category filtering (multi-select)
         if (selectedCategories.length > 0) {
@@ -444,18 +445,35 @@ export default function MarketplaceView() {
         }
 
         return true;
-      })
-      .sort((a, b) => {
-        if (filterSortBy === "price_asc") return a.price - b.price;
-        if (filterSortBy === "price_desc") return b.price - a.price;
-        if (filterSortBy === "distance_asc") {
-          return calculateItemDistanceKm(a, currentUser?.location) - calculateItemDistanceKm(b, currentUser?.location);
-        }
-        if (filterSortBy === "newest") {
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        }
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       });
+
+    if (filterSortBy === "suggested") {
+      const maxRadius =
+        filterDistanceOption !== "suggested"
+          ? filterDistanceOption === "custom"
+            ? filterCustomDistanceKm
+            : parseFloat(filterDistanceOption)
+          : undefined;
+
+      return rankAndDiversifyFeed(candidates, {
+        userLocation: currentUser?.location,
+        includeSold: filterAvailability === "all",
+        selectedCategories,
+        maxRadiusKm: maxRadius,
+      });
+    }
+
+    return candidates.sort((a, b) => {
+      if (filterSortBy === "price_asc") return a.price - b.price;
+      if (filterSortBy === "price_desc") return b.price - a.price;
+      if (filterSortBy === "distance_asc") {
+        return calculateItemDistanceKm(a, currentUser?.location) - calculateItemDistanceKm(b, currentUser?.location);
+      }
+      if (filterSortBy === "newest") {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
   }, [
     marketplaceItems, 
     browseTab, 
@@ -611,10 +629,10 @@ export default function MarketplaceView() {
           </div>
 
           {/* Listings Cards Grid */}
-          <div className="flex-1 overflow-y-auto p-3 sm:p-4 pb-28 lg:pb-6">
+          <div className="flex-1 overflow-y-auto p-0 pb-28 lg:pb-6">
 
               {filteredItems.length > 0 ? (
-                <div className="bg-white dark:bg-zinc-900 rounded-3xl overflow-hidden border border-gray-200/90 dark:border-zinc-800 shadow-xs">
+                <div className="bg-white dark:bg-zinc-900 rounded-none overflow-hidden border-b border-gray-200/90 dark:border-zinc-800">
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-px bg-gray-200/90 dark:bg-zinc-800">
                     {filteredItems.map((item) => {
                       const isSaved = currentUser ? item.savedBy?.includes(currentUser.id) : false;
