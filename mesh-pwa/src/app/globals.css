@@ -251,15 +251,13 @@ a, button, [role="button"], .cursor-pointer, input, textarea, select {
   .app-desktop-wrapper {
     display: flex;
     flex-direction: row;
-    height: 100vh;
+    height: auto;
     min-height: 100vh;
-    max-height: 100vh;
     justify-content: center;
     align-items: center;
-    padding: 18px 24px;
+    padding: 24px;
     background: linear-gradient(135deg, #e8fcd9 0%, #daf7c3 100%);
     box-sizing: border-box;
-    overflow: hidden;
   }
 
   .dark .app-desktop-wrapper {
@@ -344,15 +342,14 @@ a, button, [role="button"], .cursor-pointer, input, textarea, select {
 
 @media (min-width: 1024px) {
   .app-container {
-    width: 94vw;
-    max-width: 1580px;
-    height: 94vh;
-    min-height: 94vh;
-    max-height: 94vh;
-    border-radius: 24px;
+    max-width: 1200px; /* Narrower width */
+    min-height: calc(92vh / 0.80);
+    max-height: calc(92vh / 0.80);
+    border-radius: 20px;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
     overflow: hidden;
     flex-direction: row;
+    zoom: 0.80; /* high-density layout: smaller fonts + more content visible */
   }
 
   .dark .app-container {
