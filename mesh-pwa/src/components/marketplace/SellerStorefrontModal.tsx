@@ -222,7 +222,6 @@ export function SellerStorefrontModal({
     return getMoodsForUser ? (getMoodsForUser(sellerUser.id) || []).length : 0;
   }, [getMoodsForUser, sellerUser.id]);
 
-  const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedItem, setSelectedItem] = useState<MarketplaceItem | null>(null);
   const [showEditStoreModal, setShowEditStoreModal] = useState(false);
@@ -241,16 +240,6 @@ export function SellerStorefrontModal({
     }, 220);
   };
 
-  // Available categories in this store's inventory (or saved items when in saved tab)
-  const storeCategories = useMemo(() => {
-    const set = new Set<string>();
-    const sourceListings = statusTab === "saved" ? savedItems : sellerListings;
-    sourceListings.forEach((item) => {
-      if (item.category) set.add(item.category);
-    });
-    return ["All", ...Array.from(set)];
-  }, [sellerListings, savedItems, statusTab]);
-
   // Filtered store items
   const filteredStoreItems = useMemo(() => {
     const sourceListings = statusTab === "saved" ? savedItems : sellerListings;
@@ -259,11 +248,6 @@ export function SellerStorefrontModal({
       if (statusTab === "active" && item.status === "sold") return false;
       if (statusTab === "sold" && item.status !== "sold") return false;
       if (statusTab === "free" && item.price !== 0) return false;
-
-      // Category filtering
-      if (selectedCategory !== "All") {
-        if (item.category?.toLowerCase() !== selectedCategory.toLowerCase()) return false;
-      }
 
       // Search filtering
       if (searchQuery.trim()) {
@@ -276,7 +260,7 @@ export function SellerStorefrontModal({
 
       return true;
     });
-  }, [sellerListings, savedItems, statusTab, selectedCategory, searchQuery]);
+  }, [sellerListings, savedItems, statusTab, searchQuery]);
 
   const activeCount = sellerListings.filter((i) => i.status !== "sold").length;
   const soldCount = sellerListings.filter((i) => i.status === "sold").length;
@@ -705,27 +689,6 @@ export function SellerStorefrontModal({
                   </button>
                 )}
               </div>
-
-              {/* Category Chips within Store (hidden on Feed tab) */}
-              {statusTab !== "feed" && storeCategories.length > 2 && (
-                <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-0.5">
-                  {storeCategories.map((cat) => (
-                    <button
-                      key={cat}
-                      type="button"
-                      onClick={() => setSelectedCategory(cat)}
-                      className={clsx(
-                        "px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer whitespace-nowrap",
-                        selectedCategory === cat
-                          ? "bg-gray-900 dark:bg-white text-white dark:text-black"
-                          : "bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 text-gray-600 dark:text-zinc-400"
-                      )}
-                    >
-                      {cat}
-                    </button>
-                  ))}
-                </div>
-              )}
 
               {/* Content Area: Feed or Product Listings */}
               {statusTab === "feed" ? (
