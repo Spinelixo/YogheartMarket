@@ -537,16 +537,14 @@ export function SellerStorefrontModal({
                 </span>
               </div>
 
-              {/* Real Name if Store Name is different */}
-              {storeProfile.storeName && (
-                <p className="text-xs text-gray-500 dark:text-zinc-400 font-medium">
-                  By {sellerUser.name}
-                </p>
-              )}
+              {/* Real Name / Owner Name */}
+              <p className="text-xs text-gray-500 dark:text-zinc-400 font-medium">
+                By {storeProfile.ownerName || (isMe ? currentUser?.marketplaceStore?.ownerName : null) || sellerUser.name || "Seller"}
+              </p>
 
               {/* Tagline / Speciality Headline */}
               <p className="text-sm font-semibold text-gray-800 dark:text-zinc-200 pt-0.5">
-                {(isMe ? currentUser?.marketplaceStore?.headline : null) || storeProfile.headline || (storeProfile.bio && !storeProfile.bio.includes("Hey there") ? storeProfile.bio : "Specialized in home culinary meals cooked fresh at home with local delivery!")}
+                {(isMe ? currentUser?.marketplaceStore?.headline : null) || storeProfile.headline || (storeProfile.bio && !storeProfile.bio.includes("Hey there") ? storeProfile.bio : "Active seller on Yogheart Marketplace.")}
               </p>
             </div>
 

@@ -56,11 +56,12 @@ export function EditMarketplaceProfileModal({ onClose }: EditMarketplaceProfileM
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [ownerName, setOwnerName] = useState(currentStore.ownerName || currentUser?.name || "");
   const [storeName, setStoreName] = useState(currentStore.storeName || currentUser?.name || "");
   const [sellerType, setSellerType] = useState<MarketplaceSellerType>(currentStore.sellerType || "chef");
   const [customSellerType, setCustomSellerType] = useState(currentStore.customSellerType || "");
   const [headline, setHeadline] = useState(
-    currentStore.headline || "Specialized in home culinary meals cooked fresh at home with local delivery!"
+    currentStore.headline || (currentUser?.bio && !currentUser.bio.includes("Hey there") ? currentUser.bio : "Active seller on Yogheart Marketplace.")
   );
   const [bio, setBio] = useState(
     currentStore.bio || "We prepare delicious homemade meals using fresh ingredients and deliver right to your doorstep. Browse our menu listings or message for custom orders!"
@@ -95,6 +96,10 @@ export function EditMarketplaceProfileModal({ onClose }: EditMarketplaceProfileM
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!ownerName.trim()) {
+      addNotification("Please enter an owner name.");
+      return;
+    }
     if (!storeName.trim()) {
       addNotification("Please enter a store name.");
       return;
@@ -113,6 +118,7 @@ export function EditMarketplaceProfileModal({ onClose }: EditMarketplaceProfileM
     }
 
     const updatedProfile: MarketplaceStoreProfile = {
+      ownerName: ownerName.trim(),
       storeName: storeName.trim(),
       sellerType,
       customSellerType: customSellerType.trim() || undefined,
@@ -223,6 +229,23 @@ export function EditMarketplaceProfileModal({ onClose }: EditMarketplaceProfileM
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Owner / Personal Name */}
+          <div>
+            <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 uppercase tracking-wider mb-2">
+              Owner Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={ownerName}
+              onChange={(e) => setOwnerName(e.target.value)}
+              placeholder="e.g. Ishimwe, Lionel"
+              className="w-full bg-gray-50 dark:bg-zinc-800/80 text-gray-900 dark:text-white px-4 py-3 rounded-2xl border border-gray-200 dark:border-zinc-700 focus:ring-2 focus:ring-[var(--primary)] outline-none text-sm font-semibold"
+            />
+            <p className="text-[11px] text-gray-500 dark:text-zinc-400 mt-1">
+              Your personal name shown in chats, feed, and on your storefront as &quot;By {ownerName || "Name"}&quot;
+            </p>
           </div>
 
           {/* Store / Business Name */}

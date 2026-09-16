@@ -133,6 +133,15 @@ export default function LoginPage() {
                                 activeSessionId: newSessionId,
                                 email_lowercase: normalizedEmail
                             });
+                            // Also mirror to direct uid doc so direct lookup always succeeds
+                            try {
+                                await setDoc(doc(db, "users", uid), {
+                                    ...data,
+                                    id: uid,
+                                    activeSessionId: newSessionId,
+                                    email_lowercase: normalizedEmail
+                                }, { merge: true });
+                            } catch (_) {}
                             hasExistingProfileMatched = true;
                             if (data.onboardingComplete || data.isAdmin) {
                                 isAlreadyOnboarded = true;
@@ -151,6 +160,13 @@ export default function LoginPage() {
                             await updateDoc(matchedDocRef, {
                                 activeSessionId: newSessionId
                             });
+                            try {
+                                await setDoc(doc(db, "users", uid), {
+                                    ...data,
+                                    id: uid,
+                                    activeSessionId: newSessionId
+                                }, { merge: true });
+                            } catch (_) {}
                             hasExistingProfileMatched = true;
                             if (data.onboardingComplete || data.isAdmin) {
                                 isAlreadyOnboarded = true;
@@ -172,10 +188,14 @@ export default function LoginPage() {
             return;
         }
 
+        setIsSigningIn(false);
+        setLoading(false);
+
         if (isAlreadyOnboarded) {
             if (typeof window !== "undefined") {
                 localStorage.setItem("mesh_onboarding_complete", "true");
             }
+            router.replace("/");
         } else {
             if (typeof window !== "undefined") {
                 localStorage.removeItem("mesh_onboarding_complete");
@@ -194,7 +214,7 @@ export default function LoginPage() {
                     email: userEmail,
                     email_lowercase: userEmail.toLowerCase(),
                     photoURL: currentUser?.photoURL || null,
-                    bio: "Hey there! I'm using Yogheart.",
+                    bio: "Active seller on Yogheart Marketplace.",
                     activeSessionId: newSessionId,
                     settings: {
                         privacy: { discoverableByPhone: true, lastSeen: true, readReceipts: true }
@@ -202,8 +222,9 @@ export default function LoginPage() {
                     createdAt: new Date().toISOString()
                 });
             }
+            router.replace("/onboarding");
         }
-    }, [linkSessionToProcess]);
+    }, [linkSessionToProcess, router]);
 
 
 
@@ -357,11 +378,25 @@ export default function LoginPage() {
             }
         } catch (err: any) {
             console.error("Email/password auth failed:", err);
-            setIsSigningIn(false);
             const code = err?.code || "";
             if (code === "auth/email-already-in-use") {
-                setSignUpMode(false);
-                setError("This email already has an account. Enter your password to sign in.");
+                // Email is already registered! Automatically attempt sign-in with the provided password!
+                try {
+                    const signInRes = await signInWithEmailAndPassword(auth, trimmedEmail, passwordInput);
+                    await setupSessionAndRedirect(signInRes.user.uid, signInRes.user.phoneNumber || "");
+                    return;
+                } catch (signInErr: any) {
+                    setSignUpMode(false);
+                    const signInCode = signInErr?.code || "";
+                    if (signInCode === "auth/wrong-password" || signInCode === "auth/invalid-credential") {
+                        setError("This email is already registered. Incorrect password entered.");
+                    } else {
+                        setError("This email already has an account. Please enter your password to sign in.");
+                    }
+                    setIsSigningIn(false);
+                    setLoading(false);
+                    return;
+                }
             } else if (code === "auth/wrong-password" || code === "auth/invalid-credential") {
                 setError("Incorrect password. Please try again.");
             } else if (code === "auth/user-not-found") {
@@ -372,6 +407,7 @@ export default function LoginPage() {
             } else {
                 setError(getFriendlyErrorMessage(err, "Authentication failed. Please try again."));
             }
+            setIsSigningIn(false);
             setLoading(false);
         }
     };
@@ -395,7 +431,6 @@ export default function LoginPage() {
 
     useEffect(() => {
         if (typeof window !== "undefined") {
-            localStorage.removeItem("mesh_onboarding_complete");
             const searchParams = new URLSearchParams(window.location.search);
             const actionParam = searchParams.get("action");
             

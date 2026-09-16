@@ -251,8 +251,10 @@ export default function OnboardingPage() {
             onboardingComplete: true,
             updatedAt: new Date().toISOString(),
             marketplaceStore: {
+              ownerName: trimmedName,
               storeName: trimmedName,
               avatar: mainAvatar,
+              headline: "Active seller on Yogheart Marketplace.",
               bio: "Active seller on Yogheart Marketplace.",
               joinedYear: new Date().getFullYear().toString(),
               rating: 5.0,

@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { onAuthStateChanged, User, signOut as firebaseSignOut } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
-import { doc, onSnapshot, getDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { doc, onSnapshot, getDoc, setDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 
 type AuthContextType = {
@@ -51,14 +51,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         foundUid = currentUser.uid;
                         foundData = directSnap.data();
                     } else {
-                        // 2. Lookup by email (if signed in via Google)
+                        // 2. Lookup by email
                         if (currentUser.email) {
-                            const qEmail = query(collection(db, "users"), where("email", "==", currentUser.email));
-                            const snapEmail = await getDocs(qEmail);
+                            const normalizedEmail = currentUser.email.toLowerCase();
+                            let snapEmail = await getDocs(query(collection(db, "users"), where("email_lowercase", "==", normalizedEmail)));
+                            if (snapEmail.empty) {
+                                snapEmail = await getDocs(query(collection(db, "users"), where("email", "==", currentUser.email)));
+                            }
+                            if (snapEmail.empty) {
+                                snapEmail = await getDocs(query(collection(db, "users"), where("email", "==", normalizedEmail)));
+                            }
                             if (!snapEmail.empty) {
                                 const matchingDoc = snapEmail.docs[0];
                                 foundUid = matchingDoc.id;
                                 foundData = matchingDoc.data();
+                                // Ensure currentUser.uid also has a direct document
+                                try {
+                                    await setDoc(doc(db, "users", currentUser.uid), {
+                                        ...foundData,
+                                        id: currentUser.uid,
+                                        email: currentUser.email,
+                                        email_lowercase: normalizedEmail
+                                    }, { merge: true });
+                                } catch (_) {}
                             }
                         }
                         // 3. Lookup by phone number (if signed in via Phone and not found yet)
@@ -123,17 +138,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     console.log("AuthContext: user doc not found in cache, waiting for server...");
                     return;
                 }
-                const onboardingComplete = typeof window !== "undefined" && localStorage.getItem("mesh_onboarding_complete") === "true";
-                if (onboardingComplete) {
-                    console.log("AuthContext: user doc deleted on server, logging out...");
-                    setUserData(null);
-                    setLoading(false);
-                    logout();
-                } else {
-                    console.log("AuthContext: user doc does not exist yet (onboarding/signup in progress).");
-                    setUserData(null);
-                    setLoading(false);
-                }
+                console.log("AuthContext: user doc does not exist yet (onboarding/signup in progress).");
+                setUserData(null);
+                setLoading(false);
             }
         }, (error) => {
             console.error("AuthContext: user doc snapshot error:", error);

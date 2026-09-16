@@ -607,9 +607,10 @@ export function ItemDetailModal({
                     </div>
                     <div className="min-w-0 flex-1">
                       <h4 className="font-bold text-sm text-gray-900 dark:text-white group-hover:text-[var(--primary)] transition-colors truncate">
-                        {curItem.sellerName}
+                        {curItem.sellerOwnerName || curItem.sellerName}
                       </h4>
                       <p className="text-xs text-gray-500 dark:text-zinc-400 truncate">
+                        {curItem.sellerOwnerName && curItem.sellerName && curItem.sellerName !== curItem.sellerOwnerName ? `${curItem.sellerName} • ` : ""}
                         {curItem.sellerLocation || curItem.location} • Active on Yogheart Marketplace
                       </p>
                     </div>

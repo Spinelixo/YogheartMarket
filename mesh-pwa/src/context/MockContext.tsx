@@ -120,6 +120,7 @@ export type MarketplaceSellerType =
   | "other";
 
 export interface MarketplaceStoreProfile {
+  ownerName?: string;
   storeName?: string;
   sellerType?: MarketplaceSellerType;
   customSellerType?: string;
@@ -345,6 +346,7 @@ export type MarketplaceItem = {
     id: string;
     sellerId: string;
     sellerName: string;
+    sellerOwnerName?: string;
     sellerAvatar: string | null;
     sellerColor?: string;
     sellerLocation?: string;
@@ -1434,11 +1436,12 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
 
                 const storeData = data.marketplaceStore || {};
                 const effectiveAvatar = storeData.avatar || data.avatar || data.photoURL || null;
-                const effectiveName = storeData.storeName || data.name || "User";
+                const effectiveOwnerName = storeData.ownerName || data.name || "User";
+                const effectiveStoreName = storeData.storeName || effectiveOwnerName;
 
                 setCurrentUser({
                     id: docSnap.id,
-                    name: effectiveName,
+                    name: effectiveOwnerName,
                     age: data.age || 24,
                     bio: data.bio || "",
                     color: data.color || "bg-emerald-200",
@@ -1473,7 +1476,8 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
                     isAdmin: data.isAdmin || isSuperAdmin || false,
                     marketplaceStore: {
                         ...storeData,
-                        storeName: effectiveName,
+                        ownerName: effectiveOwnerName,
+                        storeName: effectiveStoreName,
                         avatar: effectiveAvatar
                     }
                 });
@@ -4676,8 +4680,9 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
         const newItem: MarketplaceItem = {
             id: itemId,
             sellerId: currentUserId || "me",
-            sellerName: currentUser?.name || "Me",
-            sellerAvatar: currentUser?.avatar || null,
+            sellerName: currentUser?.marketplaceStore?.storeName || currentUser?.name || "Me",
+            sellerOwnerName: currentUser?.marketplaceStore?.ownerName || currentUser?.name || "Seller",
+            sellerAvatar: currentUser?.marketplaceStore?.avatar || currentUser?.avatar || null,
             sellerColor: currentUser?.color || "bg-emerald-200",
             sellerLocation: currentUser?.location || "Local",
             title: data.title,
@@ -4854,11 +4859,14 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
         const currentStore = currentUser.marketplaceStore || {};
         const updatedStore: MarketplaceStoreProfile = { ...currentStore, ...storeData };
         const effectiveAvatar = updatedStore.avatar || currentUser.avatar || null;
-        const effectiveName = updatedStore.storeName || currentUser.name || "User";
+        const effectiveOwnerName = updatedStore.ownerName || currentUser.name || "User";
+        const effectiveStoreName = updatedStore.storeName || effectiveOwnerName;
+        updatedStore.ownerName = effectiveOwnerName;
+        updatedStore.storeName = effectiveStoreName;
         
         setCurrentUser(prev => prev ? { 
             ...prev, 
-            name: effectiveName,
+            name: effectiveOwnerName,
             avatar: effectiveAvatar,
             marketplaceStore: updatedStore 
         } : prev);
@@ -4866,7 +4874,7 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
         if (currentUserId) {
             try {
                 await updateDoc(doc(db, "users", currentUserId), {
-                    name: effectiveName,
+                    name: effectiveOwnerName,
                     avatar: effectiveAvatar,
                     photoURL: effectiveAvatar,
                     marketplaceStore: updatedStore
