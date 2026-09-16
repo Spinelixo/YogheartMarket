@@ -16,59 +16,57 @@ type AuthContextType = {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function checkHasCachedAuth(): boolean {
+    if (typeof window === "undefined") return false;
+    try {
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && (key.startsWith("firebase:authUser") || key === "mesh_session_token")) {
+                return true;
+            }
+        }
+    } catch (_) {}
+    return false;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-    const [user, setUser] = useState<User | null>(null);
+    const [user, setUser] = useState<User | null>(() => auth.currentUser || null);
     const [userData, setUserData] = useState<any>(null);
-    const [resolvedUid, setResolvedUid] = useState<string | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [resolvedUid, setResolvedUid] = useState<string | null>(() => auth.currentUser?.uid || null);
+    const [loading, setLoading] = useState<boolean>(() => checkHasCachedAuth());
     const router = useRouter();
 
     useEffect(() => {
         let isSubscribed = true;
-        let isFirstCheck = true;
-        let pendingTimeout: NodeJS.Timeout | null = null;
 
-        const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
+        const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
             if (!isSubscribed) return;
 
             if (currentUser) {
-                if (pendingTimeout) {
-                    clearTimeout(pendingTimeout);
-                    pendingTimeout = null;
-                }
-                isFirstCheck = false;
                 setUser(currentUser);
-                setLoading(true);
+                setResolvedUid(currentUser.uid);
+                // Immediately mark loading false so routes and screens don't stall
+                setLoading(false);
 
-                try {
-                    // Try to resolve the user document by checking UID, email, or phone number
-                    let foundUid = currentUser.uid;
-                    let foundData = null;
-
-                    // 1. Direct UID document lookup
-                    const directSnap = await getDoc(doc(db, "users", currentUser.uid));
-                    if (directSnap.exists()) {
-                        foundUid = currentUser.uid;
-                        foundData = directSnap.data();
-                    } else {
-                        // 2. Lookup by email
-                        if (currentUser.email) {
-                            const normalizedEmail = currentUser.email.toLowerCase();
+                // Asynchronously check for legacy email-alias unification in background without blocking UI
+                (async () => {
+                    try {
+                        if (!currentUser.email) return;
+                        const normalizedEmail = currentUser.email.toLowerCase();
+                        const directSnap = await getDoc(doc(db, "users", currentUser.uid));
+                        if (!directSnap.exists()) {
                             let snapEmail = await getDocs(query(collection(db, "users"), where("email_lowercase", "==", normalizedEmail)));
                             if (snapEmail.empty) {
                                 snapEmail = await getDocs(query(collection(db, "users"), where("email", "==", currentUser.email)));
                             }
-                            if (snapEmail.empty) {
-                                snapEmail = await getDocs(query(collection(db, "users"), where("email", "==", normalizedEmail)));
-                            }
-                            if (!snapEmail.empty) {
+                            if (!snapEmail.empty && isSubscribed) {
                                 const matchingDoc = snapEmail.docs[0];
-                                foundUid = matchingDoc.id;
-                                foundData = matchingDoc.data();
-                                // Ensure currentUser.uid also has a direct document
+                                const matchedData = matchingDoc.data();
+                                setResolvedUid(matchingDoc.id);
+                                setUserData(matchedData);
                                 try {
                                     await setDoc(doc(db, "users", currentUser.uid), {
-                                        ...foundData,
+                                        ...matchedData,
                                         id: currentUser.uid,
                                         email: currentUser.email,
                                         email_lowercase: normalizedEmail
@@ -76,35 +74,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                                 } catch (_) {}
                             }
                         }
-                        // 3. Lookup by phone number (if signed in via Phone and not found yet)
-                        if (foundUid === currentUser.uid && currentUser.phoneNumber) {
-                            const qPhone = query(collection(db, "users"), where("phoneNumber", "==", currentUser.phoneNumber));
-                            const snapPhone = await getDocs(qPhone);
-                            if (!snapPhone.empty) {
-                                const matchingDoc = snapPhone.docs[0];
-                                foundUid = matchingDoc.id;
-                                foundData = matchingDoc.data();
-                            }
-                        }
+                    } catch (err) {
+                        console.error("AuthContext: background user resolution error:", err);
                     }
-
-                    if (isSubscribed) {
-                        setResolvedUid(foundUid);
-                        if (foundData) {
-                            setUserData(foundData);
-                        }
-                    }
-                } catch (err) {
-                    console.error("AuthContext: failed to resolve user UID:", err);
-                    if (isSubscribed) {
-                        setResolvedUid(currentUser.uid);
-                    }
-                }
+                })();
             } else {
-                if (pendingTimeout) {
-                    clearTimeout(pendingTimeout);
-                    pendingTimeout = null;
-                }
                 if (isSubscribed) {
                     setUser(null);
                     setUserData(null);
@@ -116,9 +90,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         return () => {
             isSubscribed = false;
-            if (pendingTimeout) {
-                clearTimeout(pendingTimeout);
-            }
             unsubscribeAuth();
         };
     }, []);

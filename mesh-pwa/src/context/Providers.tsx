@@ -45,24 +45,8 @@ function AuthRedirectWrapper({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
 
     const [activePathname, setActivePathname] = useState<string | null>(null);
-    const [delayedShowLoader, setDelayedShowLoader] = useState(() => {
-        if (typeof window !== "undefined") {
-            const hasPersisted = !!localStorage.getItem("mesh_session_token") || 
-                localStorage.getItem("mesh_onboarding_complete") === "true" ||
-                Object.keys(localStorage).some(k => k.startsWith("firebase:authUser"));
-            return hasPersisted;
-        }
-        return false;
-    });
-    const [renderLoader, setRenderLoader] = useState(() => {
-        if (typeof window !== "undefined") {
-            const hasPersisted = !!localStorage.getItem("mesh_session_token") || 
-                localStorage.getItem("mesh_onboarding_complete") === "true" ||
-                Object.keys(localStorage).some(k => k.startsWith("firebase:authUser"));
-            return hasPersisted;
-        }
-        return false;
-    });
+    const [delayedShowLoader, setDelayedShowLoader] = useState(false);
+    const [renderLoader, setRenderLoader] = useState(false);
     const [isExiting, setIsExiting] = useState(false);
 
     useEffect(() => {
@@ -120,8 +104,9 @@ function AuthRedirectWrapper({ children }: { children: React.ReactNode }) {
     );
 
     const isProfileLoading = !!user && !isProfileLoaded;
-    const showLoader = isOnboardingPage 
-        ? ((loading && !user) || needsRedirectToHome || needsRedirectToLogin)
+    // On auth, onboarding, or unauthenticated home, NEVER mount the full-screen loader overlay
+    const showLoader = isBypassAppShell 
+        ? false 
         : ((loading && (!!user || hasPersistedSession)) || isRouteTransitioning || isRedirecting || isProfileLoading);
 
     useEffect(() => {
@@ -134,7 +119,7 @@ function AuthRedirectWrapper({ children }: { children: React.ReactNode }) {
             }
             const timer = setTimeout(() => {
                 setDelayedShowLoader(true);
-            }, 200);
+            }, 100);
             return () => clearTimeout(timer);
         } else {
             setDelayedShowLoader(false);
@@ -151,7 +136,7 @@ function AuthRedirectWrapper({ children }: { children: React.ReactNode }) {
             const timer = setTimeout(() => {
                 setRenderLoader(false);
                 setIsExiting(false);
-            }, 180);
+            }, 80);
             return () => clearTimeout(timer);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps

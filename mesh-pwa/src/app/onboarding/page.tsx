@@ -224,14 +224,13 @@ export default function OnboardingPage() {
           { merge: true }
         );
 
-        // Automatically create Store Feed posts for all extra photos uploaded
+        // Automatically create Store Feed posts for all extra photos uploaded in the background
         const extraPhotos = validPhotos.slice(1);
-        for (let i = 0; i < extraPhotos.length; i++) {
-          const extraPhoto = extraPhotos[i];
-          if (!extraPhoto) continue;
-          try {
+        if (extraPhotos.length > 0) {
+          Promise.all(extraPhotos.map((extraPhoto, i) => {
+            if (!extraPhoto) return Promise.resolve();
             const moodId = crypto.randomUUID();
-            await setDoc(doc(db, "moods", moodId), {
+            return setDoc(doc(db, "moods", moodId), {
               userId: uid,
               userName: trimmedName,
               userAvatar: mainAvatar,
@@ -242,10 +241,10 @@ export default function OnboardingPage() {
               createdAt: new Date(Date.now() - (extraPhotos.length - i) * 2000).toISOString(),
               likes: [],
               comments: [],
+            }).catch((postErr) => {
+              console.warn("Failed to create storefront feed post for extra photo:", postErr);
             });
-          } catch (postErr) {
-            console.warn("Failed to create storefront feed post for extra photo:", postErr);
-          }
+          })).catch(() => {});
         }
       }
 
@@ -255,7 +254,6 @@ export default function OnboardingPage() {
       router.replace("/");
     } catch (err) {
       console.error("Failed to complete onboarding:", err);
-      // Fallback: Ensure user is not blocked even if offline/permission issue
       if (typeof window !== "undefined") {
         localStorage.setItem("mesh_onboarding_complete", "true");
       }
@@ -269,7 +267,7 @@ export default function OnboardingPage() {
   const progressPercent = Math.round((step / 4) * 100);
 
   return (
-    <div className="min-h-screen w-full flex flex-col bg-white dark:bg-gray-900 text-gray-900 dark:text-white font-sans relative select-none ios-entrance">
+    <div className="min-h-screen w-full flex flex-col bg-white dark:bg-gray-900 text-gray-900 dark:text-white font-sans relative select-none">
       {/* ── Top Header with Progress Bar ── */}
       <header className="w-full max-w-md mx-auto pt-6 px-6 pb-4 shrink-0">
         <div className="flex items-center justify-between h-10 mb-4">
@@ -322,10 +320,10 @@ export default function OnboardingPage() {
           {step === 1 && (
             <motion.div
               key="step-1"
-              initial={{ opacity: 0, scale: 0.95 }}
+              initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
               className="flex-1 flex flex-col justify-between py-6"
             >
               <div className="flex-1 flex flex-col justify-center">
@@ -389,10 +387,10 @@ export default function OnboardingPage() {
           {step === 2 && (
             <motion.div
               key="step-2"
-              initial={{ opacity: 0, scale: 0.96 }}
+              initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.96 }}
-              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
               className="flex-1 flex flex-col justify-between py-6"
             >
               <div className="flex-1 flex flex-col justify-center">
@@ -462,10 +460,10 @@ export default function OnboardingPage() {
           {step === 3 && (
             <motion.div
               key="step-3"
-              initial={{ opacity: 0, scale: 0.96 }}
+              initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.96 }}
-              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
               className="flex-1 flex flex-col justify-between py-6"
             >
               <div className="flex-1 flex flex-col justify-center">
@@ -528,10 +526,10 @@ export default function OnboardingPage() {
           {step === 4 && (
             <motion.div
               key="step-4"
-              initial={{ opacity: 0, scale: 0.96 }}
+              initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.96 }}
-              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
               className="flex-1 flex flex-col justify-between py-6"
             >
               <div>

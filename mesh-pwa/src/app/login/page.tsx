@@ -201,13 +201,13 @@ export default function LoginPage() {
                 localStorage.removeItem("mesh_onboarding_complete");
             }
             // If the document doesn't exist AND there's no existing account to migrate:
-            // create the minimal user doc so they can go to onboarding.
+            // create the minimal user doc so they can go to onboarding without waiting for server response.
             if (!docSnap.exists() && !hasExistingProfileMatched) {
                 const currentUser = auth.currentUser;
                 const userEmail = currentUser?.email || `phone_${phoneNum.replace("+", "")}@yogheart.app`;
                 const userName = currentUser?.displayName || "User";
                 
-                await setDoc(doc(db, "users", uid), {
+                setDoc(doc(db, "users", uid), {
                     id: uid,
                     name: userName,
                     phoneNumber: phoneNum,
@@ -220,7 +220,7 @@ export default function LoginPage() {
                         privacy: { discoverableByPhone: true, lastSeen: true, readReceipts: true }
                     },
                     createdAt: new Date().toISOString()
-                });
+                }).catch(err => console.error("Error creating initial user profile:", err));
             }
             router.replace("/onboarding");
         }
@@ -391,7 +391,12 @@ export default function LoginPage() {
                     },
                     createdAt: new Date().toISOString()
                 };
-                await setDoc(doc(db, "users", newUid), initialUserData);
+                
+                // Write user document optimistically in the background without blocking navigation
+                setDoc(doc(db, "users", newUid), initialUserData).catch(err => {
+                    console.error("Failed to write initial user doc:", err);
+                });
+
                 setIsSigningIn(false);
                 setLoading(false);
                 router.replace("/onboarding");
@@ -562,7 +567,7 @@ export default function LoginPage() {
         );
     }
 
-    if ((user || isSigningIn) && !isSigningOut) {
+    if (user && !isSigningIn && !isSigningOut) {
         return null;
     }
 
