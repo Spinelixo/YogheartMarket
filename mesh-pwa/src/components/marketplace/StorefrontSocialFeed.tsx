@@ -144,7 +144,9 @@ export function StatusStoriesRow({
         })}
 
         {!isMe && activeStatuses.length === 0 && (
-          <p className="text-xs text-gray-400 dark:text-zinc-500 py-2">No active stories</p>
+          <div className="flex flex-col items-center shrink-0">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full border-2 border-dashed border-gray-300 dark:border-zinc-700 bg-gray-50/40 dark:bg-zinc-900/40" />
+          </div>
         )}
       </div>
     </div>
@@ -675,21 +677,7 @@ export function StoreFeedView({ sellerUser, isMe, onOpenCreatePost }: StoreFeedV
   };
 
   return (
-    <div className="space-y-4 pt-1">
-      {/* Create Button Header (when owner and there are posts) */}
-      {isMe && moodsList.length > 0 && (
-        <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={onOpenCreatePost}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold text-xs shadow-xs hover:scale-105 active:scale-95 transition-all cursor-pointer"
-          >
-            <Plus size={14} />
-            <span>New Post / Clip</span>
-          </button>
-        </div>
-      )}
-
+    <div className="pt-1">
       {/* Grid of Feed Items */}
       {moodsList.length === 0 ? (
         <div className="text-center py-12 px-4 bg-gray-50 dark:bg-zinc-900 rounded-3xl border border-gray-100 dark:border-zinc-800">

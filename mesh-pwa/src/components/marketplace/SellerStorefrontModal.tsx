@@ -688,6 +688,22 @@ export function SellerStorefrontModal({
                   <Sparkles size={15} />
                   <span>Feed ({userFeedCount})</span>
                 </button>
+
+                {/* New Post / Clip button placed right next to the Feed button */}
+                {isMe && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStatusTab("feed");
+                      setPostModalType("feed");
+                      setShowPostModal(true);
+                    }}
+                    className="flex items-center gap-1.5 px-4 py-2 sm:px-4.5 sm:py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold text-xs sm:text-sm shadow-xs hover:scale-105 active:scale-95 transition-all cursor-pointer whitespace-nowrap shrink-0"
+                  >
+                    <Plus size={15} />
+                    <span>New Post / Clip</span>
+                  </button>
+                )}
               </div>
 
               {/* Category Chips within Store (hidden on Feed tab) */}
