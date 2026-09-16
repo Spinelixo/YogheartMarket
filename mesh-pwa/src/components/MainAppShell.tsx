@@ -423,7 +423,7 @@ function MainAppShellContent() {
                 <div 
                     key={lastActiveThreadId}
                     className={clsx(
-                        "absolute inset-0 z-40 h-full w-full bg-white dark:bg-zinc-950 shadow-[-12px_0_30px_-5px_rgba(0,0,0,0.25)] border-l border-zinc-200/40 dark:border-zinc-800/40 overflow-hidden",
+                        "absolute inset-0 z-[160] h-full w-full bg-white dark:bg-zinc-950 shadow-[-12px_0_30px_-5px_rgba(0,0,0,0.25)] border-l border-zinc-200/40 dark:border-zinc-800/40 overflow-hidden",
                         threadAnimPhase === "entering" && "animate-slide-in-from-right-edge",
                         threadAnimPhase === "exiting" && "animate-slide-out-to-right-edge"
                     )}
@@ -454,6 +454,9 @@ function MainAppShellContent() {
                             setActiveThreadId(null);
                             if (isCurrentlyArchived) {
                                 window.history.pushState(null, "", "/archived");
+                            } else if (fromParam === "marketplace") {
+                                setActiveTab("marketplace");
+                                window.history.pushState(null, "", "/marketplace");
                             } else {
                                 setActiveTab("chats");
                                 window.history.pushState(null, "", "/chats");
@@ -491,6 +494,11 @@ function MainAppShellContent() {
                             const urlParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : new URLSearchParams();
                             const fromParam = urlParams.get("from");
                             const fromThreadId = urlParams.get("fromThreadId");
+
+                            // If we're currently on /inbox or have an active thread query, don't clobber with marketplace navigation!
+                            if (typeof window !== "undefined" && (window.location.pathname.startsWith("/inbox") || new URLSearchParams(window.location.search).get("id"))) {
+                                return;
+                            }
 
                             if (fromThreadId) {
                                 setActiveThreadId(fromThreadId);

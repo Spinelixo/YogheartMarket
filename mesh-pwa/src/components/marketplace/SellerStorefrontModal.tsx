@@ -74,6 +74,7 @@ export function SellerStorefrontModal({
     allDatingUsers,
     marketplaceItems,
     sendMarketplaceInquiry,
+    startDirectChat,
     addNotification,
     setActiveThreadId,
     setActiveTab,
@@ -308,18 +309,26 @@ export function SellerStorefrontModal({
 
       const firstItem = sellerListings[0];
       const customMsg = `Hi ${sellerUser.name}, I'm browsing your marketplace store!`;
+      let threadId = "";
       if (firstItem) {
-        const threadId = await sendMarketplaceInquiry(sellerUser, firstItem, customMsg);
-        setActiveTab("chats");
-        setActiveThreadId(threadId);
-        window.history.pushState(null, "", `/inbox?id=${threadId}`);
-        onClose();
-      } else {
-        window.history.pushState(null, "", `/profile?userId=${sellerUser.id}`);
-        onClose();
+        threadId = await sendMarketplaceInquiry(sellerUser, firstItem, customMsg);
+      } else if (startDirectChat) {
+        threadId = await startDirectChat(sellerUser, false);
       }
+
+      if (!threadId) {
+        addNotification("Could not open chat with this store.");
+        return;
+      }
+
+      setActiveThreadId(threadId);
+      setActiveTab("chats");
+      window.history.pushState(null, "", `/inbox?id=${threadId}&from=marketplace`);
+      window.dispatchEvent(new Event("locationchange"));
+      onClose();
     } catch (err) {
-      console.error(err);
+      console.error("Failed to message seller:", err);
+      addNotification("Failed to message seller.");
     }
   };
 
