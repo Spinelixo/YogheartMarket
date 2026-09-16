@@ -203,8 +203,7 @@ export function ItemDetailModal({
       const threadId = await sendMarketplaceInquiry(sellerUser, targetItem, message);
       setActiveTab("chats");
       setActiveThreadId(threadId);
-      window.history.pushState(null, "", `/inbox?id=${threadId}&from=marketplace`);
-      window.dispatchEvent(new Event("locationchange"));
+      window.history.pushState(null, "", `/inbox?id=${threadId}`);
       onClose();
     } catch (err) {
       console.error("Failed to send inquiry:", err);

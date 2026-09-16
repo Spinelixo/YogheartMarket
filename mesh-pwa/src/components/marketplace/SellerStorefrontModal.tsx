@@ -74,7 +74,6 @@ export function SellerStorefrontModal({
     allDatingUsers,
     marketplaceItems,
     sendMarketplaceInquiry,
-    startDirectChat,
     addNotification,
     setActiveThreadId,
     setActiveTab,
@@ -309,26 +308,18 @@ export function SellerStorefrontModal({
 
       const firstItem = sellerListings[0];
       const customMsg = `Hi ${sellerUser.name}, I'm browsing your marketplace store!`;
-      let threadId = "";
       if (firstItem) {
-        threadId = await sendMarketplaceInquiry(sellerUser, firstItem, customMsg);
-      } else if (startDirectChat) {
-        threadId = await startDirectChat(sellerUser, false);
+        const threadId = await sendMarketplaceInquiry(sellerUser, firstItem, customMsg);
+        setActiveTab("chats");
+        setActiveThreadId(threadId);
+        window.history.pushState(null, "", `/inbox?id=${threadId}`);
+        onClose();
+      } else {
+        window.history.pushState(null, "", `/profile?userId=${sellerUser.id}`);
+        onClose();
       }
-
-      if (!threadId) {
-        addNotification("Could not open chat with this store.");
-        return;
-      }
-
-      setActiveThreadId(threadId);
-      setActiveTab("chats");
-      window.history.pushState(null, "", `/inbox?id=${threadId}&from=marketplace`);
-      window.dispatchEvent(new Event("locationchange"));
-      onClose();
     } catch (err) {
-      console.error("Failed to message seller:", err);
-      addNotification("Failed to message seller.");
+      console.error(err);
     }
   };
 
@@ -508,9 +499,9 @@ export function SellerStorefrontModal({
                 </div>
               </div>
 
-              {/* Action Button: Edit or Message */}
-              <div>
-                {isMe ? (
+              {/* Action Button: Edit Profile (Store Owner only) */}
+              {isMe && (
+                <div>
                   <button
                     type="button"
                     onClick={() => setShowEditStoreModal(true)}
@@ -519,17 +510,8 @@ export function SellerStorefrontModal({
                     <Edit2 size={14} />
                     <span>Edit Profile</span>
                   </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleMessageSeller}
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-2xl text-white font-bold text-xs shadow-lg transition-all cursor-pointer bg-[var(--primary)] hover:bg-blue-600 shadow-blue-500/25"
-                  >
-                    <MessageCircle size={15} />
-                    <span>Message Store</span>
-                  </button>
-                )}
-              </div>
+                </div>
+              )}
             </div>
 
             {/* Title & Badge */}
