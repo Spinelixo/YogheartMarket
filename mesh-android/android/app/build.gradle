@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace = "com.mesh.dating"
+    namespace = "com.yogheart.market"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.mesh.dating"
+        applicationId "com.yogheart.market"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

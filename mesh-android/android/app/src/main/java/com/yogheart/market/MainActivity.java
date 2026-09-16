@@ -1,4 +1,4 @@
-package com.mesh.dating;
+package com.yogheart.market;
 
 import android.os.Bundle;
 import android.webkit.WebSettings;
@@ -25,4 +25,3 @@ public class MainActivity extends BridgeActivity {
         }
     }
 }
-

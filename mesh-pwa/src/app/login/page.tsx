@@ -55,6 +55,7 @@ export default function LoginPage() {
     const [isReturningUser, setIsReturningUser] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [resetEmailSent, setResetEmailSent] = useState(false);
+    const [signUpMode, setSignUpMode] = useState(true); // true = creating account, false = signing in
 
 
 
@@ -345,29 +346,27 @@ export default function LoginPage() {
         setLoading(true);
         setError("");
         try {
-            // Re-verify user existence
-            const snapEmail = await getDocs(query(collection(db, "users"), where("email_lowercase", "==", trimmedEmail)));
-            const exists = !snapEmail.empty;
-            setIsReturningUser(exists);
-
-            if (exists) {
-                // Sign in existing user
-                const result = await signInWithEmailAndPassword(auth, trimmedEmail, passwordInput);
-                await setupSessionAndRedirect(result.user.uid, result.user.phoneNumber || "");
-            } else {
-                // Create new user
+            if (signUpMode) {
+                // Create new account
                 const result = await createUserWithEmailAndPassword(auth, trimmedEmail, passwordInput);
                 await setupSessionAndRedirect(result.user.uid, "");
+            } else {
+                // Sign in existing account
+                const result = await signInWithEmailAndPassword(auth, trimmedEmail, passwordInput);
+                await setupSessionAndRedirect(result.user.uid, result.user.phoneNumber || "");
             }
         } catch (err: any) {
             console.error("Email/password auth failed:", err);
             setIsSigningIn(false);
             const code = err?.code || "";
-            if (code === "auth/wrong-password" || code === "auth/invalid-credential") {
+            if (code === "auth/email-already-in-use") {
+                setSignUpMode(false);
+                setError("This email already has an account. Enter your password to sign in.");
+            } else if (code === "auth/wrong-password" || code === "auth/invalid-credential") {
                 setError("Incorrect password. Please try again.");
-            } else if (code === "auth/email-already-in-use") {
-                setIsReturningUser(true);
-                setError("An account with this email already exists. Please verify your password.");
+            } else if (code === "auth/user-not-found") {
+                setSignUpMode(true);
+                setError("No account found with this email. Sign up to create one.");
             } else if (code === "auth/too-many-requests") {
                 setError("Too many attempts. Please try again later.");
             } else {
@@ -521,6 +520,7 @@ export default function LoginPage() {
                                 setError("");
                                 setResetEmailSent(false);
                                 setShowPassword(false);
+                                setSignUpMode(true);
                             } else {
                                 setPhase("welcome");
                             }
@@ -747,17 +747,28 @@ export default function LoginPage() {
                         {mobileAuthStep === "credentials" && (
                             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", flex: 1, justifyContent: "center", gap: 20 }}>
                                 <div style={{ textAlign: "center" }}>
-                                    <div style={{ width: 64, height: 64, borderRadius: 20, background: "linear-gradient(135deg, var(--primary), #34a853)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px auto", boxShadow: "0 8px 24px rgba(0,0,0,0.12)" }}>
+                                    <div style={{ width: 64, height: 64, borderRadius: 20, background: signUpMode ? "linear-gradient(135deg, var(--primary), #34a853)" : "linear-gradient(135deg, #4285F4, #7B61FF)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px auto", boxShadow: "0 8px 24px rgba(0,0,0,0.12)" }}>
                                         <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                            {signUpMode ? (
+                                                <>
+                                                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                                    <circle cx="8.5" cy="7" r="4"></circle>
+                                                    <line x1="20" y1="8" x2="20" y2="14"></line>
+                                                    <line x1="23" y1="11" x2="17" y2="11"></line>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                                                </>
+                                            )}
                                         </svg>
                                     </div>
                                     <h1 className="title-phone" style={{ marginBottom: 6 }}>
-                                        Get in the Mix 🍦
+                                        {signUpMode ? "Create Account 🍦" : "Welcome Back 🍦"}
                                     </h1>
                                     <p className="disclaimer-text" style={{ fontSize: 13, lineHeight: 1.5, maxWidth: 280, margin: "0 auto" }}>
-                                        Enter your email and password to continue.
+                                        {signUpMode ? "Enter your email and create a password to get started." : "Enter your email and password to sign in."}
                                     </p>
                                 </div>
 
@@ -782,8 +793,8 @@ export default function LoginPage() {
                                     <div style={{ position: "relative" }}>
                                         <input
                                             type={showPassword ? "text" : "password"}
-                                            autoComplete="current-password"
-                                            placeholder="Password"
+                                            autoComplete={signUpMode ? "new-password" : "current-password"}
+                                            placeholder={signUpMode ? "Create a password (min. 6 chars)" : "Password"}
                                             value={passwordInput}
                                             onChange={(e) => setPasswordInput(e.target.value)}
                                             onKeyDown={(e) => { if (e.key === "Enter" && !loading) handleMobileSubmit(); }}
@@ -819,18 +830,31 @@ export default function LoginPage() {
                                         className="capsule-btn blue"
                                         style={{ width: "100%", margin: "8px 0 0 0", opacity: (!emailInput.trim() || passwordInput.length < 6 || loading) ? 0.5 : 1 }}
                                     >
-                                        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Next"}
+                                        {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (signUpMode ? "Create Account" : "Sign In")}
                                     </button>
-                                    {!resetEmailSent && (
+                                    {!signUpMode && !resetEmailSent && (
                                         <button
                                             type="button"
                                             onClick={handleForgotPassword}
                                             disabled={loading}
-                                            style={{ display: "block", width: "100%", marginTop: 8, background: "none", border: "none", color: "var(--primary)", fontSize: 13, fontWeight: 600, cursor: "pointer", textAlign: "center" }}
+                                            style={{ display: "block", width: "100%", marginTop: 4, background: "none", border: "none", color: "var(--primary)", fontSize: 13, fontWeight: 600, cursor: "pointer", textAlign: "center" }}
                                         >
                                             Forgot password?
                                         </button>
                                     )}
+                                    <div style={{ textAlign: "center", marginTop: 4 }}>
+                                        <span style={{ fontSize: 13, color: "var(--secondary)" }}>
+                                            {signUpMode ? "Already have an account?" : "Don\u0027t have an account?"}
+                                        </span>
+                                        {" "}
+                                        <button
+                                            type="button"
+                                            onClick={() => { setSignUpMode(!signUpMode); setError(""); setPasswordInput(""); setResetEmailSent(false); }}
+                                            style={{ background: "none", border: "none", color: "var(--primary)", fontSize: 13, fontWeight: 700, cursor: "pointer", padding: 0 }}
+                                        >
+                                            {signUpMode ? "Sign In" : "Sign Up"}
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         )}
