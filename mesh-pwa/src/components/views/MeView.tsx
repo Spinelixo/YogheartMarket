@@ -16,21 +16,19 @@ import { useModalHistory } from "@/hooks/useModalHistory";
 const AccountPage = lazy(() => import("@/app/me/account/page"));
 const PrivacyPage = lazy(() => import("@/app/me/privacy/page"));
 const ChatsSettingsPage = lazy(() => import("@/app/me/chats/page"));
-const BoostingPage = lazy(() => import("@/app/me/boosting/page"));
 const NotificationsPage = lazy(() => import("@/app/me/notifications/page"));
 const StoragePage = lazy(() => import("@/app/me/storage/page"));
 const HelpPage = lazy(() => import("@/app/me/help/page"));
 const MarketplaceSettingsPage = lazy(() => import("@/app/me/marketplace/page"));
 const AdminPage = lazy(() => import("@/app/admin/page"));
 
-type SettingsSubpage = "marketplace" | "account" | "privacy" | "chats" | "boosting" | "notifications" | "storage" | "help" | "admin" | null;
+type SettingsSubpage = "marketplace" | "account" | "privacy" | "chats" | "notifications" | "storage" | "help" | "admin" | null;
 
 const SUBPAGE_COMPONENTS: Record<string, React.LazyExoticComponent<React.ComponentType<any>>> = {
     marketplace: MarketplaceSettingsPage,
     account: AccountPage,
     privacy: PrivacyPage,
     chats: ChatsSettingsPage,
-    boosting: BoostingPage,
     notifications: NotificationsPage,
     storage: StoragePage,
     help: HelpPage,
@@ -43,7 +41,6 @@ const HREF_TO_SUBPAGE: Record<string, SettingsSubpage> = {
     "/me/account": "account",
     "/me/privacy": "privacy",
     "/me/chats": "chats",
-    "/me/boosting": "boosting",
     "/me/notifications": "notifications",
     "/me/storage": "storage",
     "/me/help": "help",
@@ -225,7 +222,6 @@ export default function MeView({ isOverlay = false, onCloseOverlay }: { isOverla
         { icon: Key, label: "Account", sub: "Security, change number", href: "/me/account" },
         { icon: Lock, label: "Privacy", sub: "Last seen, read receipts", href: "/me/privacy" },
         { icon: Smartphone, label: "Chats", sub: "Theme, wallpapers", href: "/me/chats" },
-        { icon: Flame, label: "Boosting History", sub: "Active boosts, transaction receipts", href: "/me/boosting" },
         { icon: Laptop, label: "Link a Device", sub: "Scan QR or enter linking code", href: "#link-device" },
         { icon: Bell, label: "Notifications", sub: "Message tones, alerts", href: "/me/notifications" },
         { icon: Database, label: "Storage", sub: "Network, data usage", href: "/me/storage" },

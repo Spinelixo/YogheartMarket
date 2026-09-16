@@ -9,28 +9,32 @@ import { useMockData } from "@/context/MockContext";
 
 const FAQ_ITEMS = [
     {
-        question: "How does matching work?",
-        answer: "When you send someone a message and they accept your request, you become connected and can chat freely. Both parties need to show interest for a connection to form."
+        question: "How do I browse and buy items on Yogheart Market?",
+        answer: "Explore listings in the Marketplace tab or search by keyword and category. When you find an item you like, tap to view high-resolution photos, descriptions, condition, and fulfillment options. Tap 'Send Message' to chat directly with the seller and agree on details."
     },
     {
-        question: "Can I undo a declined request?",
-        answer: "Once you decline a request, it cannot be undone. However, the person can send you a new request if they choose to."
+        question: "How do I list an item for sale in my store?",
+        answer: "Go to Marketplace and tap '+ List Item' (or go to your Store Profile). Upload photos, enter a title, price, category, item condition, and fulfillment options (pickup, delivery, or shipping). Once published, your listing appears immediately across the marketplace."
+    },
+    {
+        question: "How does payment and fulfillment work?",
+        answer: "Sellers and buyers can coordinate in-person pickup, local drop-off, or shipping directly inside chat. Sellers can also accept secure debit and credit card payments directly via Stripe."
+    },
+    {
+        question: "How do 24-hour Statuses and Store Feed Posts work?",
+        answer: "From your Storefront, you can post a 24-hour Status update to share timely announcements or daily updates that expire automatically. You can also share permanent Photos and Video Clips to your Store Feed for buyers browsing your catalog."
+    },
+    {
+        question: "How do voice notes, calls, and messaging work?",
+        answer: "In any chat thread with a seller or buyer, you can send instant text messages, photos, and files. Tap and hold the microphone icon to record voice notes, or tap the phone or video icon in the top header to start an instant direct call."
+    },
+    {
+        question: "Are my chat messages and communications private?",
+        answer: "Yes, all chat conversations and messages between buyers and sellers are private and secure. Only the participants in the conversation can view the message history."
     },
     {
         question: "How do I delete my account?",
-        answer: "Go to Settings → Account → Delete Account. This action is permanent and will remove all your data, matches, and conversations."
-    },
-    {
-        question: "Why can't I see someone's last seen?",
-        answer: "If you can't see someone's last seen, they may have disabled this feature in their privacy settings. You also need to have yours enabled to see theirs."
-    },
-    {
-        question: "How do voice messages work?",
-        answer: "Tap and hold the microphone button to record a voice message. Release to send. You can also swipe left while recording to cancel."
-    },
-    {
-        question: "Are my messages encrypted?",
-        answer: "Yes, all messages are end-to-end encrypted. Only you and the person you're chatting with can read them."
+        answer: "Go to Settings → Account → Delete Account. This action is permanent and removes all your profile data, marketplace listings, and chat conversations."
     },
 ];
 
@@ -182,82 +186,11 @@ export default function HelpPage() {
                     ))}
                 </div>
 
-                {/* The Flavor Guide */}
-                <div className="bg-white dark:bg-zinc-900 border border-[var(--border)] dark:border-zinc-800 rounded-xl p-4 md:p-5 shadow-sm text-left">
-                    <h3 className="font-bold text-base text-[var(--primary)] flex items-center gap-1.5 mb-2">
-                        🍦 Yogheart Flavor Guide
-                    </h3>
-                    <p className="text-xs text-[var(--secondary)] mb-4">
-                        Speak the language of Yoghearts and navigate the blender like a pro:
-                    </p>
-                    
-                    <div className="space-y-3.5">
-                        {/* Swipe Mechanics */}
-                        <div className="bg-[var(--card)] dark:bg-zinc-850/50 p-3.5 rounded-xl border border-[var(--border)] dark:border-zinc-800/50">
-                            <h4 className="font-bold text-xs dark:text-zinc-200 mb-2 flex items-center gap-1.5">
-                                ⚡ The Swipe Mechanics
-                            </h4>
-                            <ul className="space-y-1.5 text-xs text-[var(--secondary)] dark:text-zinc-400">
-                                <li>• <strong>Right Swipe (Like):</strong> <span className="text-[var(--primary)] font-semibold">Scoop</span> (as in, <em>"I'd scoop that"</em> or <em>"we scooped each other"</em>).</li>
-                                <li>• <strong>Left Swipe (Pass):</strong> <span className="text-gray-500 font-semibold">Skip</span> (keeping it on ice, moving on).</li>
-                                <li>• <strong>Super Like:</strong> <span className="text-amber-500 font-semibold">Extra Sprinkle</span> (showing they are premium flavor material).</li>
-                            </ul>
-                        </div>
-
-                        {/* Profiles, Users, & The Community */}
-                        <div className="bg-[var(--card)] dark:bg-zinc-850/50 p-3.5 rounded-xl border border-[var(--border)] dark:border-zinc-800/50">
-                            <h4 className="font-bold text-xs dark:text-zinc-200 mb-2 flex items-center gap-1.5">
-                                👥 Profiles, Users, & The Community
-                            </h4>
-                            <ul className="space-y-1.5 text-xs text-[var(--secondary)] dark:text-zinc-400">
-                                <li>• <strong>User Profile:</strong> <span className="text-[var(--primary)] font-semibold">Blend</span> (your unique mix of personality, hobbies, and vibe).</li>
-                                <li>• <strong>Verified Profile:</strong> <span className="text-emerald-500 font-semibold">Organic Blend</span> (letting people know they are the real deal).</li>
-                                <li>• <strong>User Base:</strong> <span className="text-violet-500 font-semibold">Yoghearts</span> (our built-in community identity).</li>
-                            </ul>
-                        </div>
-
-                        {/* Messaging & Connections */}
-                        <div className="bg-[var(--card)] dark:bg-zinc-850/50 p-3.5 rounded-xl border border-[var(--border)] dark:border-zinc-800/50">
-                            <h4 className="font-bold text-xs dark:text-zinc-200 mb-2 flex items-center gap-1.5">
-                                💬 Messaging & Connections
-                            </h4>
-                            <ul className="space-y-1.5 text-xs text-[var(--secondary)] dark:text-zinc-400">
-                                <li>• <strong>A Match:</strong> <span className="text-rose-500 font-semibold">Perfect Blend / Swirled</span> (you two go together perfectly).</li>
-                                <li>• <strong>Text Message:</strong> <span className="text-[var(--primary)] font-semibold">Sip / Sips</span> (sweet, quick exchanges).</li>
-                                <li>• <strong>Active Chat History:</strong> <span className="text-indigo-500 font-semibold">The Counter</span> (where all the active mixing is happening).</li>
-                            </ul>
-                        </div>
-
-                        {/* Content & Feed */}
-                        <div className="bg-[var(--card)] dark:bg-zinc-850/50 p-3.5 rounded-xl border border-[var(--border)] dark:border-zinc-800/50">
-                            <h4 className="font-bold text-xs dark:text-zinc-200 mb-2 flex items-center gap-1.5">
-                                📝 Content & Feed
-                            </h4>
-                            <ul className="space-y-1.5 text-xs text-[var(--secondary)] dark:text-zinc-400">
-                                <li>• <strong>Photo/Video Post:</strong> <span className="text-teal-500 font-semibold">Fresh Topping</span> (sharing a little bite of your daily life).</li>
-                                <li>• <strong>Main Feed:</strong> <span className="text-amber-600 font-semibold">The Main Menu</span> (where you scroll through what's fresh in the community today).</li>
-                                <li>• <strong>Likes on a Post:</strong> <span className="text-red-500 font-semibold">Sweeteners</span> (adding a little sugar to someone's post).</li>
-                                <li>• <strong>Comments on a Post:</strong> <span className="text-blue-500 font-semibold">Mix-ins</span> (adding your own flavor to their conversation).</li>
-                            </ul>
-                        </div>
-
-                        {/* How it looks in action */}
-                        <div className="bg-rose-50/50 dark:bg-rose-950/20 p-3.5 rounded-xl border border-rose-100/30 dark:border-rose-900/20">
-                            <h4 className="font-bold text-xs text-rose-700 dark:text-rose-450 mb-1 flex items-center gap-1.5">
-                                ✨ In Action
-                            </h4>
-                            <p className="text-xs text-rose-600/90 dark:text-rose-300 italic leading-relaxed">
-                                "You’ve Scooped! 🍦 Drop a sip into the blender to get things moving."
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
                 {/* App Info */}
                 <div className="bg-white dark:bg-zinc-900 border border-[var(--border)] dark:border-zinc-800 rounded-xl p-4 md:p-5 text-center shadow-sm">
-                    <h3 className="font-bold text-lg text-[var(--primary)]">Yogheart</h3>
+                    <h3 className="font-bold text-lg text-[var(--primary)]">Yogheart Market</h3>
                     <p className="text-sm text-[var(--secondary)] mt-1">Version 1.0.0</p>
-                    <p className="text-xs text-[var(--secondary)] mt-2">Made with ❤️ for meaningful connections</p>
+                    <p className="text-xs text-[var(--secondary)] mt-2">Made with ❤️ for local buying, selling, and community trade</p>
                 </div>
             </div>
 

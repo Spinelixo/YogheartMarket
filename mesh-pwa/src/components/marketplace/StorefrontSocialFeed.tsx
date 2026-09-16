@@ -20,9 +20,11 @@ import {
   Sparkles,
   Trash2,
   Globe,
-  ChevronLeft
+  ChevronLeft,
+  ArrowLeft
 } from "lucide-react";
 import { clsx } from "clsx";
+import { useModalHistory } from "@/hooks/useModalHistory";
 
 export const STATUS_GRADIENTS: Record<string, string> = {
   "from-rose-500 to-amber-500": "linear-gradient(135deg, #f43f5e, #f59e0b)",
@@ -310,6 +312,7 @@ export function UnifiedPostModal({ initialType = "status", onClose }: UnifiedPos
   const { postStatus, postMood, addNotification } = useMockData();
   const [postType, setPostType] = useState<"status" | "feed">(initialType);
   const [isClosing, setIsClosing] = useState(false);
+  const [animPhase, setAnimPhase] = useState<"entering" | "stable">("entering");
 
   const handleClose = () => {
     if (isClosing) return;
@@ -318,6 +321,8 @@ export function UnifiedPostModal({ initialType = "status", onClose }: UnifiedPos
       onClose();
     }, 280);
   };
+
+  useModalHistory("unifiedPostModal", !isClosing, handleClose);
 
   // Status state
   const [statusText, setStatusText] = useState("");
@@ -409,28 +414,45 @@ export function UnifiedPostModal({ initialType = "status", onClose }: UnifiedPos
       data-modal="true"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
+      onAnimationEnd={(e) => {
+        if (e.target !== e.currentTarget) return;
+        if (animPhase === "entering" && !isClosing) {
+          setAnimPhase("stable");
+        }
+      }}
       className={clsx(
-        "absolute inset-0 z-50 bg-white dark:bg-zinc-950 flex flex-col h-full w-full overflow-hidden select-none",
-        isClosing ? "animate-slide-out-to-right-edge" : "animate-slide-in-from-right-edge"
+        "absolute inset-0 z-50 bg-white dark:bg-zinc-950 flex flex-col h-full w-full overflow-hidden select-none antialiased subpixel-antialiased",
+        isClosing
+          ? "animate-slide-out-to-right-edge"
+          : animPhase === "entering"
+          ? "animate-slide-in-from-right-edge"
+          : ""
       )}
+      style={{
+        pointerEvents: isClosing ? "none" : "auto",
+        willChange: isClosing || animPhase === "entering" ? "transform" : "auto",
+        backfaceVisibility: "hidden",
+        WebkitBackfaceVisibility: "hidden",
+        transform: animPhase === "stable" && !isClosing ? "none" : undefined,
+      }}
     >
       {/* Top Header */}
-      <header className="px-4 py-3 border-b border-gray-150 dark:border-zinc-800 shrink-0 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md sticky top-0 z-20">
-        <div className="max-w-xl mx-auto w-full flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
+      <header className="px-3 sm:px-5 py-3 border-b border-[var(--border)] dark:border-zinc-800 shrink-0 bg-white dark:bg-zinc-900 sticky top-0 z-20 shadow-xs">
+        <div className="max-w-xl mx-auto w-full flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
             <button
               type="button"
               onClick={handleClose}
-              className="w-9 h-9 rounded-full bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-200 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer"
+              className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-full transition-colors cursor-pointer shrink-0"
               title="Back"
             >
-              <ChevronLeft size={22} />
+              <ArrowLeft size={24} className="text-[var(--primary)]" />
             </button>
-            <div>
-              <h2 className="text-base font-bold text-gray-900 dark:text-white leading-tight">
+            <div className="min-w-0 flex-1">
+              <h2 className="text-base font-bold text-gray-900 dark:text-white leading-tight truncate">
                 {postType === "status" ? "Share New Status" : "New Post / Clip"}
               </h2>
-              <p className="text-[10px] text-gray-500 dark:text-zinc-400">
+              <p className="text-[11px] text-gray-500 dark:text-zinc-400 truncate">
                 {postType === "status"
                   ? "Disappears after 24 hours"
                   : "Permanent post in your store feed"}
@@ -438,21 +460,31 @@ export function UnifiedPostModal({ initialType = "status", onClose }: UnifiedPos
             </div>
           </div>
 
-          <button
-            type="button"
-            disabled={isSubmitting}
-            onClick={handleSubmit}
-            className="px-4 py-2 bg-[var(--primary)] hover:bg-emerald-600 text-white font-bold text-xs rounded-xl shadow-xs transition-all active:scale-95 disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
-          >
-            {isSubmitting ? (
-              <span>Publishing...</span>
-            ) : (
-              <>
-                <Sparkles size={14} />
-                <span>Publish</span>
-              </>
-            )}
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              disabled={isSubmitting}
+              onClick={handleSubmit}
+              className="px-3.5 py-1.5 sm:px-4 sm:py-2 bg-[var(--primary)] hover:bg-emerald-600 text-white font-bold text-xs rounded-xl shadow-xs transition-all active:scale-95 disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
+            >
+              {isSubmitting ? (
+                <span>Publishing...</span>
+              ) : (
+                <>
+                  <Sparkles size={14} />
+                  <span>Publish</span>
+                </>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={handleClose}
+              className="w-9 h-9 rounded-full bg-gray-100 dark:bg-zinc-800 flex items-center justify-center text-gray-600 dark:text-zinc-300 hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors cursor-pointer shrink-0"
+              title="Close"
+            >
+              <X size={18} />
+            </button>
+          </div>
         </div>
       </header>
 
@@ -589,7 +621,7 @@ export function UnifiedPostModal({ initialType = "status", onClose }: UnifiedPos
 
       {/* Bottom Sticky Action Bar */}
       <div
-        className="p-4 border-t border-gray-150 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md shrink-0"
+        className="px-4 py-3.5 border-t border-[var(--border)] dark:border-zinc-800 bg-white dark:bg-zinc-900 shrink-0"
         style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom, 1rem))" }}
       >
         <div className="max-w-xl mx-auto w-full">
@@ -604,7 +636,7 @@ export function UnifiedPostModal({ initialType = "status", onClose }: UnifiedPos
             ) : (
               <>
                 <Sparkles size={17} />
-                <span>Publish to Store</span>
+                <span>{postType === "status" ? "Share Status" : "Publish to Store Feed"}</span>
               </>
             )}
           </button>

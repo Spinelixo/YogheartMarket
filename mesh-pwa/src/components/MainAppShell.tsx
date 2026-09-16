@@ -456,7 +456,7 @@ function MainAppShellContent() {
                                 window.history.pushState(null, "", "/archived");
                             } else {
                                 setActiveTab("chats");
-                                window.history.pushState(null, "", "/");
+                                window.history.pushState(null, "", "/chats");
                             }
                         }} 
                     />
@@ -502,7 +502,7 @@ function MainAppShellContent() {
                                 }
                             } else if (fromParam === "chats") {
                                 setActiveTab("chats");
-                                window.history.pushState(null, "", "/");
+                                window.history.pushState(null, "", "/chats");
                             } else if (fromParam === "marketplace") {
                                 setActiveTab("marketplace");
                                 window.history.pushState(null, "", "/marketplace");
