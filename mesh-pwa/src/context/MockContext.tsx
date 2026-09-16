@@ -4054,14 +4054,14 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
     };
 
     const requestNotificationPermission = async (): Promise<boolean> => {
-        if (!currentUserId || typeof window === "undefined") return false;
+        if (typeof window === "undefined") return false;
         
         const isCapacitor = typeof window !== "undefined" && (window as any).Capacitor;
         if (isCapacitor) {
             try {
                 const { PushNotifications } = await import('@capacitor/push-notifications');
                 let permStatus = await PushNotifications.checkPermissions();
-                if (permStatus.receive === 'prompt') {
+                if (permStatus.receive !== 'granted') {
                     permStatus = await PushNotifications.requestPermissions();
                 }
                 if (permStatus.receive === 'granted') {
@@ -4070,22 +4070,27 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
                     await PushNotifications.addListener('registration', async (token) => {
                         const deviceToken = token.value;
                         console.log('Capacitor native push registration success, token: ' + deviceToken);
-                        const userDocRef = doc(db, "users", currentUserId);
-                        const userSnap = await getDoc(userDocRef);
-                        if (userSnap.exists()) {
-                            const data = userSnap.data();
-                            const existingTokens = data.fcmTokens || [];
-                            if (!existingTokens.includes(deviceToken)) {
-                                await updateDoc(userDocRef, {
-                                    fcmTokens: arrayUnion(deviceToken)
-                                });
+                        if (currentUserId) {
+                            try {
+                                const userDocRef = doc(db, "users", currentUserId);
+                                const userSnap = await getDoc(userDocRef);
+                                if (userSnap.exists()) {
+                                    const data = userSnap.data();
+                                    const existingTokens = data.fcmTokens || [];
+                                    if (!existingTokens.includes(deviceToken)) {
+                                        await updateDoc(userDocRef, {
+                                            fcmTokens: arrayUnion(deviceToken)
+                                        });
+                                    }
+                                }
+                            } catch (e) {
+                                console.warn("Failed to sync FCM token to user document:", e);
                             }
                         }
                     });
                     addNotification("Notifications enabled successfully!");
                     return true;
                 } else {
-                    addNotification("Notification permission denied");
                     return false;
                 }
             } catch (err) {
@@ -4098,32 +4103,37 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
         try {
             const permission = await Notification.requestPermission();
             if (permission === "granted") {
-                const reg = await navigator.serviceWorker.ready;
-                let subscription = await reg.pushManager.getSubscription();
-                if (!subscription) {
-                    const convertedKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
-                    subscription = await reg.pushManager.subscribe({
-                        userVisibleOnly: true,
-                        applicationServerKey: convertedKey
-                    });
-                }
-                const subJson = subscription.toJSON();
-                const userDocRef = doc(db, "users", currentUserId);
-                const userSnap = await getDoc(userDocRef);
-                if (userSnap.exists()) {
-                    const data = userSnap.data();
-                    const existingSubs = data.pushSubscriptions || [];
-                    const alreadySaved = existingSubs.some((s: any) => s.endpoint === subJson.endpoint);
-                    if (!alreadySaved) {
-                        await updateDoc(userDocRef, {
-                            pushSubscriptions: arrayUnion(subJson)
-                        });
+                if (currentUserId) {
+                    try {
+                        const reg = await navigator.serviceWorker.ready;
+                        let subscription = await reg.pushManager.getSubscription();
+                        if (!subscription) {
+                            const convertedKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+                            subscription = await reg.pushManager.subscribe({
+                                userVisibleOnly: true,
+                                applicationServerKey: convertedKey
+                            });
+                        }
+                        const subJson = subscription.toJSON();
+                        const userDocRef = doc(db, "users", currentUserId);
+                        const userSnap = await getDoc(userDocRef);
+                        if (userSnap.exists()) {
+                            const data = userSnap.data();
+                            const existingSubs = data.pushSubscriptions || [];
+                            const alreadySaved = existingSubs.some((s: any) => s.endpoint === subJson.endpoint);
+                            if (!alreadySaved) {
+                                await updateDoc(userDocRef, {
+                                    pushSubscriptions: arrayUnion(subJson)
+                                });
+                            }
+                        }
+                    } catch (e) {
+                        console.warn("Failed to sync Web push subscription:", e);
                     }
                 }
                 addNotification("Notifications enabled successfully!");
                 return true;
             } else {
-                addNotification("Notification permission denied");
                 return false;
             }
         } catch (err) {
@@ -4134,8 +4144,7 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
 
     const requestLocationPermission = async (): Promise<boolean> => {
         if (typeof window === "undefined" || !navigator.geolocation) {
-            addNotification("Location access enabled!");
-            return true;
+            return false;
         }
 
         return new Promise((resolve) => {
@@ -4144,10 +4153,9 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
             const fallbackTimer = setTimeout(() => {
                 if (!resolved) {
                     resolved = true;
-                    addNotification("Location access enabled!");
-                    resolve(true);
+                    resolve(false);
                 }
-            }, 3500);
+            }, 8000);
 
             navigator.geolocation.getCurrentPosition(
                 async (position) => {
@@ -4172,11 +4180,10 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
                     if (resolved) return;
                     resolved = true;
                     clearTimeout(fallbackTimer);
-                    console.error("Location permission error:", err);
-                    addNotification("Location access enabled!");
-                    resolve(true);
+                    console.warn("Location permission error or dismissed:", err);
+                    resolve(false);
                 },
-                { enableHighAccuracy: false, timeout: 3500 }
+                { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
             );
         });
     };

@@ -112,7 +112,7 @@ function MainAppShellContent() {
 
     useEffect(() => {
         if (typeof window === "undefined") return;
-        const hasPrompted = localStorage.getItem("yogheart_permissions_prompted_v2") || sessionStorage.getItem("yogheart_permissions_prompted_v2");
+        const hasPrompted = localStorage.getItem("yogheart_permissions_prompted_v3") || sessionStorage.getItem("yogheart_permissions_prompted_v3");
         if (!hasPrompted) {
             const timer = setTimeout(() => {
                 setShowPermissionsModal(true);
