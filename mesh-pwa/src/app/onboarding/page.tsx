@@ -7,10 +7,10 @@ import { doc, setDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useMockData } from "@/context/MockContext";
 import { useAuth } from "@/context/AuthContext";
-import { processImageFile } from "@/utils/imageProcessor";
+import { processImageFile, cropImageToSquareWithPosition } from "@/utils/imageProcessor";
 import { clsx } from "clsx";
 import {
-  User, Camera, ArrowRight, ChevronLeft, Plus, X, Loader2
+  User, Camera, ArrowRight, ChevronLeft, Plus, X, Loader2, MoveVertical
 } from "lucide-react";
 
 export default function OnboardingPage() {
@@ -45,6 +45,17 @@ export default function OnboardingPage() {
   const [uploadingSlot, setUploadingSlot] = useState<number | null>(null);
   const [photoSlotTarget, setPhotoSlotTarget] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [mainPhotoPosY, setMainPhotoPosY] = useState(50); // 0 = top, 50 = center, 100 = bottom
+  const isDraggingMainRef = useRef(false);
+  const dragStartYRef = useRef(0);
+  const dragStartPosRef = useRef(50);
+
+  // Redirect if already onboarded
+  useEffect(() => {
+    if (userData?.onboardingComplete || localOnboardingComplete) {
+      router.replace("/");
+    }
+  }, [userData, localOnboardingComplete, router]);
 
   // Prefill existing user data if available
   useEffect(() => {
@@ -212,7 +223,17 @@ export default function OnboardingPage() {
           : "";
 
       const validPhotos = photos.filter(Boolean);
-      const mainAvatar = validPhotos[0] || null;
+      let mainAvatar = validPhotos[0] || null;
+
+      // If user provided a main photo, apply their custom framing before saving
+      if (mainAvatar) {
+        try {
+          mainAvatar = await cropImageToSquareWithPosition(mainAvatar, mainPhotoPosY);
+          validPhotos[0] = mainAvatar;
+        } catch (cropErr) {
+          console.warn("Avatar cropping skipped, using original:", cropErr);
+        }
+      }
 
       if (uid) {
         await setDoc(
@@ -223,6 +244,7 @@ export default function OnboardingPage() {
             dob: dobString,
             avatar: mainAvatar,
             photos: validPhotos,
+            avatarPosY: mainPhotoPosY,
             onboardingComplete: true,
             updatedAt: new Date().toISOString(),
           },
@@ -233,14 +255,14 @@ export default function OnboardingPage() {
       if (typeof window !== "undefined") {
         localStorage.setItem("mesh_onboarding_complete", "true");
       }
-      router.push("/");
+      router.replace("/");
     } catch (err) {
       console.error("Failed to complete onboarding:", err);
       // Fallback: Ensure user is not blocked even if offline/permission issue
       if (typeof window !== "undefined") {
         localStorage.setItem("mesh_onboarding_complete", "true");
       }
-      router.push("/");
+      router.replace("/");
     } finally {
       setLoading(false);
     }
@@ -512,7 +534,7 @@ export default function OnboardingPage() {
                 />
 
                 {/* 6-Slot Photo Grid */}
-                <div className="grid grid-cols-3 gap-3 mb-4">
+                <div className="grid grid-cols-3 gap-3 mb-3">
                   {[0, 1, 2, 3, 4, 5].map((idx) => {
                     const photoUrl = photos[idx];
                     const isUploading = uploadingSlot === idx;
@@ -526,9 +548,41 @@ export default function OnboardingPage() {
                             ? "col-span-2 row-span-2 aspect-square"
                             : "aspect-square",
                           photoUrl
-                            ? "border-transparent shadow-sm"
+                            ? (idx === 0 ? "border-transparent shadow-sm cursor-grab active:cursor-grabbing touch-none" : "border-transparent shadow-sm")
                             : "border-gray-200 dark:border-gray-700 hover:border-emerald-500 bg-gray-50 dark:bg-gray-800/50 cursor-pointer"
                         )}
+                        onPointerDown={(e) => {
+                          if (idx === 0 && photoUrl) {
+                            isDraggingMainRef.current = true;
+                            dragStartYRef.current = e.clientY;
+                            dragStartPosRef.current = mainPhotoPosY;
+                            (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+                          }
+                        }}
+                        onPointerMove={(e) => {
+                          if (idx === 0 && isDraggingMainRef.current) {
+                            const deltaY = e.clientY - dragStartYRef.current;
+                            const deltaPercent = (deltaY / 220) * -100;
+                            const nextPos = Math.max(0, Math.min(100, Math.round(dragStartPosRef.current + deltaPercent)));
+                            setMainPhotoPosY(nextPos);
+                          }
+                        }}
+                        onPointerUp={(e) => {
+                          if (idx === 0 && isDraggingMainRef.current) {
+                            isDraggingMainRef.current = false;
+                            try {
+                              (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId);
+                            } catch {}
+                          }
+                        }}
+                        onPointerCancel={(e) => {
+                          if (idx === 0 && isDraggingMainRef.current) {
+                            isDraggingMainRef.current = false;
+                            try {
+                              (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId);
+                            } catch {}
+                          }
+                        }}
                         onClick={() => {
                           if (!photoUrl && !isUploading) {
                             setPhotoSlotTarget(idx);
@@ -542,7 +596,9 @@ export default function OnboardingPage() {
                             <img
                               src={photoUrl}
                               alt={`Profile photo ${idx + 1}`}
-                              className="w-full h-full object-cover"
+                              className="w-full h-full object-cover select-none pointer-events-none"
+                              style={idx === 0 ? { objectPosition: `50% ${mainPhotoPosY}%` } : undefined}
+                              draggable={false}
                             />
                             <button
                               type="button"
@@ -551,14 +607,20 @@ export default function OnboardingPage() {
                                 removePhoto(idx);
                               }}
                               aria-label="Remove photo"
-                              className="absolute top-2 right-2 w-7 h-7 bg-black/60 hover:bg-black/80 rounded-full flex items-center justify-center text-white backdrop-blur-sm transition-all"
+                              className="absolute top-2 right-2 w-7 h-7 bg-black/60 hover:bg-black/80 rounded-full flex items-center justify-center text-white backdrop-blur-sm transition-all z-10"
                             >
                               <X size={14} />
                             </button>
                             {idx === 0 && (
-                              <span className="absolute bottom-2 left-2 px-2 py-0.5 bg-black/60 backdrop-blur-sm text-white text-[10px] font-semibold rounded-md">
-                                Main photo
-                              </span>
+                              <>
+                                <div className="absolute top-2 left-2 px-2 py-1 bg-black/60 backdrop-blur-sm text-white text-[10px] font-semibold rounded-lg flex items-center gap-1 shadow-sm pointer-events-none z-10">
+                                  <MoveVertical size={12} className="text-emerald-400" />
+                                  <span>Drag to adjust</span>
+                                </div>
+                                <span className="absolute bottom-2 left-2 px-2 py-0.5 bg-black/60 backdrop-blur-sm text-white text-[10px] font-semibold rounded-md z-10 pointer-events-none">
+                                  Main photo
+                                </span>
+                              </>
                             )}
                           </>
                         ) : (
@@ -579,6 +641,32 @@ export default function OnboardingPage() {
                     );
                   })}
                 </div>
+
+                {/* Framing Slider for Main Photo */}
+                {photos[0] && (
+                  <div className="mb-4 px-3.5 py-2 bg-gray-50 dark:bg-zinc-800/60 rounded-2xl border border-gray-200/80 dark:border-zinc-700/80 flex items-center gap-3 animate-fade-in">
+                    <div className="flex items-center gap-1 text-[11px] font-semibold text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                      <MoveVertical size={13} className="text-emerald-500" />
+                      <span>Framing</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={mainPhotoPosY}
+                      onChange={(e) => setMainPhotoPosY(Number(e.target.value))}
+                      className="w-full accent-emerald-600 h-1.5 bg-gray-200 dark:bg-zinc-700 rounded-lg cursor-pointer"
+                      aria-label="Adjust vertical photo position"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setMainPhotoPosY(50)}
+                      className="text-[10px] font-bold text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors uppercase tracking-wider"
+                    >
+                      Center
+                    </button>
+                  </div>
+                )}
 
                 {errorMsg && (
                   <p className="text-sm text-red-500 font-medium text-center mt-2 animate-fade-in">

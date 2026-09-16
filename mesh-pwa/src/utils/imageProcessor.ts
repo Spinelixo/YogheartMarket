@@ -111,3 +111,76 @@ export async function processImageFile(file: File): Promise<{ dataUrl: string; n
     img.src = objectUrl;
   });
 }
+
+/**
+ * Crops an image into a crisp square based on a vertical percentage position (0% = top, 50% = center, 100% = bottom).
+ * This ensures the user's custom framing is baked in permanently for all avatars/cards across the app.
+ */
+export async function cropImageToSquareWithPosition(
+  imageUrl: string,
+  posYPercent: number = 50,
+  targetSize: number = 800
+): Promise<string> {
+  return new Promise((resolve) => {
+    if (!imageUrl) {
+      resolve("");
+      return;
+    }
+
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+
+    img.onload = () => {
+      const w = img.naturalWidth || img.width;
+      const h = img.naturalHeight || img.height;
+      if (!w || !h) {
+        resolve(imageUrl);
+        return;
+      }
+
+      const canvas = document.createElement("canvas");
+      const size = Math.min(w, h);
+      const outSize = Math.min(size, targetSize);
+      canvas.width = outSize;
+      canvas.height = outSize;
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        resolve(imageUrl);
+        return;
+      }
+
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+
+      let sx = 0;
+      let sy = 0;
+      if (h > w) {
+        // Tall portrait image: calculate vertical offset based on posYPercent
+        const excess = h - w;
+        const clampedPos = Math.max(0, Math.min(100, posYPercent));
+        sy = excess * (clampedPos / 100);
+        sx = 0;
+      } else if (w > h) {
+        // Wide landscape image: center horizontally
+        const excess = w - h;
+        sx = excess * 0.5;
+        sy = 0;
+      }
+
+      ctx.drawImage(img, sx, sy, size, size, 0, 0, outSize, outSize);
+      try {
+        resolve(canvas.toDataURL("image/jpeg", 0.92));
+      } catch {
+        resolve(imageUrl);
+      }
+    };
+
+    img.onerror = () => {
+      resolve(imageUrl);
+    };
+
+    img.src = imageUrl;
+  });
+}
+

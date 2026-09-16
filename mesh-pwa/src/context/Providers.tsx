@@ -82,9 +82,7 @@ function AuthRedirectWrapper({ children }: { children: React.ReactNode }) {
     // Check local storage override to prevent race conditions during onboarding finish
     const localOnboardingComplete = typeof window !== "undefined" && localStorage.getItem("mesh_onboarding_complete") === "true";
 
-    const onboardingComplete = userData 
-        ? (!!userData.onboardingComplete || !!userData.isAdmin)
-        : localOnboardingComplete;
+    const onboardingComplete = !!userData?.onboardingComplete || !!userData?.isAdmin || localOnboardingComplete;
 
     // Determine if redirect is required
     const isHomePage = normalizedPath === "/";
