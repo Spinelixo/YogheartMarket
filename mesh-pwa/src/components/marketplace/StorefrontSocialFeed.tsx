@@ -868,7 +868,7 @@ function FeedDetailModal({
   return (
     <div
       className={clsx(
-        "absolute inset-0 z-[70] flex items-center justify-center p-0 sm:p-4 bg-black/40 backdrop-blur-xs",
+        "absolute inset-0 z-[70] flex items-center justify-center p-0 sm:p-4 bg-transparent",
         isClosing ? "pointer-events-none" : ""
       )}
       onClick={onClose}

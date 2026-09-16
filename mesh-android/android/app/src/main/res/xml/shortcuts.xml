@@ -26,18 +26,6 @@
             android:data="https://yoghearts.web.app/calls" />
     </shortcut>
     <shortcut
-        android:shortcutId="shortcut_requests"
-        android:enabled="true"
-        android:icon="@mipmap/ic_launcher"
-        android:shortcutShortLabel="@string/shortcut_requests"
-        android:shortcutLongLabel="@string/shortcut_requests_desc">
-        <intent
-            android:action="android.intent.action.VIEW"
-            android:targetPackage="com.mesh.dating"
-            android:targetClass="com.mesh.dating.MainActivity"
-            android:data="https://yoghearts.web.app/requests" />
-    </shortcut>
-    <shortcut
         android:shortcutId="shortcut_marketplace"
         android:enabled="true"
         android:icon="@mipmap/ic_launcher"

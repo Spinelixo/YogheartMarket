@@ -3673,11 +3673,6 @@ export default function ChatThreadView({ threadId, onClose }: { threadId: string
                                 )}>
                                     Marketplace listing
                                 </span>
-                                {isBannerHighlighted && (
-                                    <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-emerald-500 text-white animate-pulse shadow-xs">
-                                        Tap to view
-                                    </span>
-                                )}
                             </div>
                             <h4 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white truncate">
                                 {currentMarketplaceItem.title}

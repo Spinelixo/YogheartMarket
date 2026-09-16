@@ -10,8 +10,9 @@ import { useAuth } from "@/context/AuthContext";
 import { processImageFile, cropImageToSquareWithPosition } from "@/utils/imageProcessor";
 import { clsx } from "clsx";
 import {
-  User, Camera, ArrowRight, ChevronLeft, Plus, X, Loader2, MoveVertical, Store
+  User, Camera, ArrowRight, ChevronLeft, Plus, X, Loader2, MoveVertical, Store, Phone
 } from "lucide-react";
+import { formatPhoneAsYouType, toE164 } from "@/lib/phone";
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -22,7 +23,7 @@ export default function OnboardingPage() {
     typeof window !== "undefined" &&
     localStorage.getItem("mesh_onboarding_complete") === "true";
 
-  // Active step: 1 (Name), 2 (Birthday), 3 (Store Name), 4 (Photos)
+  // Active step: 1 (Name), 2 (Phone Number), 3 (Store Name), 4 (Photos)
   const [step, setStep] = useState(1);
   const [direction, setDirection] = useState<"forward" | "back">("forward");
   const [loading, setLoading] = useState(false);
@@ -32,13 +33,9 @@ export default function OnboardingPage() {
   const [name, setName] = useState("");
   const isInitialized = useRef(false);
 
-  // Step 2: Birthday
-  const [dobDay, setDobDay] = useState("");
-  const [dobMonth, setDobMonth] = useState("");
-  const [dobYear, setDobYear] = useState("");
-  const dayInputRef = useRef<HTMLInputElement>(null);
-  const monthInputRef = useRef<HTMLInputElement>(null);
-  const yearInputRef = useRef<HTMLInputElement>(null);
+  // Step 2: Phone Number
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const phoneInputRef = useRef<HTMLInputElement>(null);
 
   // Step 3: Store Name
   const [storeName, setStoreName] = useState("");
@@ -68,13 +65,10 @@ export default function OnboardingPage() {
       if (userData.name && userData.name !== "User") {
         setName(userData.name);
       }
-      if (userData.dob) {
-        const parts = userData.dob.split("-");
-        if (parts.length === 3) {
-          setDobYear(parts[0]);
-          setDobMonth(parts[1]);
-          setDobDay(parts[2]);
-        }
+      if (userData.phoneNumber) {
+        setPhoneNumber(formatPhoneAsYouType(userData.phoneNumber));
+      } else if (user?.phoneNumber) {
+        setPhoneNumber(formatPhoneAsYouType(user.phoneNumber));
       }
       if (userData.photos && userData.photos.length > 0) {
         setPhotos(userData.photos);
@@ -85,59 +79,19 @@ export default function OnboardingPage() {
         setStoreName(userData.marketplaceStore.storeName);
       }
     }
-  }, [userData]);
+  }, [userData, user]);
 
-  // ─── DOB HELPERS ────────────────────────────────────────────────────────
-  const handleDayChange = (val: string) => {
-    const cleaned = val.replace(/[^0-9]/g, "");
-    setDobDay(cleaned);
-    if (cleaned.length === 2 && monthInputRef.current) {
-      monthInputRef.current.focus();
-    }
+  // ─── PHONE HELPERS ──────────────────────────────────────────────────────
+  const handlePhoneChange = (val: string) => {
+    const formatted = formatPhoneAsYouType(val);
+    setPhoneNumber(formatted);
+    if (errorMsg) setErrorMsg("");
   };
 
-  const handleMonthChange = (val: string) => {
-    const cleaned = val.replace(/[^0-9]/g, "");
-    setDobMonth(cleaned);
-    if (cleaned.length === 2 && yearInputRef.current) {
-      yearInputRef.current.focus();
-    }
-  };
-
-  const handleYearChange = (val: string) => {
-    const cleaned = val.replace(/[^0-9]/g, "");
-    setDobYear(cleaned);
-  };
-
-  const getAgeFromDob = (): number | null => {
-    const m = parseInt(dobMonth, 10);
-    const d = parseInt(dobDay, 10);
-    const y = parseInt(dobYear, 10);
-    if (!m || !d || !y || m < 1 || m > 12 || d < 1 || d > 31 || y < 1900) {
-      return null;
-    }
-    const dob = new Date(y, m - 1, d);
-    const today = new Date();
-    let age = today.getFullYear() - dob.getFullYear();
-    const monthDiff = today.getMonth() - dob.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
-      age--;
-    }
-    return age;
-  };
-
-  const validateDob = (): boolean => {
-    const age = getAgeFromDob();
-    if (age === null) {
-      setErrorMsg("Please enter a valid date of birth.");
-      return false;
-    }
-    if (age < 18) {
-      setErrorMsg("You must be 18 or older to join Yogheart.");
-      return false;
-    }
-    if (age > 120) {
-      setErrorMsg("Please enter a valid date of birth.");
+  const validatePhone = (): boolean => {
+    const digits = phoneNumber.replace(/\D/g, "");
+    if (digits.length < 7) {
+      setErrorMsg("Please enter a valid phone number.");
       return false;
     }
     return true;
@@ -223,11 +177,8 @@ export default function OnboardingPage() {
 
     try {
       const uid = user?.uid;
-      const age = getAgeFromDob() || 18;
-      const dobString =
-        dobYear && dobMonth && dobDay
-          ? `${dobYear}-${dobMonth.padStart(2, "0")}-${dobDay.padStart(2, "0")}`
-          : "";
+      const trimmedPhone = phoneNumber.trim();
+      const normalizedPhone = trimmedPhone ? (toE164(trimmedPhone) || trimmedPhone) : "";
 
       const validPhotos = photos.filter(Boolean);
       let mainAvatar = validPhotos[0] || null;
@@ -250,8 +201,8 @@ export default function OnboardingPage() {
           doc(db, "users", uid),
           {
             name: trimmedName,
-            age,
-            dob: dobString,
+            phoneNumber: normalizedPhone,
+            age: 18,
             avatar: mainAvatar,
             photoURL: mainAvatar,
             photos: validPhotos,
@@ -434,7 +385,7 @@ export default function OnboardingPage() {
             </motion.div>
           )}
 
-          {/* ═══════════════ STEP 2: BIRTHDAY ═══════════════ */}
+          {/* ═══════════════ STEP 2: PHONE NUMBER ═══════════════ */}
           {step === 2 && (
             <motion.div
               key="step-2"
@@ -446,81 +397,41 @@ export default function OnboardingPage() {
             >
               <div className="flex-1 flex flex-col justify-center">
                 <div className="text-center mb-8">
-                  <div className="w-16 h-16 bg-amber-50 dark:bg-amber-950/40 rounded-3xl mx-auto flex items-center justify-center mb-4 text-2xl shadow-sm border border-amber-100 dark:border-amber-900/40">
-                    🎂
+                  <div className="w-16 h-16 bg-emerald-50 dark:bg-emerald-950/40 rounded-3xl mx-auto flex items-center justify-center mb-4 text-2xl shadow-sm border border-emerald-100 dark:border-emerald-900/40 text-emerald-600 dark:text-emerald-400">
+                    <Phone size={28} />
                   </div>
                   <h1 className="text-2xl sm:text-3xl font-bold mb-2 tracking-tight">
-                    When&apos;s your birthday?
+                    What&apos;s your phone number?
                   </h1>
                   <p className="text-sm text-gray-500 dark:text-gray-400 px-6 leading-relaxed">
-                    Your age and birthdate stay private. We use this to fight against fraud or system abuse.
+                    This helps friends and contacts on Yogheart find you and connect with you easily.
                   </p>
                 </div>
 
-                <div className="flex gap-3 justify-center mb-4">
-                  <div className="flex flex-col items-center">
+                <div className="max-w-xs mx-auto w-full mb-4">
+                  <div className="relative flex items-center">
+                    <div className="absolute left-4 pointer-events-none text-gray-400 dark:text-zinc-500">
+                      <Phone size={18} />
+                    </div>
                     <input
-                      ref={dayInputRef}
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={2}
-                      value={dobDay}
-                      onChange={(e) => {
-                        handleDayChange(e.target.value);
-                        if (errorMsg) setErrorMsg("");
+                      ref={phoneInputRef}
+                      type="tel"
+                      inputMode="tel"
+                      value={phoneNumber}
+                      onChange={(e) => handlePhoneChange(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          if (validatePhone()) goForward(3);
+                        }
                       }}
-                      placeholder="DD"
-                      className="w-20 text-center text-xl font-bold bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl py-4 focus:ring-2 focus:ring-emerald-500 outline-none dark:text-white transition-all"
+                      placeholder="+1 (555) 000-0000"
+                      className="w-full text-center text-lg font-bold bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl py-4 pl-10 pr-4 focus:ring-2 focus:ring-emerald-500 outline-none dark:text-white transition-all tracking-wider"
                       autoFocus
                     />
-                    <span className="text-[11px] font-medium text-gray-400 mt-1.5 uppercase">Day</span>
                   </div>
-
-                  <div className="flex flex-col items-center">
-                    <input
-                      ref={monthInputRef}
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={2}
-                      value={dobMonth}
-                      onChange={(e) => {
-                        handleMonthChange(e.target.value);
-                        if (errorMsg) setErrorMsg("");
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Backspace" && !dobMonth && dayInputRef.current) {
-                          dayInputRef.current.focus();
-                        }
-                      }}
-                      placeholder="MM"
-                      className="w-20 text-center text-xl font-bold bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl py-4 focus:ring-2 focus:ring-emerald-500 outline-none dark:text-white transition-all"
-                    />
-                    <span className="text-[11px] font-medium text-gray-400 mt-1.5 uppercase">Month</span>
-                  </div>
-
-                  <div className="flex flex-col items-center">
-                    <input
-                      ref={yearInputRef}
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={4}
-                      value={dobYear}
-                      onChange={(e) => {
-                        handleYearChange(e.target.value);
-                        if (errorMsg) setErrorMsg("");
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Backspace" && !dobYear && monthInputRef.current) {
-                          monthInputRef.current.focus();
-                        } else if (e.key === "Enter") {
-                          if (validateDob()) goForward(3);
-                        }
-                      }}
-                      placeholder="YYYY"
-                      className="w-28 text-center text-xl font-bold bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl py-4 focus:ring-2 focus:ring-emerald-500 outline-none dark:text-white transition-all"
-                    />
-                    <span className="text-[11px] font-medium text-gray-400 mt-1.5 uppercase">Year</span>
-                  </div>
+                  <span className="block text-[11px] font-medium text-gray-400 text-center mt-2">
+                    Enter country code and mobile number
+                  </span>
                 </div>
 
                 {errorMsg && (
@@ -534,12 +445,12 @@ export default function OnboardingPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    if (validateDob()) {
+                    if (validatePhone()) {
                       goForward(3);
                     }
                   }}
-                  disabled={!dobMonth || !dobDay || !dobYear}
-                  className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white rounded-2xl font-bold text-base shadow-lg shadow-emerald-600/20 active:scale-[0.99] transition-all flex items-center justify-center gap-2"
+                  disabled={phoneNumber.replace(/\D/g, "").length < 7}
+                  className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white rounded-2xl font-bold text-base shadow-lg shadow-emerald-600/20 active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer"
                 >
                   Continue <ArrowRight size={18} />
                 </button>
