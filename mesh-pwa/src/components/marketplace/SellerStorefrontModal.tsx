@@ -612,13 +612,6 @@ export function SellerStorefrontModal({
                       </>
                     )}
                   </h2>
-                  {statusTab !== "feed" && (
-                    <p className="text-[11px] text-gray-500 dark:text-zinc-400">
-                      {statusTab === "saved"
-                        ? `Showing ${filteredStoreItems.length} of ${savedCount} saved items`
-                        : `Showing ${filteredStoreItems.length} of ${sellerListings.length} items`}
-                    </p>
-                  )}
                 </div>
               </div>
 
