@@ -48,25 +48,27 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html: `
+              (function() {
               try {
-                let hasAuth = false;
+                var hasAuth = false;
                 try {
                   hasAuth = !!(
                     localStorage.getItem("mesh_session_token") ||
                     localStorage.getItem("mesh_onboarding_complete") === "true" ||
-                    Object.keys(localStorage).some(k => k.startsWith("firebase:authUser"))
+                    Object.keys(localStorage).some(function(k) { return k.indexOf("firebase:authUser") === 0; })
                   );
                 } catch (_) {}
 
                 if (!hasAuth) {
                   document.documentElement.style.background = '#ffffff';
+                  document.body && (document.body.style.background = '#ffffff');
                   return;
                 }
 
-                let isDark = false;
-                const meshDarkMode = localStorage.getItem('mesh_dark_mode');
-                const meshTheme = localStorage.getItem('mesh_theme');
-                if (meshDarkMode === 'true' || ['dark', 'glow-dark', 'cyber-glow', 'neon-violet', 'sunset-amber'].includes(meshTheme)) {
+                var isDark = false;
+                var meshDarkMode = localStorage.getItem('mesh_dark_mode');
+                var meshTheme = localStorage.getItem('mesh_theme');
+                if (meshDarkMode === 'true' || ['dark', 'glow-dark', 'cyber-glow', 'neon-violet', 'sunset-amber'].indexOf(meshTheme) !== -1) {
                   isDark = true;
                 } else if (meshTheme === 'system' || (!meshTheme && !meshDarkMode)) {
                   isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -109,6 +111,7 @@ export default function RootLayout({
                   }
                 }
               } catch (e) {}
+              })();
             `,
           }}
         />

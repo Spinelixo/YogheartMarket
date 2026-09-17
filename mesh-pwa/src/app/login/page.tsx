@@ -192,16 +192,15 @@ export default function LoginPage() {
             if (typeof window !== "undefined") {
                 localStorage.setItem("mesh_onboarding_complete", "true");
             }
+            // Do NOT reset isSigningIn — keep LoginPage suppressed until route change completes
             router.replace("/");
-            return;
-        }
+        } else {
+            setIsSigningIn(false);
+            setLoading(false);
 
-        setIsSigningIn(false);
-        setLoading(false);
-
-        if (typeof window !== "undefined") {
-            localStorage.removeItem("mesh_onboarding_complete");
-        }
+            if (typeof window !== "undefined") {
+                localStorage.removeItem("mesh_onboarding_complete");
+            }
             // If the document doesn't exist AND there's no existing account to migrate:
             // create the minimal user doc so they can go to onboarding without waiting for server response.
             if (!docSnap.exists() && !hasExistingProfileMatched) {
@@ -225,6 +224,7 @@ export default function LoginPage() {
                 }).catch(err => console.error("Error creating initial user profile:", err));
             }
             router.replace("/onboarding");
+        }
     }, [linkSessionToProcess, router]);
 
 
@@ -568,25 +568,11 @@ export default function LoginPage() {
         );
     }
 
-    if (isSigningIn && !error) {
-        return (
-            <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-white dark:bg-[#0b141a]">
-                <div className="w-20 h-20 rounded-[22px] overflow-hidden shadow-xl flex items-center justify-center animate-pulse">
-                    <img
-                        src="/icon-192-v3.png"
-                        alt="Yogheart Market"
-                        className="w-full h-full object-cover"
-                    />
-                </div>
-                <div className="mt-4 flex items-center gap-2 text-sm font-semibold text-gray-500 dark:text-gray-400">
-                    <Loader2 className="w-4 h-4 animate-spin text-[var(--primary)]" />
-                    <span>Signing in...</span>
-                </div>
-            </div>
-        );
-    }
-
-    if (user && !isSigningOut) {
+    // Suppress the entire Welcome page UI whenever:
+    // - Sign-in is actively in progress (Google popup returned, Firebase authenticating)
+    // - User is already authenticated (auth state resolved)
+    // This prevents any flash/repaint of the Welcome screen between sign-in and feed.
+    if ((isSigningIn && !error) || (user && !isSigningOut)) {
         return null;
     }
 
