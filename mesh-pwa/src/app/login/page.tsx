@@ -191,6 +191,8 @@ export default function LoginPage() {
         if (isAlreadyOnboarded) {
             if (typeof window !== "undefined") {
                 localStorage.setItem("mesh_onboarding_complete", "true");
+                sessionStorage.removeItem("mesh_auth_in_progress");
+                sessionStorage.setItem("mesh_just_signed_in", "true");
             }
             // Do NOT reset isSigningIn — keep LoginPage suppressed until route change completes
             router.replace("/");
@@ -200,6 +202,7 @@ export default function LoginPage() {
 
             if (typeof window !== "undefined") {
                 localStorage.removeItem("mesh_onboarding_complete");
+                sessionStorage.removeItem("mesh_auth_in_progress");
             }
             // If the document doesn't exist AND there's no existing account to migrate:
             // create the minimal user doc so they can go to onboarding without waiting for server response.
@@ -248,6 +251,9 @@ export default function LoginPage() {
                 const data = docSnap.data();
                 if (data.status === "authenticated" && data.customToken) {
                     setLoading(true);
+                    if (typeof window !== "undefined") {
+                        sessionStorage.setItem("mesh_auth_in_progress", "true");
+                    }
                     try {
                         const userCredential = await signInWithCustomToken(auth, data.customToken);
                         const user = userCredential.user;
@@ -260,6 +266,9 @@ export default function LoginPage() {
                             await deleteDoc(doc(db, "qr_codes", linkCodeVal));
                         }
                     } catch (err) {
+                        if (typeof window !== "undefined") {
+                            sessionStorage.removeItem("mesh_auth_in_progress");
+                        }
                         console.error("Sign in with custom token failed:", err);
                         setError("Failed to sign in. Please try again.");
                         setLoading(false);
@@ -312,12 +321,18 @@ export default function LoginPage() {
         setIsSigningIn(true);
         setLoading(true);
         setError("");
+        if (typeof window !== "undefined") {
+            sessionStorage.setItem("mesh_auth_in_progress", "true");
+        }
         const provider = new GoogleAuthProvider();
         try {
             const result = await signInWithPopup(auth, provider);
             const user = result.user;
             await setupSessionAndRedirect(user.uid, user.phoneNumber || "");
         } catch (err: any) {
+            if (typeof window !== "undefined") {
+                sessionStorage.removeItem("mesh_auth_in_progress");
+            }
             console.error("Google sign in failed:", err);
             setIsSigningIn(false);
             const errMsg = err.message || "";
@@ -341,11 +356,17 @@ export default function LoginPage() {
         setIsSigningIn(true);
         setLoading(true);
         setError("");
+        if (typeof window !== "undefined") {
+            sessionStorage.setItem("mesh_auth_in_progress", "true");
+        }
         try {
             const result = await signInAnonymously(auth);
             const user = result.user;
             await setupSessionAndRedirect(user.uid, "");
         } catch (err: any) {
+            if (typeof window !== "undefined") {
+                sessionStorage.removeItem("mesh_auth_in_progress");
+            }
             console.error("Anonymous sign in failed:", err);
             setIsSigningIn(false);
             setError(getFriendlyErrorMessage(err, "Failed to create an account."));
@@ -367,6 +388,9 @@ export default function LoginPage() {
         setIsSigningIn(true);
         setLoading(true);
         setError("");
+        if (typeof window !== "undefined") {
+            sessionStorage.setItem("mesh_auth_in_progress", "true");
+        }
         try {
             if (signUpMode) {
                 // Create new account
@@ -376,6 +400,7 @@ export default function LoginPage() {
                 if (typeof window !== "undefined") {
                     localStorage.setItem("mesh_session_token", newSessionId);
                     localStorage.removeItem("mesh_onboarding_complete");
+                    sessionStorage.removeItem("mesh_auth_in_progress");
                 }
                 const initialUserData = {
                     id: newUid,
@@ -408,6 +433,9 @@ export default function LoginPage() {
                 await setupSessionAndRedirect(result.user.uid, result.user.phoneNumber || "");
             }
         } catch (err: any) {
+            if (typeof window !== "undefined") {
+                sessionStorage.removeItem("mesh_auth_in_progress");
+            }
             console.error("Email/password auth failed:", err);
             const code = err?.code || "";
             if (code === "auth/email-already-in-use") {
@@ -568,12 +596,52 @@ export default function LoginPage() {
         );
     }
 
-    // Suppress the entire Welcome page UI whenever:
-    // - Sign-in is actively in progress (Google popup returned, Firebase authenticating)
-    // - User is already authenticated (auth state resolved)
-    // This prevents any flash/repaint of the Welcome screen between sign-in and feed.
+    // Suppress the Welcome page UI whenever sign-in is in progress or user is authenticated:
+    // Render the App Icon spinning smoothly on a clean white/dark background.
+    // This prevents any flash of the empty green body background, Welcome page, or onboarding screens!
     if ((isSigningIn && !error) || (user && !isSigningOut)) {
-        return null;
+        return (
+            <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-white dark:bg-[#0b141a]">
+                <style>{`
+                    @keyframes smoothIconSpin {
+                        0% { transform: rotate(0deg) translateZ(0); }
+                        100% { transform: rotate(360deg) translateZ(0); }
+                    }
+                    .animate-icon-spin {
+                        animation: smoothIconSpin 1.2s linear infinite;
+                        transform-origin: center center;
+                        will-change: transform;
+                        backface-visibility: hidden;
+                        -webkit-backface-visibility: hidden;
+                    }
+                `}</style>
+                <div className="relative flex items-center justify-center">
+                    {/* Static ambient soft shadow that does not wobble or re-render during rotation */}
+                    <div className="absolute w-16 h-16 rounded-[22px] bg-black/15 dark:bg-black/50 blur-xl pointer-events-none" />
+                    <div 
+                        className={`relative w-20 h-20 rounded-[22px] overflow-hidden flex items-center justify-center ${
+                            isSigningIn ? "animate-icon-spin" : ""
+                        }`}
+                        style={{
+                            willChange: "transform",
+                            transform: "translate3d(0, 0, 0)",
+                            WebkitTransform: "translate3d(0, 0, 0)",
+                            backfaceVisibility: "hidden",
+                            WebkitBackfaceVisibility: "hidden",
+                        }}
+                    >
+                        <img
+                            src="/icon-192-v3.png"
+                            alt="Yogheart Market"
+                            className="w-full h-full object-cover select-none pointer-events-none"
+                            style={{
+                                transform: "translateZ(0)",
+                            }}
+                        />
+                    </div>
+                </div>
+            </div>
+        );
     }
 
     return (

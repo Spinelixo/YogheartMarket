@@ -112,6 +112,9 @@ function MainAppShellContent() {
 
     useEffect(() => {
         if (typeof window === "undefined") return;
+        // On desktop devices (screens >= 768px), never show the mobile permissions modal
+        if (window.innerWidth >= 768) return;
+
         const hasPrompted = localStorage.getItem("yogheart_permissions_prompted_v7") || sessionStorage.getItem("yogheart_permissions_prompted_v7");
         if (!hasPrompted) {
             const timer = setTimeout(() => {

@@ -979,6 +979,10 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
             try {
                 const reg = await navigator.serviceWorker.ready;
                 if (notificationsEnabled) {
+                    // On desktop devices (screens >= 768px), do not auto-request notification permissions
+                    if (typeof window !== "undefined" && window.innerWidth >= 768) {
+                        return;
+                    }
                     // Request Notification Permission
                     const permission = await Notification.requestPermission();
                     if (permission !== "granted") {

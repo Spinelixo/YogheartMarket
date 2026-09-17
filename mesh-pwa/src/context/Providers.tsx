@@ -40,7 +40,6 @@ function NotificationBanner() {
 
 function AuthRedirectWrapper({ children }: { children: React.ReactNode }) {
     const { user, userData, isUserDataLoaded, loading, logout } = useAuth();
-    const { isProfileLoaded } = useMockData();
     const router = useRouter();
     const pathname = usePathname();
 
@@ -68,9 +67,12 @@ function AuthRedirectWrapper({ children }: { children: React.ReactNode }) {
 
     const onboardingComplete = !!userData?.onboardingComplete || !!userData?.isAdmin || localOnboardingComplete;
 
+    // Check if auth sign-in / verification is actively in progress
+    const isAuthInProgress = typeof window !== "undefined" && sessionStorage.getItem("mesh_auth_in_progress") === "true";
+
     // Determine if redirect is required
     const isHomePage = normalizedPath === "/";
-    const needsRedirectToOnboarding = !!user && isUserDataLoaded && !onboardingComplete && !isOnboardingPage && !normalizedPath.startsWith("/admin");
+    const needsRedirectToOnboarding = !isAuthInProgress && !!user && isUserDataLoaded && !onboardingComplete && !isOnboardingPage && !normalizedPath.startsWith("/admin");
     // We only redirect away from auth pages if user is fully onboarded. 
     // Now, "/" serves BOTH login and home, so we don't redirect if it's "/" and user is onboarded.
     const needsRedirectToHome = !!user && onboardingComplete && (isOnboardingPage || normalizedPath === "/login" || normalizedPath === "/signup");
@@ -94,14 +96,6 @@ function AuthRedirectWrapper({ children }: { children: React.ReactNode }) {
             router.push("/");
         }
     }, [loading, isUserDataLoaded, user, needsRedirectToLogin, needsRedirectToOnboarding, needsRedirectToHome, router]);
-
-    // We only hide the loader on the onboarding page to allow its internal steps to render without flashing,
-    // unless we are still loading the user state or redirecting away from it.
-    const hasPersistedSession = typeof window !== "undefined" && (
-        !!localStorage.getItem("mesh_session_token") || 
-        localStorage.getItem("mesh_onboarding_complete") === "true" ||
-        Object.keys(localStorage).some(k => k.startsWith("firebase:authUser"))
-    );
 
     // On auth, onboarding, or home page, NEVER mount the full-screen loader overlay
     const showLoader = isBypassAppShell || isHomePage 
@@ -260,10 +254,10 @@ function AuthRedirectWrapper({ children }: { children: React.ReactNode }) {
                             animation: iosScaleUp 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
                         }
                         .loader-overlay {
-                            background-color: var(--background, #e4ebd9);
+                            background-color: #ffffff;
                         }
                         .dark .loader-overlay {
-                            background-color: var(--background, #0b141a);
+                            background-color: #0b141a;
                         }
                         .loader-overlay.exiting {
                             animation: loaderExit 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;

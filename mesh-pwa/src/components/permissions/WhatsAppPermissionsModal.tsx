@@ -34,6 +34,11 @@ const PERMISSION_STEPS: PermissionStep[] = [
 ];
 
 export function WhatsAppPermissionsModal({ onClose }: WhatsAppPermissionsModalProps) {
+  // On desktop devices (screens >= 768px), never show this permissions modal
+  if (typeof window !== "undefined" && window.innerWidth >= 768) {
+    return null;
+  }
+
   const {
     requestNotificationPermission,
     requestLocationPermission,
