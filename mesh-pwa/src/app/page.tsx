@@ -5,35 +5,53 @@ import LoginPage from "@/app/login/page";
 import { useAuth } from "@/context/AuthContext";
 import { useState, useEffect } from "react";
 
+function checkHasPersistedAuth(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return !!(
+      localStorage.getItem("mesh_session_token") ||
+      localStorage.getItem("mesh_onboarding_complete") === "true" ||
+      Object.keys(localStorage).some((k) => k.startsWith("firebase:authUser"))
+    );
+  } catch (_) {
+    return false;
+  }
+}
+
 export default function HomePage() {
   const { user, loading } = useAuth();
   const [isMounted, setIsMounted] = useState(false);
+  const [hasPersisted, setHasPersisted] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
+    setHasPersisted(checkHasPersistedAuth());
   }, []);
 
-  const hasPersistedAuth = typeof window !== "undefined" && (
-    !!localStorage.getItem("mesh_session_token") || 
-    localStorage.getItem("mesh_onboarding_complete") === "true" ||
-    Object.keys(localStorage).some(k => k.startsWith("firebase:authUser"))
-  );
-
-  // If there's definitely no cached auth (fresh install / logged out), render LoginPage immediately!
-  // This also ensures static build (out/index.html) has LoginPage pre-rendered for 0ms initial launch!
-  if (!hasPersistedAuth && !user) {
-    return <LoginPage />;
-  }
-
-  // Only if there is a cached session and auth is hydrating, show the brief spinner
-  if ((!isMounted || loading) && !user) {
+  // During static SSR/export and the initial frame before hydration:
+  // Render the App Icon launch screen matching the native splash screen.
+  // This completely eliminates any split-second flash of the Welcome page or spinning circles!
+  if (!isMounted) {
     return (
-      <div className="fixed inset-0 bg-white dark:bg-zinc-950 flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+      <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-white dark:bg-[#0b141a]">
+        <div className="w-20 h-20 rounded-[22px] overflow-hidden shadow-xl flex items-center justify-center">
+          <img
+            src="/icon-192-v3.png"
+            alt="Yogheart Market"
+            className="w-full h-full object-cover"
+          />
+        </div>
       </div>
     );
   }
 
+  // If user is authenticated, or has saved session tokens while auth hydrates:
+  // Go straight to the main Market feed without flashing any spinner or Welcome page!
+  if (user || (hasPersisted && loading)) {
+    return <MainAppShell />;
+  }
+
+  // If auth has finished and no user exists (or user logged out), render the Welcome page
   if (!user) {
     return <LoginPage />;
   }

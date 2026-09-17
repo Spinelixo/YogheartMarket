@@ -60,7 +60,11 @@ export function EditMarketplaceProfileModal({
   const currentStore = currentUser?.marketplaceStore || {};
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
+  const [avatarImage, setAvatarImage] = useState<string | null>(
+    currentStore.avatar || currentUser?.avatar || null
+  );
   const [ownerName, setOwnerName] = useState(currentStore.ownerName || currentUser?.name || "");
   const [storeName, setStoreName] = useState(currentStore.storeName || currentUser?.name || "");
   const [sellerType, setSellerType] = useState<MarketplaceSellerType>(currentStore.sellerType || "chef");
@@ -86,6 +90,18 @@ export function EditMarketplaceProfileModal({
   const [isPickup, setIsPickup] = useState(currentStore.fulfillmentOptions?.includes("pickup") ?? true);
   const [isShipping, setIsShipping] = useState(currentStore.fulfillmentOptions?.includes("shipping") ?? false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (loadEvt) => {
+      if (loadEvt.target?.result) {
+        setAvatarImage(loadEvt.target.result as string);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -130,6 +146,7 @@ export function EditMarketplaceProfileModal({
       headline: headline.trim(),
       bio: bio.trim(),
       bannerImage,
+      avatar: avatarImage,
       location: location.trim(),
       businessHours: businessHours.trim(),
       fulfillmentOptions,
@@ -211,32 +228,90 @@ export function EditMarketplaceProfileModal({
       {/* Scrollable Form Body */}
       <div className="flex-1 overflow-y-auto min-h-0 overscroll-contain">
         <form onSubmit={handleSave} className="max-w-xl mx-auto w-full px-4 py-5 sm:px-6 sm:py-6 space-y-6 pb-28">
-          {/* Banner Photo Selector */}
+          {/* Visual Identity: Banner Cover & Storefront Avatar */}
           <div>
             <label className="block text-xs font-bold text-gray-700 dark:text-zinc-300 uppercase tracking-wider mb-2">
-              Storefront Banner Cover
+              Storefront Banner & Avatar
             </label>
-            <div className="relative w-full h-32 rounded-2xl overflow-hidden border border-gray-200 dark:border-zinc-800 group bg-zinc-100 dark:bg-zinc-900">
-              <img
-                src={bannerImage}
-                alt="Store Banner Preview"
-                className="w-full h-full object-cover"
-              />
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 text-white font-bold text-xs transition-opacity backdrop-blur-xs cursor-pointer"
-              >
-                <Camera size={18} />
-                <span>Change Banner Photo</span>
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleBannerUpload}
-              />
+            <div className="relative w-full rounded-2xl border border-gray-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-900 mb-12">
+              {/* Banner Cover */}
+              <div className="relative w-full h-36 rounded-2xl overflow-hidden group">
+                <img
+                  src={bannerImage}
+                  alt="Store Banner Preview"
+                  className="w-full h-full object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 text-white font-bold text-xs transition-opacity backdrop-blur-xs cursor-pointer"
+                >
+                  <Camera size={18} />
+                  <span>Change Banner Photo</span>
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleBannerUpload}
+                />
+              </div>
+
+              {/* Storefront Avatar Profile Image */}
+              <div className="absolute -bottom-9 left-4 flex items-end gap-3 z-10">
+                <div className="relative group">
+                  <div className="w-20 h-20 rounded-2xl overflow-hidden border-4 border-white dark:border-zinc-900 bg-emerald-100 dark:bg-emerald-950 shadow-xl flex items-center justify-center">
+                    {avatarImage ? (
+                      <img
+                        src={avatarImage}
+                        alt="Storefront Avatar"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <Store size={32} className="text-emerald-600 dark:text-emerald-400" />
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => avatarInputRef.current?.click()}
+                    className="absolute inset-0 rounded-2xl bg-black/50 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-[10px] font-bold transition-opacity cursor-pointer border-4 border-transparent"
+                    title="Change Storefront Avatar"
+                  >
+                    <Camera size={18} />
+                    <span>Change</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => avatarInputRef.current?.click()}
+                    className="absolute -bottom-1 -right-1 p-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-full shadow-md border-2 border-white dark:border-zinc-900 transition-transform active:scale-90 cursor-pointer"
+                    title="Upload Store Avatar"
+                  >
+                    <Camera size={14} />
+                  </button>
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleAvatarUpload}
+                  />
+                </div>
+
+                <div className="mb-2">
+                  <button
+                    type="button"
+                    onClick={() => avatarInputRef.current?.click()}
+                    className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer flex items-center gap-1.5"
+                  >
+                    <Camera size={13} />
+                    <span>Change Store Avatar</span>
+                  </button>
+                  <p className="text-[10px] text-gray-500 dark:text-zinc-400">
+                    Visible on your storefront, feed & listings
+                  </p>
+                </div>
+              </div>
             </div>
 
             {/* Banner Presets */}

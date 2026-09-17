@@ -103,28 +103,21 @@ function AuthRedirectWrapper({ children }: { children: React.ReactNode }) {
         Object.keys(localStorage).some(k => k.startsWith("firebase:authUser"))
     );
 
-    const isProfileLoading = !!user && !isProfileLoaded;
-    // On auth, onboarding, or unauthenticated home, NEVER mount the full-screen loader overlay
-    const showLoader = isBypassAppShell 
+    // On auth, onboarding, or home page, NEVER mount the full-screen loader overlay
+    const showLoader = isBypassAppShell || isHomePage 
         ? false 
-        : ((loading && (!!user || hasPersistedSession)) || isRouteTransitioning || isRedirecting || isProfileLoading);
+        : (isRouteTransitioning || isRedirecting);
 
     useEffect(() => {
         if (showLoader) {
-            // On page refresh or when profile is loading, mount loader instantly
-            if ((user && !isProfileLoaded) || (loading && hasPersistedSession)) {
-                // eslint-disable-next-line react-hooks/set-state-in-effect
-                setDelayedShowLoader(true);
-                return;
-            }
             const timer = setTimeout(() => {
                 setDelayedShowLoader(true);
-            }, 100);
+            }, 150);
             return () => clearTimeout(timer);
         } else {
             setDelayedShowLoader(false);
         }
-    }, [showLoader, user, isProfileLoaded, loading, hasPersistedSession]);
+    }, [showLoader]);
 
     useEffect(() => {
         if (delayedShowLoader) {
@@ -190,7 +183,7 @@ function AuthRedirectWrapper({ children }: { children: React.ReactNode }) {
     }
 
     let content = null;
-    const hideContentDuringRedirect = (isRedirecting || isProfileLoading) && !isBypassAppShell;
+    const hideContentDuringRedirect = isRedirecting && !isBypassAppShell;
     
     if (!hideContentDuringRedirect) {
         if (isBypassAppShell) {
