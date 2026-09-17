@@ -732,7 +732,7 @@ export default function CallsView({ onBack, isOverlay }: CallsViewProps = {}) {
                 <div
                   key={group.id}
                   onClick={() => setSelectedCallInfoGroup(group)}
-                  className="flex items-center gap-3.5 px-4 md:px-6 py-2.5 sm:py-3 hover:bg-black/5 dark:hover:bg-gray-800/40 transition-colors cursor-pointer select-none group"
+                  className="flex items-center gap-3.5 px-4 md:px-6 py-3 hover:bg-black/5 dark:hover:bg-gray-800/40 transition-colors cursor-pointer select-none group"
                 >
                   {/* Avatar (Clicking opens Zoomed Avatar) */}
                   <div
@@ -744,12 +744,12 @@ export default function CallsView({ onBack, isOverlay }: CallsViewProps = {}) {
                         window.history.pushState(null, "", `/profile?userId=${group.otherPartyId}&from=calls`);
                       }
                     }}
-                    className="cursor-pointer"
+                    className="w-12 h-12 shrink-0 relative flex items-center justify-center cursor-pointer"
                     title="View Avatar"
                   >
                     <div
                       className={clsx(
-                        "w-11 h-11 rounded-full overflow-hidden flex items-center justify-center font-bold shrink-0 shadow-xs transition-transform group-hover:scale-105",
+                        "w-full h-full rounded-full overflow-hidden flex items-center justify-center font-bold shrink-0 shadow-xs transition-transform group-hover:scale-105",
                         group.otherPartyAvatar ? "bg-white" : group.otherPartyColor
                       )}
                     >
