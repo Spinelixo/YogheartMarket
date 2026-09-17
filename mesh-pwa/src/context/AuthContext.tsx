@@ -11,6 +11,7 @@ type AuthContextType = {
     userData: any /* eslint-disable-line @typescript-eslint/no-explicit-any */; // Extended user profile from Firestore
     resolvedUid: string | null;
     loading: boolean;
+    isUserDataLoaded: boolean;
     logout: () => Promise<void>;
 };
 
@@ -34,6 +35,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [userData, setUserData] = useState<any>(null);
     const [resolvedUid, setResolvedUid] = useState<string | null>(() => auth.currentUser?.uid || null);
     const [loading, setLoading] = useState<boolean>(() => checkHasCachedAuth());
+    const [isUserDataLoaded, setIsUserDataLoaded] = useState<boolean>(() => !auth.currentUser);
     const router = useRouter();
 
     useEffect(() => {
@@ -45,6 +47,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (currentUser) {
                 setUser(currentUser);
                 setResolvedUid(currentUser.uid);
+                // Mark user doc as not yet loaded until Firestore snapshot responds
+                setIsUserDataLoaded(false);
                 // Immediately mark loading false so routes and screens don't stall
                 setLoading(false);
 
@@ -64,6 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                                 const matchedData = matchingDoc.data();
                                 setResolvedUid(matchingDoc.id);
                                 setUserData(matchedData);
+                                setIsUserDataLoaded(true);
                                 try {
                                     await setDoc(doc(db, "users", currentUser.uid), {
                                         ...matchedData,
@@ -83,6 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     setUser(null);
                     setUserData(null);
                     setResolvedUid(null);
+                    setIsUserDataLoaded(true);
                     setLoading(false);
                 }
             }
@@ -103,6 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (docSnap.exists()) {
                 const data = docSnap.data();
                 setUserData(data);
+                setIsUserDataLoaded(true);
                 setLoading(false);
             } else {
                 if (docSnap.metadata.fromCache) {
@@ -111,10 +118,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 }
                 console.log("AuthContext: user doc does not exist yet (onboarding/signup in progress).");
                 setUserData(null);
+                setIsUserDataLoaded(true);
                 setLoading(false);
             }
         }, (error) => {
             console.error("AuthContext: user doc snapshot error:", error);
+            setIsUserDataLoaded(true);
             setLoading(false);
         });
 
@@ -131,7 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     return (
-        <AuthContext.Provider value={{ user, userData, resolvedUid, loading, logout }}>
+        <AuthContext.Provider value={{ user, userData, resolvedUid, loading, isUserDataLoaded, logout }}>
             {children}
         </AuthContext.Provider>
     );

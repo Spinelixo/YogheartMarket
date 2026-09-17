@@ -503,6 +503,7 @@ type MockContextType = {
     requestLocationPermission: () => Promise<boolean>;
     requestContactsPermission: () => Promise<boolean>;
     marketplaceItems: MarketplaceItem[];
+    isMarketplaceLoaded: boolean;
     createMarketplaceListing: (data: {
         title: string;
         price: number;
@@ -714,7 +715,30 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
     const [moods, setMoods] = useState<Mood[]>([]);
     const [drafts, setDrafts] = useState<Draft[]>([]);
     const [callLogs, setCallLogs] = useState<CallLog[]>([]);
-    const [marketplaceItems, setMarketplaceItems] = useState<MarketplaceItem[]>(INITIAL_MARKETPLACE_ITEMS);
+    const [marketplaceItems, setMarketplaceItems] = useState<MarketplaceItem[]>(() => {
+        if (typeof window !== "undefined") {
+            try {
+                const cached = localStorage.getItem("yogheart_cached_marketplace_items");
+                if (cached) {
+                    const parsed = JSON.parse(cached);
+                    if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+                }
+            } catch (e) {}
+        }
+        return INITIAL_MARKETPLACE_ITEMS;
+    });
+    const [isMarketplaceLoaded, setIsMarketplaceLoaded] = useState<boolean>(() => {
+        if (typeof window !== "undefined") {
+            try {
+                const cached = localStorage.getItem("yogheart_cached_marketplace_items");
+                if (cached) {
+                    const parsed = JSON.parse(cached);
+                    if (Array.isArray(parsed) && parsed.length > 0) return true;
+                }
+            } catch (e) {}
+        }
+        return false;
+    });
     const [rides, setRides] = useState<Ride[]>(INITIAL_RIDES);
     const [unlockedRideIds, setUnlockedRideIds] = useState<string[]>(() => {
         if (typeof window !== "undefined") {
@@ -4343,12 +4367,20 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
                     } as MarketplaceItem;
                 }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
                 setMarketplaceItems(itemsList);
+                setIsMarketplaceLoaded(true);
+                if (typeof window !== "undefined") {
+                    try {
+                        localStorage.setItem("yogheart_cached_marketplace_items", JSON.stringify(itemsList));
+                    } catch (e) {}
+                }
             } else {
                 setMarketplaceItems([]);
+                setIsMarketplaceLoaded(true);
             }
         }, (error) => {
             console.error("MockContext: onSnapshot marketplace items error:", error);
             setMarketplaceItems([]);
+            setIsMarketplaceLoaded(true);
         });
 
         return () => unsubscribe();
@@ -5018,6 +5050,7 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
             moods,
             callLogs,
             marketplaceItems,
+            isMarketplaceLoaded,
             createMarketplaceListing,
             updateMarketplaceListing,
             deleteMarketplaceListing,
@@ -5052,7 +5085,7 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
     }), [
         currentUser, isProfileLoaded, activeTab, suggestions, requests, activeThreads, archivedThreads,
         blockedUsersList, savedContactsList, appNotifications, allDatingUsers, sortedStatuses,
-        transactions, moods, callLogs, marketplaceItems, rides, unlockedRideIds, drafts,
+        transactions, moods, callLogs, marketplaceItems, isMarketplaceLoaded, rides, unlockedRideIds, drafts,
         activeThreadId, currentPath, currentSearchParams
     ]); // eslint-disable-line react-hooks/exhaustive-deps
 

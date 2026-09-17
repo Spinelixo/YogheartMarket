@@ -132,6 +132,7 @@ export default function MarketplaceView() {
   const {
     currentUser,
     marketplaceItems,
+    isMarketplaceLoaded,
     toggleSaveMarketplaceItem,
     activeTab,
     setActiveTab: setGlobalActiveTab,
@@ -755,6 +756,16 @@ export default function MarketplaceView() {
                       </div>
                     );
                   })}
+                  </div>
+                </div>
+              ) : !isMarketplaceLoaded && marketplaceItems.length === 0 ? (
+                /* Clean Loading Placeholder while Firestore items load */
+                <div className="h-full flex flex-col items-center justify-center p-8">
+                  <div className="w-full max-w-md grid grid-cols-2 gap-3 animate-pulse opacity-30">
+                    <div className="h-48 bg-gray-200 dark:bg-zinc-800 rounded-2xl" />
+                    <div className="h-48 bg-gray-200 dark:bg-zinc-800 rounded-2xl" />
+                    <div className="h-48 bg-gray-200 dark:bg-zinc-800 rounded-2xl" />
+                    <div className="h-48 bg-gray-200 dark:bg-zinc-800 rounded-2xl" />
                   </div>
                 </div>
               ) : (

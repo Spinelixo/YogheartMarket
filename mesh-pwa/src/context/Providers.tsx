@@ -39,7 +39,7 @@ function NotificationBanner() {
 }
 
 function AuthRedirectWrapper({ children }: { children: React.ReactNode }) {
-    const { user, userData, loading, logout } = useAuth();
+    const { user, userData, isUserDataLoaded, loading, logout } = useAuth();
     const { isProfileLoaded } = useMockData();
     const router = useRouter();
     const pathname = usePathname();
@@ -70,7 +70,7 @@ function AuthRedirectWrapper({ children }: { children: React.ReactNode }) {
 
     // Determine if redirect is required
     const isHomePage = normalizedPath === "/";
-    const needsRedirectToOnboarding = !!user && !onboardingComplete && !isOnboardingPage && !normalizedPath.startsWith("/admin");
+    const needsRedirectToOnboarding = !!user && isUserDataLoaded && !onboardingComplete && !isOnboardingPage && !normalizedPath.startsWith("/admin");
     // We only redirect away from auth pages if user is fully onboarded. 
     // Now, "/" serves BOTH login and home, so we don't redirect if it's "/" and user is onboarded.
     const needsRedirectToHome = !!user && onboardingComplete && (isOnboardingPage || normalizedPath === "/login" || normalizedPath === "/signup");
@@ -81,7 +81,7 @@ function AuthRedirectWrapper({ children }: { children: React.ReactNode }) {
     const isRedirecting = needsRedirectToLogin || needsRedirectToOnboarding || needsRedirectToHome;
 
     useEffect(() => {
-        if (loading) return;
+        if (loading || (user && !isUserDataLoaded)) return;
 
         if (needsRedirectToLogin) {
             console.log("AuthRedirectWrapper: not logged in. Redirecting to /login...");
@@ -93,7 +93,7 @@ function AuthRedirectWrapper({ children }: { children: React.ReactNode }) {
             console.log("AuthRedirectWrapper: onboarded user visited auth/onboarding. Redirecting to /...");
             router.push("/");
         }
-    }, [loading, needsRedirectToLogin, needsRedirectToOnboarding, needsRedirectToHome, router]);
+    }, [loading, isUserDataLoaded, user, needsRedirectToLogin, needsRedirectToOnboarding, needsRedirectToHome, router]);
 
     // We only hide the loader on the onboarding page to allow its internal steps to render without flashing,
     // unless we are still loading the user state or redirecting away from it.

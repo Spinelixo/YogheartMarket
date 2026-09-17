@@ -567,8 +567,18 @@ export default function LoginPage() {
         );
     }
 
-    if (user && !isSigningIn && !isSigningOut) {
-        return null;
+    if ((user && !isSigningOut) || isSigningIn) {
+        return (
+            <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-white dark:bg-[#0b141a]">
+                <div className="w-20 h-20 rounded-[22px] overflow-hidden shadow-xl flex items-center justify-center">
+                    <img
+                        src="/icon-192-v3.png"
+                        alt="Yogheart Market"
+                        className="w-full h-full object-cover"
+                    />
+                </div>
+            </div>
+        );
     }
 
     return (
