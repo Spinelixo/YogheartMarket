@@ -20,8 +20,8 @@ function checkHasPersistedAuth(): boolean {
 
 export default function HomePage() {
   const { user, loading } = useAuth();
-  const [isMounted, setIsMounted] = useState(false);
-  const [hasPersisted, setHasPersisted] = useState(false);
+  const [isMounted, setIsMounted] = useState(() => typeof window !== "undefined");
+  const [hasPersisted, setHasPersisted] = useState(() => checkHasPersistedAuth());
 
   useEffect(() => {
     setIsMounted(true);
@@ -37,7 +37,7 @@ export default function HomePage() {
   // If user is authenticated, or has saved session tokens while auth hydrates:
   if (user || (hasPersisted && loading)) {
     return (
-      <div className="w-full h-full animate-fade-in">
+      <div key={user?.uid || "home-auth"} className="w-full h-full animate-lockscreen-entrance">
         <MainAppShell />
       </div>
     );

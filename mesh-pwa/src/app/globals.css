@@ -5,6 +5,7 @@ html, body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  background-color: #ffffff;
 }
 
 /* Disable text selection and callouts globally for native app experience */
@@ -1254,6 +1255,26 @@ html.text-sz-large {
 .bg-clip-text {
   -webkit-background-clip: text !important;
   background-clip: text !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   iPhone / Samsung Lockscreen Unlock Scale-Up Entrance Animation
+══════════════════════════════════════════════════════════════════ */
+@keyframes iosScaleUpEntrance {
+  0% {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-lockscreen-entrance {
+  animation: iosScaleUpEntrance 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transform-origin: center center;
+  will-change: transform, opacity;
 }
 
 

@@ -49,6 +49,20 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               try {
+                let hasAuth = false;
+                try {
+                  hasAuth = !!(
+                    localStorage.getItem("mesh_session_token") ||
+                    localStorage.getItem("mesh_onboarding_complete") === "true" ||
+                    Object.keys(localStorage).some(k => k.startsWith("firebase:authUser"))
+                  );
+                } catch (_) {}
+
+                if (!hasAuth) {
+                  document.documentElement.style.background = '#ffffff';
+                  return;
+                }
+
                 let isDark = false;
                 const meshDarkMode = localStorage.getItem('mesh_dark_mode');
                 const meshTheme = localStorage.getItem('mesh_theme');
