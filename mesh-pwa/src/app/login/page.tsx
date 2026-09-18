@@ -210,6 +210,8 @@ export default function LoginPage() {
                 localStorage.setItem("mesh_onboarding_complete", "true");
                 sessionStorage.removeItem("mesh_auth_in_progress");
                 sessionStorage.setItem("mesh_just_signed_in", "true");
+                document.documentElement.classList.add("mesh-auth-active");
+                document.documentElement.classList.remove("mesh-auth-guest");
             }
             // Do NOT reset isSigningIn — keep LoginPage suppressed until route change completes
             router.replace("/");

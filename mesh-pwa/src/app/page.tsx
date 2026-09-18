@@ -88,7 +88,7 @@ export default function HomePage() {
   // When user is authenticated or has persisted session:
   // Render MainAppShell with the smooth lockscreen unlock animation transitioning from the splash
   return (
-    <div className="relative w-full h-full min-h-screen overflow-hidden" data-app-shell="true" id="main-app-shell-root">
+    <div className="relative w-full h-full min-h-screen overflow-hidden">
       <style>{`
         @keyframes smoothIconSpin {
           0% {

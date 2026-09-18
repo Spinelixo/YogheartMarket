@@ -128,11 +128,6 @@ export default function RootLayout({
               html.mesh-auth-active [data-welcome-page="true"] {
                 display: none !important;
               }
-              html.mesh-auth-guest .main-app-shell,
-              html.mesh-auth-guest #main-app-shell-root,
-              html.mesh-auth-guest [data-app-shell="true"] {
-                display: none !important;
-              }
             `,
           }}
         />

@@ -57,6 +57,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         localStorage.setItem("mesh_auth_persisted", "true");
                         localStorage.setItem("mesh_user_uid", currentUser.uid);
                     } catch (_) {}
+                    document.documentElement.classList.add("mesh-auth-active");
+                    document.documentElement.classList.remove("mesh-auth-guest");
                 }
                 setUser(currentUser);
                 setResolvedUid(currentUser.uid);
@@ -104,6 +106,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                             localStorage.removeItem("mesh_user_uid");
                             localStorage.removeItem("mesh_session_token");
                         } catch (_) {}
+                        document.documentElement.classList.remove("mesh-auth-active");
+                        document.documentElement.classList.add("mesh-auth-guest");
                     }
                     setUser(null);
                     setUserData(null);
@@ -158,6 +162,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 localStorage.removeItem("mesh_session_token");
                 localStorage.removeItem("mesh_onboarding_complete");
             } catch (_) {}
+            document.documentElement.classList.remove("mesh-auth-active");
+            document.documentElement.classList.add("mesh-auth-guest");
         }
         await firebaseSignOut(auth);
         router.push("/login");
