@@ -62,10 +62,13 @@ export default function RootLayout({
                 } catch (_) {}
 
                 if (!hasAuth) {
+                  document.documentElement.classList.add('mesh-auth-guest');
                   document.documentElement.style.background = '#ffffff';
                   document.body && (document.body.style.background = '#ffffff');
                   return;
                 }
+
+                document.documentElement.classList.add('mesh-auth-active');
 
                 var isDark = false;
                 var meshDarkMode = localStorage.getItem('mesh_dark_mode');
@@ -114,6 +117,22 @@ export default function RootLayout({
                 }
               } catch (e) {}
               })();
+            `,
+          }}
+        />
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `
+              html.mesh-auth-active .login-page,
+              html.mesh-auth-active #welcome-page-container,
+              html.mesh-auth-active [data-welcome-page="true"] {
+                display: none !important;
+              }
+              html.mesh-auth-guest .main-app-shell,
+              html.mesh-auth-guest #main-app-shell-root,
+              html.mesh-auth-guest [data-app-shell="true"] {
+                display: none !important;
+              }
             `,
           }}
         />

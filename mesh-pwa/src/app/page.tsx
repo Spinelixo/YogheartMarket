@@ -12,6 +12,7 @@ function checkHasPersistedAuth(): boolean {
       localStorage.getItem("mesh_auth_persisted") === "true" ||
       localStorage.getItem("mesh_user_uid") ||
       localStorage.getItem("mesh_session_token") ||
+      localStorage.getItem("mesh_onboarding_complete") === "true" ||
       Object.keys(localStorage).some((k) => k.startsWith("firebase:authUser"))
     );
   } catch (_) {
@@ -87,7 +88,7 @@ export default function HomePage() {
   // When user is authenticated or has persisted session:
   // Render MainAppShell with the smooth lockscreen unlock animation transitioning from the splash
   return (
-    <div className="relative w-full h-full min-h-screen overflow-hidden">
+    <div className="relative w-full h-full min-h-screen overflow-hidden" data-app-shell="true" id="main-app-shell-root">
       <style>{`
         @keyframes smoothIconSpin {
           0% {

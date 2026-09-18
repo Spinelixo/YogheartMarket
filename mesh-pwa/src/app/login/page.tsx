@@ -72,7 +72,9 @@ export default function LoginPage() {
             return (
                 localStorage.getItem("mesh_auth_persisted") === "true" ||
                 !!localStorage.getItem("mesh_user_uid") ||
-                !!localStorage.getItem("mesh_session_token")
+                !!localStorage.getItem("mesh_session_token") ||
+                localStorage.getItem("mesh_onboarding_complete") === "true" ||
+                Object.keys(localStorage).some((k) => k.startsWith("firebase:authUser"))
             );
         } catch (_) {
             return false;
@@ -666,7 +668,7 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="login-page">
+        <div className="login-page" data-welcome-page="true" id="welcome-page-container">
             <div className={`app-wrapper ${largeFont ? "large-font" : ""} ${highContrast ? "high-contrast" : ""}`}>
                 {/* Header Navigation */}
                 <div className="auth-header">
