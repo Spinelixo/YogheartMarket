@@ -22,7 +22,7 @@ function checkHasPersistedAuth(): boolean {
 export default function HomePage() {
   const { user, loading } = useAuth();
   const [hasPersisted, setHasPersisted] = useState(() => checkHasPersistedAuth());
-  const [isMounted, setIsMounted] = useState(() => typeof window !== "undefined");
+  const [isMounted, setIsMounted] = useState(false);
   const [isJustSignedIn, setIsJustSignedIn] = useState(false);
   
   // splashStage:
@@ -73,13 +73,13 @@ export default function HomePage() {
     };
   }, [user, loading]);
 
-  // If user has no saved session and is not authenticated, render Welcome page!
-  if (!hasPersisted && !user && !loading) {
+  // If user has no saved session and is not authenticated, render Welcome page immediately!
+  // This guarantees ZERO item feed flash before the Welcome page on launch.
+  if (!hasPersisted && !user) {
     return <LoginPage />;
   }
 
-  // During static SSR/export before client hydration, if not persisted, render LoginPage.
-  // This guarantees ZERO item feed flash before the Welcome page on initial launch!
+  // During static SSR/export before client hydration, if not persisted, also render LoginPage
   if (!isMounted && !hasPersisted) {
     return <LoginPage />;
   }
