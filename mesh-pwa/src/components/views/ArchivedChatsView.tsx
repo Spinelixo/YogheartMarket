@@ -372,7 +372,7 @@ export default function ArchivedChatsView({ onClose }: { onClose: () => void }) 
                                 key={thread.id}
                                 onClick={() => handleThreadClick(thread.id)}
                                 onContextMenu={(e) => handleContextMenu(e, thread)}
-                                className="flex items-center gap-3.5 px-4 py-3.5 hover:bg-gray-100/60 dark:hover:bg-gray-800/60 cursor-pointer transition-colors"
+                                className="flex items-center gap-4 px-4 py-3.5 sm:py-4 hover:bg-gray-100/60 dark:hover:bg-gray-800/60 cursor-pointer transition-colors border-b border-[var(--border)]/70 dark:border-zinc-800/70"
                             >
                                 {/* Avatar */}
                                 <div className="relative shrink-0">
@@ -435,7 +435,7 @@ export default function ArchivedChatsView({ onClose }: { onClose: () => void }) 
 
                                 {/* Thread Details */}
                                 <div className="flex-1 min-w-0">
-                                    <div className="flex justify-between items-baseline mb-1">
+                                    <div className="flex justify-between items-baseline mb-1.5">
                                         <h3 className="font-semibold text-[15px] truncate text-gray-900 dark:text-white flex items-center gap-1.5">
                                             {user.name || "User"}
                                             {isPinned && (

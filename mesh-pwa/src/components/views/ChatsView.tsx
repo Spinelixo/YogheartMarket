@@ -1540,7 +1540,7 @@ export default function ChatsView() {
                         handleThreadClick(chat.id);
                       }} 
                       className={clsx(
-                        "cursor-pointer flex items-center gap-3.5 px-4 md:px-6 py-2.5 sm:py-3 hover:bg-gray-50 dark:hover:bg-gray-800 border-b border-[var(--border)] dark:border-gray-800 relative overflow-hidden",
+                        "cursor-pointer flex items-center gap-4 px-4 md:px-6 py-3.5 sm:py-4 hover:bg-gray-50 dark:hover:bg-gray-800/70 border-b border-[var(--border)]/70 dark:border-gray-800/70 relative overflow-hidden transition-colors",
                         isSelectionMode && selectedThreadIds.has(chat.id) && "bg-blue-50/60 dark:bg-blue-950/30"
                       )}
                     >
@@ -1638,7 +1638,7 @@ export default function ChatsView() {
                           );
                         })()}
                         <div className="flex-1 min-w-0">
-                          <div className="flex justify-between items-baseline mb-1">
+                          <div className="flex justify-between items-baseline mb-1.5">
                             <h3 className="font-semibold text-[15px] truncate dark:text-white flex items-center gap-1.5">
                               <span className="truncate">{chat.user.name}</span>
                               {isMarketplaceThread(chat) && (
@@ -1722,7 +1722,7 @@ export default function ChatsView() {
                             handleThreadClick(chat.id);
                           }} 
                           className={clsx(
-                            "cursor-pointer flex items-center gap-3.5 px-4 md:px-6 py-2.5 sm:py-3 hover:bg-gray-50 dark:hover:bg-gray-800 border-b border-[var(--border)] dark:border-gray-800 relative overflow-hidden",
+                            "cursor-pointer flex items-center gap-4 px-4 md:px-6 py-3.5 sm:py-4 hover:bg-gray-50 dark:hover:bg-gray-800/70 border-b border-[var(--border)]/70 dark:border-gray-800/70 relative overflow-hidden transition-colors",
                             isSelectionMode && selectedThreadIds.has(chat.id) && "bg-blue-50/60 dark:bg-blue-950/30"
                           )}
                         >
@@ -1820,7 +1820,7 @@ export default function ChatsView() {
                           );
                         })()}
                             <div className="flex-1 min-w-0">
-                              <div className="flex justify-between items-baseline mb-1">
+                              <div className="flex justify-between items-baseline mb-1.5">
                                 <h3 className="font-semibold text-[15px] truncate dark:text-white flex items-center gap-1.5">
                                   <span className="truncate">{chat.user.name}</span>
                                   {isMarketplaceThread(chat) && (
@@ -1890,7 +1890,7 @@ export default function ChatsView() {
                             handleThreadClick(threadId);
                           }
                         }}
-                        className="flex items-center gap-3.5 px-4 md:px-6 py-2.5 sm:py-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors border-b border-[var(--border)] dark:border-gray-800 cursor-pointer relative overflow-hidden"
+                        className="flex items-center gap-4 px-4 md:px-6 py-3.5 sm:py-4 hover:bg-gray-50 dark:hover:bg-gray-800/70 transition-colors border-b border-[var(--border)]/70 dark:border-gray-800/70 cursor-pointer relative overflow-hidden"
                       >
                         <div 
                   onClick={(e) => {
