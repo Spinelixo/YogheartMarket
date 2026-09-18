@@ -9,6 +9,8 @@ function checkHasPersistedAuth(): boolean {
   if (typeof window === "undefined") return false;
   try {
     return !!(
+      localStorage.getItem("mesh_auth_persisted") === "true" ||
+      localStorage.getItem("mesh_user_uid") ||
       localStorage.getItem("mesh_session_token") ||
       Object.keys(localStorage).some((k) => k.startsWith("firebase:authUser"))
     );
@@ -24,14 +26,12 @@ export default function HomePage() {
   const [isJustSignedIn, setIsJustSignedIn] = useState(false);
   
   // splashStage:
-  // "holding"   -> App icon splash visible while Firestore database items connect
-  // "unlocking" -> iPhone/Samsung lockscreen unlock transition (splash scales up & fades, home scales in)
-  // "done"      -> Splash unmounted, user is fully in the app
+  // "unlocking" -> Only when user just finished signing in (smooth lockscreen unlock transition)
+  // "done"      -> App is open directly, smoothly displaying feed items with zero artificial hold delays
   const [splashStage, setSplashStage] = useState<"holding" | "unlocking" | "done">(() => {
     if (typeof window === "undefined") return "done";
-    const hasSession = checkHasPersistedAuth();
     const justSignedIn = sessionStorage.getItem("mesh_just_signed_in") === "true";
-    return (hasSession || justSignedIn) ? "holding" : "done";
+    return justSignedIn ? "unlocking" : "done";
   });
   const timersRef = useRef<NodeJS.Timeout[]>([]);
 
@@ -63,28 +63,9 @@ export default function HomePage() {
       return;
     }
 
-    // If app already launched in this session, skip splash delay
-    const alreadyLaunched = typeof window !== "undefined" && sessionStorage.getItem("mesh_app_launched") === "true";
-    if (alreadyLaunched) {
-      setSplashStage("done");
-      return;
-    }
-
     // On cold start / relaunch while signed in:
-    // Hold the app icon splash screen for ~700ms so items hydrate, then unlock smoothly
-    const holdTimer = setTimeout(() => {
-      setSplashStage("unlocking");
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem("mesh_app_launched", "true");
-      }
-
-      const exitTimer = setTimeout(() => {
-        setSplashStage("done");
-      }, 450);
-      timersRef.current.push(exitTimer);
-    }, 700);
-
-    timersRef.current.push(holdTimer);
+    // Zero artificial splash hold delay - smoothly enter main feed items directly!
+    setSplashStage("done");
 
     return () => {
       timersRef.current.forEach(clearTimeout);
@@ -92,14 +73,8 @@ export default function HomePage() {
     };
   }, [user, loading]);
 
-  // If user has no saved session and is not authenticated, render Welcome page immediately!
-  // This guarantees ZERO spinning icon or splash screen before the Welcome page on fresh launch.
+  // If user has no saved session and is not authenticated, render Welcome page!
   if (!hasPersisted && !user && !loading) {
-    return <LoginPage />;
-  }
-
-  // During static SSR/export before client hydration, if not persisted, also render LoginPage
-  if (!isMounted && !hasPersisted) {
     return <LoginPage />;
   }
 

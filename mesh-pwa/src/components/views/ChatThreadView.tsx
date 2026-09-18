@@ -4,8 +4,9 @@ import { useMockData, Message, User, MarketplaceItem, isMarketplaceThread } from
 import { useCall } from "@/context/CallContext";
 import { processImageFile } from "@/utils/imageProcessor";
 
-import { ArrowLeft, Phone, Video, Send, Paperclip, Mic, Camera, Image, FileText, BarChart3, MoreVertical, X, Check, CheckCheck, Edit2, Trash2, Copy, Reply, ChevronLeft, ChevronRight, Square, Search, Bell, BellOff, Ban, Flag, Trash, Archive, ChevronUp, ChevronDown, Play, Pause, Pin, RotateCw, Download, Share2, Users, LogOut, UserCheck, MapPin, User as LucideUser, Star, ShoppingBag, Car } from "lucide-react";
+import { ArrowLeft, Phone, Video, Send, Paperclip, Mic, Camera, Image, FileText, BarChart3, MoreVertical, X, Check, CheckCheck, Edit2, Trash2, Copy, Reply, ChevronLeft, ChevronRight, Square, Search, Bell, BellOff, Ban, Flag, Trash, Archive, ChevronUp, ChevronDown, Play, Pause, Pin, RotateCw, Download, Share2, Users, LogOut, UserCheck, MapPin, User as LucideUser, Star, ShoppingBag, Car, Layers } from "lucide-react";
 import { useState, useRef, useEffect, Fragment, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { createPortal } from "react-dom";
 import { clsx } from "clsx";
 import { useModalHistory } from "@/hooks/useModalHistory";
@@ -1340,47 +1341,156 @@ export default function ChatThreadView({ threadId, onClose }: { threadId: string
     const isFromMarketplace = !!(thread && isMarketplaceThread(thread)) || (typeof window !== "undefined" && (new URLSearchParams(window.location.search).get("from") === "marketplace" || new URLSearchParams(window.location.search).get("from") === "rides"));
     const fromParamValue = isFromMarketplace ? "marketplace" : "chat";
 
-    // Marketplace item associated with this chat thread
-    const marketplaceItem = useMemo(() => {
-        if (!thread) return null;
+    // Marketplace items associated with this chat thread (all referenced listings from this store/user)
+    const threadMarketplaceItems = useMemo(() => {
+        if (!thread) return [];
+        const itemOrderMap = new Map<string, { item: MarketplaceItem; order: number }>();
+        let orderCounter = 0;
+
+        const registerItem = (item: MarketplaceItem | null | undefined, priorityOrder?: number) => {
+            if (!item || !item.id) return;
+            const existing = itemOrderMap.get(item.id);
+            const ord = priorityOrder !== undefined ? priorityOrder : (existing ? existing.order : ++orderCounter);
+            itemOrderMap.set(item.id, { item, order: ord });
+        };
+
+        // 1. Thread explicit marketplaceItemIds (array of all items referenced)
+        if (Array.isArray((thread as any).marketplaceItemIds)) {
+            for (const id of (thread as any).marketplaceItemIds) {
+                const found = (marketplaceItems || []).find(i => i.id === id);
+                if (found) registerItem(found);
+            }
+        }
+
+        // 2. Thread explicit marketplaceItemId (singular)
         if ((thread as any).marketplaceItemId) {
             const found = (marketplaceItems || []).find(i => i.id === (thread as any).marketplaceItemId);
-            if (found) return found;
+            if (found) registerItem(found);
         }
+
+        // 3. Thread ID encoding (e.g. mkt_user1_user2_itemId)
         if (thread.id.startsWith("mkt_")) {
             const parts = thread.id.split("_");
             if (parts.length >= 4) {
                 const potentialItemId = parts.slice(3).join("_");
                 const found = (marketplaceItems || []).find(i => i.id === potentialItemId);
-                if (found) return found;
+                if (found) registerItem(found);
             }
         }
-        const reversedMessages = [...(thread.messages || [])].reverse();
-        for (const m of reversedMessages) {
+
+        // 4. Scan all messages in thread (both sent and received) in chronological order
+        const allMessages = thread.messages || [];
+        allMessages.forEach((m, idx) => {
+            const msgOrder = 1000 + idx;
+
+            // Direct m.marketplaceItemId
+            if ((m as any).marketplaceItemId) {
+                const found = (marketplaceItems || []).find(i => i.id === (m as any).marketplaceItemId);
+                if (found) registerItem(found, msgOrder);
+            }
+
+            // Check replyTo.id
             if (m.replyTo?.id) {
                 const found = (marketplaceItems || []).find(i => i.id === m.replyTo?.id);
-                if (found) return found;
+                if (found) registerItem(found, msgOrder);
             }
-            if (m.replyTo?.text?.includes("Marketplace Listing:")) {
-                const titlePart = m.replyTo.text.replace("Marketplace Listing:", "").split("(")[0].trim();
-                const found = (marketplaceItems || []).find(i => i.title.toLowerCase() === titlePart.toLowerCase());
-                if (found) return found;
-            }
-        }
-        if (thread.lastMessage?.includes("Marketplace Listing:")) {
-            const titlePart = thread.lastMessage.replace("Marketplace Listing:", "").split("(")[0].trim();
-            const found = (marketplaceItems || []).find(i => i.title.toLowerCase() === titlePart.toLowerCase());
-            if (found) return found;
-        }
-        if (isFromMarketplace) {
-            const sellerListings = (marketplaceItems || []).filter(i => i.sellerId === thread.user.id || i.sellerName?.toLowerCase() === thread.user.name.toLowerCase());
-            if (sellerListings.length > 0) return sellerListings[0];
-        }
-        return null;
-    }, [thread, marketplaceItems, isFromMarketplace]);
 
+            // Check replyTo.text containing "Marketplace Listing:"
+            if (m.replyTo?.text?.includes("Marketplace Listing:")) {
+                const cleanText = m.replyTo.text.replace("🛍️", "").replace("Marketplace Listing:", "").trim();
+                const titlePart = cleanText.split("(")[0].trim().toLowerCase();
+                const found = (marketplaceItems || []).find(i => 
+                    i.title.toLowerCase() === titlePart ||
+                    titlePart.includes(i.title.toLowerCase()) ||
+                    i.title.toLowerCase().includes(titlePart)
+                );
+                if (found) registerItem(found, msgOrder);
+            }
+
+            // Check message text containing "Marketplace Listing:"
+            if (m.text?.includes("Marketplace Listing:")) {
+                const cleanText = m.text.replace("🛍️", "").replace("Marketplace Listing:", "").trim();
+                const titlePart = cleanText.split("(")[0].trim().toLowerCase();
+                const found = (marketplaceItems || []).find(i => 
+                    i.title.toLowerCase() === titlePart ||
+                    titlePart.includes(i.title.toLowerCase()) ||
+                    i.title.toLowerCase().includes(titlePart)
+                );
+                if (found) registerItem(found, msgOrder);
+            }
+
+            // Check for quoted item title in message text: e.g. is "4 1/2 House" still available?
+            const quoteMatch = m.text?.match(/["“](.+?)["”]/);
+            if (quoteMatch && quoteMatch[1]) {
+                const quotedTitle = quoteMatch[1].trim().toLowerCase();
+                const found = (marketplaceItems || []).find(i =>
+                    (i.sellerId === thread.user.id || i.sellerId === currentUser?.id || i.sellerId === "me" || (i.sellerName && thread.user.name && i.sellerName.toLowerCase() === thread.user.name.toLowerCase())) &&
+                    (i.title.toLowerCase() === quotedTitle ||
+                     i.title.toLowerCase().includes(quotedTitle) ||
+                     quotedTitle.includes(i.title.toLowerCase()))
+                );
+                if (found) registerItem(found, msgOrder);
+            }
+
+            // Check if any listing belonging to the thread counterpart or current user is mentioned by title in message text
+            for (const item of (marketplaceItems || [])) {
+                if (item.sellerId === thread.user.id || item.sellerId === currentUser?.id || item.sellerId === "me" || (item.sellerName && thread.user.name && item.sellerName.toLowerCase() === thread.user.name.toLowerCase())) {
+                    if (item.title && item.title.length > 2 && m.text?.toLowerCase().includes(item.title.toLowerCase())) {
+                        registerItem(item, msgOrder);
+                    }
+                }
+            }
+
+            // Check if message imageUrl matches any listing cover
+            if (m.imageUrl) {
+                const found = (marketplaceItems || []).find(i => 
+                    (i.sellerId === thread.user.id || i.sellerId === currentUser?.id || i.sellerId === "me" || (i.sellerName && thread.user.name && i.sellerName.toLowerCase() === thread.user.name.toLowerCase())) &&
+                    (i.images?.includes(m.imageUrl!) || (i.images && i.images.length > 0 && i.images[0] === m.imageUrl))
+                );
+                if (found) registerItem(found, msgOrder);
+            }
+        });
+
+        // 5. Thread lastMessage
+        if (thread.lastMessage?.includes("Marketplace Listing:")) {
+            const cleanText = thread.lastMessage.replace("🛍️", "").replace("Marketplace Listing:", "").trim();
+            const titlePart = cleanText.split("(")[0].trim().toLowerCase();
+            const found = (marketplaceItems || []).find(i => 
+                i.title.toLowerCase() === titlePart ||
+                titlePart.includes(i.title.toLowerCase()) ||
+                i.title.toLowerCase().includes(titlePart)
+            );
+            if (found) registerItem(found, 9999);
+        }
+
+        // 6. Fallback if coming from marketplace and no specific item was matched yet
+        if (itemOrderMap.size === 0 && isFromMarketplace) {
+            const sellerListings = (marketplaceItems || []).filter(i => 
+                i.sellerId === thread.user.id || 
+                (i.sellerName && thread.user.name && i.sellerName.toLowerCase() === thread.user.name.toLowerCase())
+            );
+            if (sellerListings.length > 0) {
+                registerItem(sellerListings[0]);
+            }
+        }
+
+        // Sort items so the most recently messaged item is in front ([0]),
+        // and all remaining items are stacked underneath it
+        const sortedEntries = Array.from(itemOrderMap.values()).sort((a, b) => b.order - a.order);
+        
+        return sortedEntries.map(entry => {
+            const latest = (marketplaceItems || []).find(i => i.id === entry.item.id);
+            return latest || entry.item;
+        });
+    }, [thread, marketplaceItems, isFromMarketplace, currentUser?.id]);
+
+    const marketplaceItem = threadMarketplaceItems[0] || null;
+    const stackHasSold = threadMarketplaceItems.some(i => i.status === "sold");
+    const stackHasPending = !stackHasSold && threadMarketplaceItems.some(i => i.status === "pending" || i.status === "reserved");
     const [activeMarketplaceItem, setActiveMarketplaceItem] = useState<MarketplaceItem | null>(null);
+    const [highlightedItemId, setHighlightedItemId] = useState<string | null>(null);
     const [isBannerHighlighted, setIsBannerHighlighted] = useState(false);
+    const [isBannersCollapsed, setIsBannersCollapsed] = useState(true);
     const bannerHighlightTimerRef = useRef<NodeJS.Timeout | null>(null);
 
     const currentMarketplaceItem = activeMarketplaceItem || marketplaceItem;
@@ -1389,6 +1499,8 @@ export default function ChatThreadView({ threadId, onClose }: { threadId: string
     useEffect(() => {
         setActiveMarketplaceItem(null);
         setIsBannerHighlighted(false);
+        setHighlightedItemId(null);
+        setIsBannersCollapsed(true);
         if (bannerHighlightTimerRef.current) {
             clearTimeout(bannerHighlightTimerRef.current);
             bannerHighlightTimerRef.current = null;
@@ -1407,7 +1519,6 @@ export default function ChatThreadView({ threadId, onClose }: { threadId: string
         currentMarketplaceItem.sellerId === "me" ||
         (currentUser?.name && currentMarketplaceItem.sellerName?.toLowerCase() === currentUser.name.toLowerCase())
     ));
-    const [showSellerStatusMenu, setShowSellerStatusMenu] = useState(false);
 
     const [selectedMarketplaceItem, setSelectedMarketplaceItem] = useState<MarketplaceItem | null>(null);
     const [closingMarketplaceItem, setClosingMarketplaceItem] = useState<MarketplaceItem | null>(null);
@@ -3038,7 +3149,7 @@ export default function ChatThreadView({ threadId, onClose }: { threadId: string
             (replyTo?.id && (marketplaceItems || []).some(i => i.id === replyTo.id)) ||
             (msgId && (marketplaceItems || []).some(i => i.id === msgId));
 
-        if (isMarketplaceReply || marketplaceItem) {
+        if (isMarketplaceReply || threadMarketplaceItems.length > 0) {
             let matchedItem: MarketplaceItem | undefined;
             if (replyTo?.id) {
                 matchedItem = (marketplaceItems || []).find(i => i.id === replyTo.id);
@@ -3055,12 +3166,14 @@ export default function ChatThreadView({ threadId, onClose }: { threadId: string
                     i.title.toLowerCase().includes(titlePart)
                 );
             }
-            if (!matchedItem && marketplaceItem) {
-                matchedItem = marketplaceItem;
+            if (!matchedItem && threadMarketplaceItems.length > 0) {
+                matchedItem = threadMarketplaceItems[0];
             }
 
             if (matchedItem) {
+                setHighlightedItemId(matchedItem.id);
                 setActiveMarketplaceItem(matchedItem);
+                setIsBannersCollapsed(false);
             }
 
             // Smoothly scroll chat container to top so the highlighted banner is in clear view
@@ -3075,6 +3188,7 @@ export default function ChatThreadView({ threadId, onClose }: { threadId: string
             }
             bannerHighlightTimerRef.current = setTimeout(() => {
                 setIsBannerHighlighted(false);
+                setHighlightedItemId(null);
                 bannerHighlightTimerRef.current = null;
             }, 2600);
             return;
@@ -3631,199 +3745,574 @@ export default function ChatThreadView({ threadId, onClose }: { threadId: string
                 </div>
             </header>
 
-            {/* Facebook Marketplace Style Listing Bar below Header */}
-            {(isFromMarketplace || currentMarketplaceItem) && currentMarketplaceItem && (
+            {/* Floating Marketplace Listing Pill(s) below Header */}
+            {(isFromMarketplace || threadMarketplaceItems.length > 0) && threadMarketplaceItems.length > 0 && (
                 <div
-                    onClick={() => setSelectedMarketplaceItem(currentMarketplaceItem)}
                     className={clsx(
-                        "px-3.5 py-2.5 border-b flex items-center justify-between gap-3 cursor-pointer transition-all duration-300 shrink-0 shadow-xs z-10 relative select-none",
-                        isBannerHighlighted
-                            ? "bg-emerald-50/90 dark:bg-emerald-950/60 border-emerald-400 dark:border-emerald-500 shadow-[0_0_24px_rgba(16,185,129,0.4)] dark:shadow-[0_0_28px_rgba(16,185,129,0.55)] scale-[1.01]"
-                            : "bg-gray-50/95 dark:bg-zinc-900/95 border-[var(--border)] dark:border-zinc-800 hover:bg-gray-100/80 dark:hover:bg-zinc-850/80"
+                        "transition-all duration-200 shrink-0 relative select-none bg-transparent",
+                        !isBannersCollapsed ? "z-50" : "z-20"
                     )}
                 >
-                    {/* Animated glowing lighting border effect when highlighted */}
-                    {isBannerHighlighted && (
-                        <div className="absolute inset-0 pointer-events-none border-2 border-emerald-500 dark:border-emerald-400 animate-pulse shadow-[inset_0_0_14px_rgba(16,185,129,0.35)] z-20" />
-                    )}
-
-                    <div className="flex items-center gap-3 min-w-0 flex-1">
-                        <div className={clsx(
-                            "w-11 h-11 rounded-xl overflow-hidden bg-zinc-200 dark:bg-zinc-800 shrink-0 border flex items-center justify-center relative shadow-2xs transition-all duration-300",
-                            isBannerHighlighted 
-                                ? "border-emerald-500 ring-2 ring-emerald-400/80 shadow-[0_0_12px_rgba(16,185,129,0.5)]" 
-                                : "border-gray-200 dark:border-zinc-700"
-                        )}>
-                            {currentMarketplaceItem.images?.[0] ? (
-                                <img src={currentMarketplaceItem.images[0]} alt={currentMarketplaceItem.title} className="w-full h-full object-cover" />
-                            ) : (
-                                <ShoppingBag size={18} className="text-gray-400" />
-                            )}
-                            {currentMarketplaceItem.status === "sold" && (
-                                <div className="absolute inset-0 bg-black/60 backdrop-blur-[0.5px] flex items-center justify-center">
-                                    <span className="text-[9px] font-black text-white uppercase tracking-wider">SOLD</span>
-                                </div>
-                            )}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-1.5 mb-0.5">
-                                <span className={clsx(
-                                    "text-[10px] font-bold uppercase tracking-wider transition-colors",
-                                    isBannerHighlighted ? "text-emerald-700 dark:text-emerald-300 font-extrabold" : "text-gray-500 dark:text-zinc-400"
-                                )}>
-                                    Marketplace listing
-                                </span>
-                            </div>
-                            <h4 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white truncate">
-                                {currentMarketplaceItem.title}
-                            </h4>
-                            <p className={clsx(
-                                "text-[11px] font-semibold truncate",
-                                currentMarketplaceItem.status === "sold"
-                                    ? "text-gray-400 dark:text-zinc-500 line-through"
-                                    : "text-[var(--primary)]"
-                            )}>
-                                {currentMarketplaceItem.price === 0 ? "FREE" : `$${currentMarketplaceItem.price.toLocaleString()}`}
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-1.5 shrink-0 relative">
-                        {/* Status / View button with backlight glow */}
-                        <button
-                            type="button"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                if (isCurrentUserSeller) {
-                                    setShowSellerStatusMenu(prev => !prev);
-                                } else {
-                                    setSelectedMarketplaceItem(currentMarketplaceItem);
-                                }
-                            }}
-                            className={clsx(
-                                "text-xs font-bold px-3 py-1.5 rounded-xl border transition-all duration-200 flex items-center gap-1.5 cursor-pointer shadow-xs",
-                                isBannerHighlighted && "animate-bounce shadow-[0_0_16px_rgba(16,185,129,0.6)] ring-2 ring-emerald-400",
-                                currentMarketplaceItem.status === "sold"
-                                    ? "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/40 hover:bg-red-500/20 shadow-[0_0_12px_rgba(239,68,68,0.22)] dark:shadow-[0_0_14px_rgba(239,68,68,0.35)]"
-                                    : (currentMarketplaceItem.status === "pending" || currentMarketplaceItem.status === "reserved")
-                                    ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/40 hover:bg-amber-500/20 shadow-[0_0_12px_rgba(245,158,11,0.25)] dark:shadow-[0_0_14px_rgba(245,158,11,0.35)]"
-                                    : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/40 hover:bg-emerald-500/20 shadow-[0_0_12px_rgba(16,185,129,0.22)] dark:shadow-[0_0_14px_rgba(16,185,129,0.35)]"
-                            )}
-                            title={isCurrentUserSeller ? "Click to manage status" : "Click to view listing details"}
-                        >
-                            {currentMarketplaceItem.status === "sold" ? (
-                                <>
-                                    <span className="w-2 h-2 rounded-full bg-red-500 shrink-0 shadow-[0_0_6px_rgba(239,68,68,0.9)]" />
-                                    <span>Sold</span>
-                                </>
-                            ) : (currentMarketplaceItem.status === "pending" || currentMarketplaceItem.status === "reserved") ? (
-                                <>
-                                    <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0 animate-pulse shadow-[0_0_6px_rgba(245,158,11,0.9)]" />
-                                    <span>Pending</span>
-                                </>
-                            ) : (
-                                <>
-                                    <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0 shadow-[0_0_6px_rgba(16,185,129,0.9)]" />
-                                    <span>Available</span>
-                                </>
-                            )}
-                            <ChevronRight size={13} className="opacity-60 -mr-0.5 shrink-0" />
-                        </button>
-
-                        {/* Seller Quick Status Popover */}
-                        {isCurrentUserSeller && showSellerStatusMenu && (
-                            <>
-                                <div 
-                                    className="fixed inset-0 z-40" 
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setShowSellerStatusMenu(false);
-                                    }} 
-                                />
-                                <div 
-                                    onClick={(e) => e.stopPropagation()}
-                                    className="absolute right-0 top-full mt-2 w-48 bg-white dark:bg-zinc-900 rounded-2xl shadow-xl border border-gray-200 dark:border-zinc-800 p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150"
-                                >
-                                    <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-zinc-500">
-                                        Update Status
+                    {threadMarketplaceItems.length === 1 ? (
+                        /* Single Listing Floating Pill */
+                        <div className="px-3.5 pt-2 pb-1.5">
+                            <div
+                                onClick={() => setSelectedMarketplaceItem(threadMarketplaceItems[0])}
+                                className={clsx(
+                                    "px-3.5 py-2 flex items-center justify-between gap-3 cursor-pointer transition-all duration-200 relative rounded-2xl border bg-white dark:bg-zinc-900 shadow-sm hover:shadow-md",
+                                    isBannerHighlighted
+                                        ? "bg-emerald-50/95 dark:bg-emerald-950/70 shadow-[0_0_20px_rgba(16,185,129,0.35)] ring-2 ring-emerald-400 dark:ring-emerald-500 z-10"
+                                        : "border-gray-200 dark:border-zinc-800 hover:border-gray-300 dark:hover:border-zinc-700"
+                                )}
+                            >
+                                {isBannerHighlighted && (
+                                    <div className="absolute inset-0 pointer-events-none border-2 border-emerald-500 dark:border-emerald-400 animate-pulse shadow-[inset_0_0_12px_rgba(16,185,129,0.3)] z-20 rounded-2xl" />
+                                )}
+                                <div className="flex items-center gap-3 min-w-0 flex-1">
+                                    <div className={clsx(
+                                        "w-11 h-11 rounded-xl overflow-hidden bg-zinc-200 dark:bg-zinc-800 shrink-0 border flex items-center justify-center relative shadow-2xs transition-all duration-300",
+                                        isBannerHighlighted 
+                                            ? "border-emerald-500 ring-2 ring-emerald-400/80 shadow-[0_0_12px_rgba(16,185,129,0.5)]" 
+                                            : "border-gray-200 dark:border-zinc-700"
+                                    )}>
+                                        {threadMarketplaceItems[0].images?.[0] ? (
+                                            <img src={threadMarketplaceItems[0].images[0]} alt={threadMarketplaceItems[0].title} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <ShoppingBag size={18} className="text-gray-400" />
+                                        )}
+                                        {threadMarketplaceItems[0].status === "sold" && (
+                                            <div className="absolute inset-0 bg-black/60 backdrop-blur-[0.5px] flex items-center justify-center">
+                                                <span className="text-[9px] font-black text-white uppercase tracking-wider">SOLD</span>
+                                            </div>
+                                        )}
                                     </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            updateMarketplaceListing(currentMarketplaceItem.id, { status: "active" });
-                                            setShowSellerStatusMenu(false);
-                                        }}
-                                        className={clsx(
-                                            "w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer",
-                                            currentMarketplaceItem.status === "active" || !currentMarketplaceItem.status
-                                                ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400"
-                                                : "hover:bg-gray-100 dark:hover:bg-zinc-850 text-gray-700 dark:text-zinc-300"
-                                        )}
-                                    >
-                                        <span className="flex items-center gap-2">
-                                            <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.8)]" />
-                                            Available
-                                        </span>
-                                        {(currentMarketplaceItem.status === "active" || !currentMarketplaceItem.status) && <Check size={14} className="text-emerald-600" />}
-                                    </button>
-
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            updateMarketplaceListing(currentMarketplaceItem.id, { status: "pending" });
-                                            setShowSellerStatusMenu(false);
-                                        }}
-                                        className={clsx(
-                                            "w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer",
-                                            currentMarketplaceItem.status === "pending" || currentMarketplaceItem.status === "reserved"
-                                                ? "bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400"
-                                                : "hover:bg-gray-100 dark:hover:bg-zinc-850 text-gray-700 dark:text-zinc-300"
-                                        )}
-                                    >
-                                        <span className="flex items-center gap-2">
-                                            <span className="w-2 h-2 rounded-full bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.8)]" />
-                                            Pending
-                                        </span>
-                                        {(currentMarketplaceItem.status === "pending" || currentMarketplaceItem.status === "reserved") && <Check size={14} className="text-amber-600" />}
-                                    </button>
-
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            updateMarketplaceListing(currentMarketplaceItem.id, { status: "sold" });
-                                            setShowSellerStatusMenu(false);
-                                        }}
-                                        className={clsx(
-                                            "w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-bold transition-colors cursor-pointer",
-                                            currentMarketplaceItem.status === "sold"
-                                                ? "bg-red-50 text-red-700 dark:bg-red-950/50 dark:text-red-400"
-                                                : "hover:bg-gray-100 dark:hover:bg-zinc-850 text-gray-700 dark:text-zinc-300"
-                                        )}
-                                    >
-                                        <span className="flex items-center gap-2">
-                                            <span className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.8)]" />
-                                            Sold
-                                        </span>
-                                        {currentMarketplaceItem.status === "sold" && <Check size={14} className="text-red-600" />}
-                                    </button>
-
-                                    <div className="my-1 border-t border-gray-100 dark:border-zinc-800" />
-
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setShowSellerStatusMenu(false);
-                                            setSelectedMarketplaceItem(currentMarketplaceItem);
-                                        }}
-                                        className="w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-semibold text-gray-600 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-850 transition-colors cursor-pointer"
-                                    >
-                                        <span>View Listing Details</span>
-                                        <ChevronRight size={13} className="opacity-50" />
-                                    </button>
+                                    <div className="min-w-0 flex-1">
+                                        <div className="flex items-center gap-1.5 mb-0.5">
+                                            <span className={clsx(
+                                                "text-[10px] font-bold uppercase tracking-wider transition-colors",
+                                                isBannerHighlighted 
+                                                    ? "text-emerald-700 dark:text-emerald-300 font-extrabold" 
+                                                    : (currentUser?.id === threadMarketplaceItems[0].sellerId || threadMarketplaceItems[0].sellerId === "me" || (currentUser?.name && threadMarketplaceItems[0].sellerName?.toLowerCase() === currentUser.name.toLowerCase()))
+                                                    ? "text-emerald-600 dark:text-emerald-400" 
+                                                    : "text-gray-500 dark:text-zinc-400"
+                                            )}>
+                                                {(currentUser?.id === threadMarketplaceItems[0].sellerId || threadMarketplaceItems[0].sellerId === "me" || (currentUser?.name && threadMarketplaceItems[0].sellerName?.toLowerCase() === currentUser.name.toLowerCase())) ? "Your listing" : "Marketplace listing"}
+                                            </span>
+                                        </div>
+                                        <h4 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white truncate">
+                                            {threadMarketplaceItems[0].title}
+                                        </h4>
+                                        <p className={clsx(
+                                            "text-[11px] font-semibold truncate",
+                                            threadMarketplaceItems[0].status === "sold"
+                                                ? "text-gray-400 dark:text-zinc-500 line-through"
+                                                : "text-[var(--primary)]"
+                                        )}>
+                                            {threadMarketplaceItems[0].price === 0 ? "FREE" : `$${threadMarketplaceItems[0].price.toLocaleString()}`}
+                                        </p>
+                                    </div>
                                 </div>
-                            </>
-                        )}
-                    </div>
+
+                                <div className="flex items-center gap-1.5 shrink-0 relative">
+                                    {(currentUser?.id === threadMarketplaceItems[0].sellerId || threadMarketplaceItems[0].sellerId === "me" || (currentUser?.name && threadMarketplaceItems[0].sellerName?.toLowerCase() === currentUser.name.toLowerCase())) ? (
+                                        /* Seller: 3 direct status buttons */
+                                        <div 
+                                            onClick={(e) => e.stopPropagation()} 
+                                            className="flex items-center gap-1 shrink-0"
+                                        >
+                                            <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    updateMarketplaceListing(threadMarketplaceItems[0].id, { status: "active" });
+                                                }}
+                                                className={clsx(
+                                                    "px-2 sm:px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer border",
+                                                    threadMarketplaceItems[0].status === "active" || !threadMarketplaceItems[0].status
+                                                        ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                                                        : "bg-gray-100/90 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 border-gray-200/80 dark:border-zinc-700 hover:bg-gray-200 dark:hover:bg-zinc-700 hover:text-gray-900 dark:hover:text-white"
+                                                )}
+                                                title="Mark as Available"
+                                            >
+                                                <span className={clsx("w-1.5 h-1.5 rounded-full shrink-0", (threadMarketplaceItems[0].status === "active" || !threadMarketplaceItems[0].status) ? "bg-white" : "bg-emerald-500")} />
+                                                <span>Available</span>
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    updateMarketplaceListing(threadMarketplaceItems[0].id, { status: "pending" });
+                                                }}
+                                                className={clsx(
+                                                    "px-2 sm:px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer border",
+                                                    threadMarketplaceItems[0].status === "pending" || threadMarketplaceItems[0].status === "reserved"
+                                                        ? "bg-amber-600 text-white border-amber-600 shadow-xs"
+                                                        : "bg-gray-100/90 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 border-gray-200/80 dark:border-zinc-700 hover:bg-gray-200 dark:hover:bg-zinc-700 hover:text-gray-900 dark:hover:text-white"
+                                                )}
+                                                title="Mark as Pending"
+                                            >
+                                                <span className={clsx("w-1.5 h-1.5 rounded-full shrink-0", (threadMarketplaceItems[0].status === "pending" || threadMarketplaceItems[0].status === "reserved") ? "bg-white" : "bg-amber-500")} />
+                                                <span>Pending</span>
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    updateMarketplaceListing(threadMarketplaceItems[0].id, { status: "sold" });
+                                                }}
+                                                className={clsx(
+                                                    "px-2 sm:px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer border",
+                                                    threadMarketplaceItems[0].status === "sold"
+                                                        ? "bg-red-600 text-white border-red-600 shadow-xs"
+                                                        : "bg-gray-100/90 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 border-gray-200/80 dark:border-zinc-700 hover:bg-gray-200 dark:hover:bg-zinc-700 hover:text-gray-900 dark:hover:text-white"
+                                                )}
+                                                title="Mark as Sold"
+                                            >
+                                                <span className={clsx("w-1.5 h-1.5 rounded-full shrink-0", threadMarketplaceItems[0].status === "sold" ? "bg-white" : "bg-red-500")} />
+                                                <span>Sold</span>
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        /* Buyer: Status badge button */
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setSelectedMarketplaceItem(threadMarketplaceItems[0]);
+                                            }}
+                                            className={clsx(
+                                                "text-xs font-bold px-3 py-1.5 rounded-xl border transition-all duration-200 flex items-center gap-1.5 cursor-pointer shadow-xs",
+                                                threadMarketplaceItems[0].status === "sold"
+                                                    ? "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/40 hover:bg-red-500/20 shadow-[0_0_12px_rgba(239,68,68,0.22)] dark:shadow-[0_0_14px_rgba(239,68,68,0.35)]"
+                                                    : (threadMarketplaceItems[0].status === "pending" || threadMarketplaceItems[0].status === "reserved")
+                                                    ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/40 hover:bg-amber-500/20 shadow-[0_0_12px_rgba(245,158,11,0.25)] dark:shadow-[0_0_14px_rgba(245,158,11,0.35)]"
+                                                    : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/40 hover:bg-emerald-500/20 shadow-[0_0_12px_rgba(16,185,129,0.22)] dark:shadow-[0_0_14px_rgba(16,185,129,0.35)]"
+                                            )}
+                                        >
+                                            {threadMarketplaceItems[0].status === "sold" ? (
+                                                <>
+                                                    <span className="w-2 h-2 rounded-full bg-red-500 shrink-0 shadow-[0_0_6px_rgba(239,68,68,0.9)]" />
+                                                    <span>Sold</span>
+                                                </>
+                                            ) : (threadMarketplaceItems[0].status === "pending" || threadMarketplaceItems[0].status === "reserved") ? (
+                                                <>
+                                                    <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0 animate-pulse shadow-[0_0_6px_rgba(245,158,11,0.9)]" />
+                                                    <span>Pending</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0 shadow-[0_0_6px_rgba(16,185,129,0.9)]" />
+                                                    <span>Available</span>
+                                                </>
+                                            )}
+                                            <ChevronRight size={13} className="opacity-60 -mr-0.5 shrink-0" />
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        /* Multiple Listings: Floating Stacked Pill with Absolute Overlay Dropdown (Zero UI Shift!) */
+                        <div className="px-3.5 pt-2 pb-2 relative">
+                            {/* Front Stack Pill (Anchored in normal flow) */}
+                            <div
+                                onClick={() => setIsBannersCollapsed(prev => !prev)}
+                                className="relative cursor-pointer group select-none mx-auto w-full"
+                                title={isBannersCollapsed ? "Tap to show all marketplace listings" : "Tap to collapse"}
+                            >
+                                {/* 3rd Layer Floating Peek Card (if 3 or more items and collapsed) */}
+                                {isBannersCollapsed && threadMarketplaceItems.length >= 3 && (
+                                    <div 
+                                        className="absolute inset-x-5 -bottom-2.5 h-7 rounded-2xl bg-white/80 dark:bg-zinc-850/80 border border-gray-200/80 dark:border-zinc-750/70 shadow-xs z-0 pointer-events-none transition-all duration-150 group-hover:-bottom-3"
+                                    />
+                                )}
+
+                                {/* 2nd Layer Floating Peek Card (if collapsed) */}
+                                {isBannersCollapsed && (
+                                    <div 
+                                        className="absolute inset-x-2.5 -bottom-1.5 h-7 rounded-2xl bg-white/90 dark:bg-zinc-850 border border-gray-200 dark:border-zinc-750 shadow-xs z-5 pointer-events-none transition-all duration-150 group-hover:-bottom-2"
+                                    />
+                                )}
+
+                                {/* Front Floating Pill Card */}
+                                <div className={clsx(
+                                    "relative z-10 bg-white dark:bg-zinc-900 rounded-2xl border transition-all duration-150 p-2.5 flex items-center justify-between gap-3",
+                                    !isBannersCollapsed
+                                        ? "border-emerald-500/60 dark:border-emerald-500/50 shadow-md ring-1 ring-emerald-500/20"
+                                        : "border-gray-200 dark:border-zinc-800 shadow-sm group-hover:shadow-md"
+                                )}>
+                                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                                        <div className="w-10 h-10 rounded-xl overflow-hidden bg-zinc-200 dark:bg-zinc-800 shrink-0 border border-gray-200 dark:border-zinc-700 flex items-center justify-center relative shadow-2xs">
+                                            {threadMarketplaceItems[0].images?.[0] ? (
+                                                <img src={threadMarketplaceItems[0].images[0]} alt={threadMarketplaceItems[0].title} className="w-full h-full object-cover" />
+                                            ) : (
+                                                <ShoppingBag size={17} className="text-gray-400" />
+                                            )}
+                                            {threadMarketplaceItems[0].status === "sold" && (
+                                                <div className="absolute inset-0 bg-black/60 backdrop-blur-[0.5px] flex items-center justify-center">
+                                                    <span className="text-[8.5px] font-black text-white uppercase tracking-wider">SOLD</span>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="min-w-0 flex-1">
+                                            <div className="flex items-center gap-1.5 mb-0.5">
+                                                <span className={clsx(
+                                                    "text-[10px] font-bold uppercase tracking-wider truncate",
+                                                    (currentUser?.id === threadMarketplaceItems[0].sellerId || threadMarketplaceItems[0].sellerId === "me" || (currentUser?.name && threadMarketplaceItems[0].sellerName?.toLowerCase() === currentUser.name.toLowerCase()))
+                                                        ? "text-emerald-600 dark:text-emerald-400" 
+                                                        : "text-gray-500 dark:text-zinc-400"
+                                                )}>
+                                                    {(currentUser?.id === threadMarketplaceItems[0].sellerId || threadMarketplaceItems[0].sellerId === "me" || (currentUser?.name && threadMarketplaceItems[0].sellerName?.toLowerCase() === currentUser.name.toLowerCase())) ? "Your listing" : `${thread.user.name}'s listing`}
+                                                </span>
+                                            </div>
+
+                                            <h4 className="text-xs font-bold text-gray-900 dark:text-white truncate">
+                                                {threadMarketplaceItems[0].title}
+                                            </h4>
+                                            <p className={clsx(
+                                                "text-[11px] font-semibold truncate",
+                                                threadMarketplaceItems[0].status === "sold"
+                                                    ? "text-gray-400 dark:text-zinc-500 line-through"
+                                                    : "text-[var(--primary)]"
+                                            )}>
+                                                {threadMarketplaceItems[0].price === 0 ? "FREE" : `$${threadMarketplaceItems[0].price.toLocaleString()}`}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-2 shrink-0">
+                                        {(currentUser?.id === threadMarketplaceItems[0].sellerId || threadMarketplaceItems[0].sellerId === "me" || (currentUser?.name && threadMarketplaceItems[0].sellerName?.toLowerCase() === currentUser.name.toLowerCase())) ? (
+                                            /* Seller: 3 direct status buttons */
+                                            <div 
+                                                onClick={(e) => e.stopPropagation()} 
+                                                className="flex items-center gap-1 shrink-0"
+                                            >
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        updateMarketplaceListing(threadMarketplaceItems[0].id, { status: "active" });
+                                                    }}
+                                                    className={clsx(
+                                                        "px-2 sm:px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer border relative",
+                                                        stackHasSold
+                                                            ? "bg-emerald-600 text-white border-red-500 ring-2 ring-red-500 shadow-[0_0_12px_rgba(239,68,68,0.85)] animate-pulse"
+                                                            : stackHasPending
+                                                            ? "bg-emerald-600 text-white border-amber-400 ring-2 ring-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.85)] animate-pulse"
+                                                            : threadMarketplaceItems[0].status === "active" || !threadMarketplaceItems[0].status
+                                                            ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                                                            : "bg-gray-100/90 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 border-gray-200/80 dark:border-zinc-700 hover:bg-gray-200 dark:hover:bg-zinc-700 hover:text-gray-900 dark:hover:text-white"
+                                                    )}
+                                                    title="Mark as Available"
+                                                >
+                                                    <span className={clsx(
+                                                        "w-1.5 h-1.5 rounded-full shrink-0", 
+                                                        stackHasSold
+                                                            ? "bg-red-300 shadow-[0_0_6px_rgba(239,68,68,0.9)]"
+                                                            : stackHasPending
+                                                            ? "bg-amber-200 shadow-[0_0_6px_rgba(245,158,11,0.9)]"
+                                                            : (threadMarketplaceItems[0].status === "active" || !threadMarketplaceItems[0].status)
+                                                            ? "bg-white" 
+                                                            : "bg-emerald-500"
+                                                    )} />
+                                                    <span>Available</span>
+                                                </button>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        updateMarketplaceListing(threadMarketplaceItems[0].id, { status: "pending" });
+                                                    }}
+                                                    className={clsx(
+                                                        "px-2 sm:px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer border",
+                                                        threadMarketplaceItems[0].status === "pending" || threadMarketplaceItems[0].status === "reserved"
+                                                            ? "bg-amber-600 text-white border-amber-600 shadow-xs"
+                                                            : "bg-gray-100/90 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 border-gray-200/80 dark:border-zinc-700 hover:bg-gray-200 dark:hover:bg-zinc-700 hover:text-gray-900 dark:hover:text-white"
+                                                    )}
+                                                    title="Mark as Pending"
+                                                >
+                                                    <span className={clsx("w-1.5 h-1.5 rounded-full shrink-0", (threadMarketplaceItems[0].status === "pending" || threadMarketplaceItems[0].status === "reserved") ? "bg-white" : "bg-amber-500")} />
+                                                    <span>Pending</span>
+                                                </button>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        updateMarketplaceListing(threadMarketplaceItems[0].id, { status: "sold" });
+                                                    }}
+                                                    className={clsx(
+                                                        "px-2 sm:px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer border",
+                                                        threadMarketplaceItems[0].status === "sold"
+                                                            ? "bg-red-600 text-white border-red-600 shadow-xs"
+                                                            : "bg-gray-100/90 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 border-gray-200/80 dark:border-zinc-700 hover:bg-gray-200 dark:hover:bg-zinc-700 hover:text-gray-900 dark:hover:text-white"
+                                                    )}
+                                                    title="Mark as Sold"
+                                                >
+                                                    <span className={clsx("w-1.5 h-1.5 rounded-full shrink-0", threadMarketplaceItems[0].status === "sold" ? "bg-white" : "bg-red-500")} />
+                                                    <span>Sold</span>
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            /* Buyer: Status badge button */
+                                            <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setSelectedMarketplaceItem(threadMarketplaceItems[0]);
+                                                }}
+                                                className={clsx(
+                                                    "text-xs font-bold px-2.5 py-1.2 rounded-xl border transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs",
+                                                    stackHasSold
+                                                        ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-red-500 ring-2 ring-red-500 shadow-[0_0_12px_rgba(239,68,68,0.85)] animate-pulse"
+                                                        : stackHasPending
+                                                        ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-amber-400 ring-2 ring-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.85)] animate-pulse"
+                                                        : threadMarketplaceItems[0].status === "sold"
+                                                        ? "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/40 hover:bg-red-500/20"
+                                                        : (threadMarketplaceItems[0].status === "pending" || threadMarketplaceItems[0].status === "reserved")
+                                                        ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/40 hover:bg-amber-500/20"
+                                                        : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/40 hover:bg-emerald-500/20"
+                                                )}
+                                                title="Click to view listing details"
+                                            >
+                                                <span className={clsx(
+                                                    "w-2 h-2 rounded-full",
+                                                    stackHasSold
+                                                        ? "bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.9)]"
+                                                        : stackHasPending
+                                                        ? "bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.9)]"
+                                                        : threadMarketplaceItems[0].status === "sold"
+                                                        ? "bg-red-500"
+                                                        : (threadMarketplaceItems[0].status === "pending" || threadMarketplaceItems[0].status === "reserved")
+                                                        ? "bg-amber-500 animate-pulse"
+                                                        : "bg-emerald-500"
+                                                )} />
+                                                <span>{threadMarketplaceItems[0].status === "sold" ? "Sold" : (threadMarketplaceItems[0].status === "pending" || threadMarketplaceItems[0].status === "reserved") ? "Pending" : "Available"}</span>
+                                                <ChevronRight size={12} className="opacity-60 -mr-0.5" />
+                                            </button>
+                                        )}
+
+                                        {/* Expand/Collapse Chevron Indicator */}
+                                        <div className={clsx(
+                                            "w-7 h-7 rounded-full flex items-center justify-center transition-colors",
+                                            !isBannersCollapsed
+                                                ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400"
+                                                : "bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 group-hover:bg-gray-200 dark:group-hover:bg-zinc-700"
+                                        )}>
+                                            {isBannersCollapsed ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Dropdown Floating ABOVE the Chat Messages (Zero UI Shift, No chat blocking!) */}
+                            <AnimatePresence>
+                                {!isBannersCollapsed && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: -6 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -6 }}
+                                        transition={{ duration: 0.16, ease: "easeOut" }}
+                                        className="absolute top-full left-0 right-0 px-3.5 pt-1 z-40 pointer-events-auto"
+                                    >
+                                            <div className="bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md rounded-2xl border border-gray-200 dark:border-zinc-800 shadow-2xl overflow-hidden">
+                                                {/* Header */}
+                                                <div className="px-3.5 py-2 bg-gray-50/90 dark:bg-zinc-850/80 border-b border-gray-200/70 dark:border-zinc-800/80 flex items-center justify-between">
+                                                    <span className="text-xs font-bold text-gray-700 dark:text-zinc-300">
+                                                        Marketplace Listings
+                                                    </span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setIsBannersCollapsed(true);
+                                                        }}
+                                                        className="flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium text-gray-600 dark:text-zinc-300 hover:text-black dark:hover:text-white bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 shadow-2xs hover:bg-gray-50 dark:hover:bg-zinc-750 transition-all cursor-pointer"
+                                                    >
+                                                        <span>Collapse</span>
+                                                        <ChevronUp size={13} />
+                                                    </button>
+                                                </div>
+
+                                                {/* List of remaining items */}
+                                                <div className="divide-y divide-gray-100 dark:divide-zinc-800 max-h-[280px] overflow-y-auto scrollbar-thin">
+                                                    {threadMarketplaceItems.slice(1).map((item) => {
+                                                        const isItemSeller = !!(
+                                                            currentUser?.id === item.sellerId || 
+                                                            item.sellerId === "me" ||
+                                                            (currentUser?.name && item.sellerName?.toLowerCase() === currentUser.name.toLowerCase())
+                                                        );
+                                                        const isThisItemHighlighted = isBannerHighlighted && (highlightedItemId === item.id || (!highlightedItemId && threadMarketplaceItems.length === 1));
+
+                                                        return (
+                                                            <div
+                                                                key={item.id}
+                                                                onClick={() => setSelectedMarketplaceItem(item)}
+                                                                className={clsx(
+                                                                    "px-3.5 py-2.5 transition-colors duration-150 relative cursor-pointer",
+                                                                    isThisItemHighlighted
+                                                                        ? "bg-emerald-50/95 dark:bg-emerald-950/70 shadow-[0_0_20px_rgba(16,185,129,0.35)] ring-2 ring-emerald-400 dark:ring-emerald-500 z-10"
+                                                                        : "hover:bg-gray-50 dark:hover:bg-zinc-850/60"
+                                                                )}
+                                                            >
+                                                                {/* Animated glowing lighting border effect when highlighted */}
+                                                                {isThisItemHighlighted && (
+                                                                    <div className="absolute inset-0 pointer-events-none border-2 border-emerald-500 dark:border-emerald-400 animate-pulse shadow-[inset_0_0_12px_rgba(16,185,129,0.3)] z-20" />
+                                                                )}
+
+                                                                <div className="flex items-center justify-between gap-3">
+                                                                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                                                                        <div className={clsx(
+                                                                            "w-11 h-11 rounded-xl overflow-hidden bg-zinc-200 dark:bg-zinc-800 shrink-0 border flex items-center justify-center relative shadow-2xs transition-all duration-300",
+                                                                            isThisItemHighlighted 
+                                                                                ? "border-emerald-500 ring-2 ring-emerald-400/80 shadow-[0_0_12px_rgba(16,185,129,0.5)]" 
+                                                                                : "border-gray-200 dark:border-zinc-700"
+                                                                        )}>
+                                                                            {item.images?.[0] ? (
+                                                                                <img src={item.images[0]} alt={item.title} className="w-full h-full object-cover" />
+                                                                            ) : (
+                                                                                <ShoppingBag size={18} className="text-gray-400" />
+                                                                            )}
+                                                                            {item.status === "sold" && (
+                                                                                <div className="absolute inset-0 bg-black/60 backdrop-blur-[0.5px] flex items-center justify-center">
+                                                                                    <span className="text-[9px] font-black text-white uppercase tracking-wider">SOLD</span>
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                        <div className="min-w-0 flex-1">
+                                                                            <div className="flex items-center gap-1.5 mb-0.5">
+                                                                                <span className={clsx(
+                                                                                    "text-[10px] font-bold uppercase tracking-wider transition-colors",
+                                                                                    isThisItemHighlighted 
+                                                                                        ? "text-emerald-700 dark:text-emerald-300 font-extrabold" 
+                                                                                        : isItemSeller 
+                                                                                        ? "text-emerald-600 dark:text-emerald-400" 
+                                                                                        : "text-gray-500 dark:text-zinc-400"
+                                                                                )}>
+                                                                                    {isItemSeller ? "Your listing" : `${thread.user.name}'s listing`}
+                                                                                </span>
+                                                                            </div>
+                                                                            <h4 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white truncate">
+                                                                                {item.title}
+                                                                            </h4>
+                                                                            <p className={clsx(
+                                                                                "text-[11px] font-semibold truncate",
+                                                                                item.status === "sold"
+                                                                                    ? "text-gray-400 dark:text-zinc-500 line-through"
+                                                                                    : "text-[var(--primary)]"
+                                                                            )}>
+                                                                                {item.price === 0 ? "FREE" : `$${item.price.toLocaleString()}`}
+                                                                            </p>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <div className="flex items-center gap-1.5 shrink-0 relative">
+                                                                        {isItemSeller ? (
+                                                                            /* Seller: 3 direct status buttons */
+                                                                            <div 
+                                                                                onClick={(e) => e.stopPropagation()} 
+                                                                                className="flex items-center gap-1 shrink-0"
+                                                                            >
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        updateMarketplaceListing(item.id, { status: "active" });
+                                                                                    }}
+                                                                                    className={clsx(
+                                                                                        "px-2 sm:px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer border",
+                                                                                        item.status === "active" || !item.status
+                                                                                            ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                                                                                            : "bg-gray-100/90 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 border-gray-200/80 dark:border-zinc-700 hover:bg-gray-200 dark:hover:bg-zinc-700 hover:text-gray-900 dark:hover:text-white"
+                                                                                    )}
+                                                                                    title="Mark as Available"
+                                                                                >
+                                                                                    <span className={clsx("w-1.5 h-1.5 rounded-full shrink-0", (item.status === "active" || !item.status) ? "bg-white" : "bg-emerald-500")} />
+                                                                                    <span>Available</span>
+                                                                                </button>
+
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        updateMarketplaceListing(item.id, { status: "pending" });
+                                                                                    }}
+                                                                                    className={clsx(
+                                                                                        "px-2 sm:px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer border",
+                                                                                        item.status === "pending" || item.status === "reserved"
+                                                                                            ? "bg-amber-600 text-white border-amber-600 shadow-xs"
+                                                                                            : "bg-gray-100/90 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 border-gray-200/80 dark:border-zinc-700 hover:bg-gray-200 dark:hover:bg-zinc-700 hover:text-gray-900 dark:hover:text-white"
+                                                                                    )}
+                                                                                    title="Mark as Pending"
+                                                                                >
+                                                                                    <span className={clsx("w-1.5 h-1.5 rounded-full shrink-0", (item.status === "pending" || item.status === "reserved") ? "bg-white" : "bg-amber-500")} />
+                                                                                    <span>Pending</span>
+                                                                                </button>
+
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={(e) => {
+                                                                                        e.stopPropagation();
+                                                                                        updateMarketplaceListing(item.id, { status: "sold" });
+                                                                                    }}
+                                                                                    className={clsx(
+                                                                                        "px-2 sm:px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer border",
+                                                                                        item.status === "sold"
+                                                                                            ? "bg-red-600 text-white border-red-600 shadow-xs"
+                                                                                            : "bg-gray-100/90 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 border-gray-200/80 dark:border-zinc-700 hover:bg-gray-200 dark:hover:bg-zinc-700 hover:text-gray-900 dark:hover:text-white"
+                                                                                    )}
+                                                                                    title="Mark as Sold"
+                                                                                >
+                                                                                    <span className={clsx("w-1.5 h-1.5 rounded-full shrink-0", item.status === "sold" ? "bg-white" : "bg-red-500")} />
+                                                                                    <span>Sold</span>
+                                                                                </button>
+                                                                            </div>
+                                                                        ) : (
+                                                                            /* Buyer: Status / Action Button */
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={(e) => {
+                                                                                    e.stopPropagation();
+                                                                                    setSelectedMarketplaceItem(item);
+                                                                                }}
+                                                                                className={clsx(
+                                                                                    "text-xs font-bold px-3 py-1.5 rounded-xl border transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs",
+                                                                                    item.status === "sold"
+                                                                                        ? "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/40 hover:bg-red-500/20 shadow-[0_0_12px_rgba(239,68,68,0.22)] dark:shadow-[0_0_14px_rgba(239,68,68,0.35)]"
+                                                                                        : (item.status === "pending" || item.status === "reserved")
+                                                                                        ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/40 hover:bg-amber-500/20 shadow-[0_0_12px_rgba(245,158,11,0.25)] dark:shadow-[0_0_14px_rgba(245,158,11,0.35)]"
+                                                                                        : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/40 hover:bg-emerald-500/20 shadow-[0_0_12px_rgba(16,185,129,0.22)] dark:shadow-[0_0_14px_rgba(16,185,129,0.35)]"
+                                                                                )}
+                                                                                title="Click to view listing details"
+                                                                            >
+                                                                                <span className={clsx(
+                                                                                    "w-2 h-2 rounded-full",
+                                                                                    item.status === "sold"
+                                                                                        ? "bg-red-500"
+                                                                                        : (item.status === "pending" || item.status === "reserved")
+                                                                                        ? "bg-amber-500 animate-pulse"
+                                                                                        : "bg-emerald-500"
+                                                                                )} />
+                                                                                <span>{item.status === "sold" ? "Sold" : (item.status === "pending" || item.status === "reserved") ? "Pending" : "Available"}</span>
+                                                                                <ChevronRight size={13} className="opacity-60 -mr-0.5 shrink-0" />
+                                                                            </button>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+                    )}
                 </div>
             )}
 

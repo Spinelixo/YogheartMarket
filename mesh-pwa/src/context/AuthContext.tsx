@@ -20,6 +20,13 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 function checkHasCachedAuth(): boolean {
     if (typeof window === "undefined") return false;
     try {
+        if (
+            localStorage.getItem("mesh_auth_persisted") === "true" ||
+            localStorage.getItem("mesh_user_uid") ||
+            localStorage.getItem("mesh_session_token")
+        ) {
+            return true;
+        }
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
             if (key && (key.startsWith("firebase:authUser") || key === "mesh_session_token")) {
@@ -34,7 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(() => auth.currentUser || null);
     const [userData, setUserData] = useState<any>(null);
     const [resolvedUid, setResolvedUid] = useState<string | null>(() => auth.currentUser?.uid || null);
-    const [loading, setLoading] = useState<boolean>(() => checkHasCachedAuth());
+    const [loading, setLoading] = useState<boolean>(true);
     const [isUserDataLoaded, setIsUserDataLoaded] = useState<boolean>(() => !auth.currentUser);
     const router = useRouter();
 
@@ -45,6 +52,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (!isSubscribed) return;
 
             if (currentUser) {
+                if (typeof window !== "undefined") {
+                    try {
+                        localStorage.setItem("mesh_auth_persisted", "true");
+                        localStorage.setItem("mesh_user_uid", currentUser.uid);
+                    } catch (_) {}
+                }
                 setUser(currentUser);
                 setResolvedUid(currentUser.uid);
                 // Mark user doc as not yet loaded until Firestore snapshot responds
@@ -85,6 +98,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 })();
             } else {
                 if (isSubscribed) {
+                    if (typeof window !== "undefined") {
+                        try {
+                            localStorage.removeItem("mesh_auth_persisted");
+                            localStorage.removeItem("mesh_user_uid");
+                            localStorage.removeItem("mesh_session_token");
+                        } catch (_) {}
+                    }
                     setUser(null);
                     setUserData(null);
                     setResolvedUid(null);
@@ -132,8 +152,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     async function logout() {
         if (typeof window !== "undefined") {
-            localStorage.removeItem("mesh_session_token");
-            localStorage.removeItem("mesh_onboarding_complete");
+            try {
+                localStorage.removeItem("mesh_auth_persisted");
+                localStorage.removeItem("mesh_user_uid");
+                localStorage.removeItem("mesh_session_token");
+                localStorage.removeItem("mesh_onboarding_complete");
+            } catch (_) {}
         }
         await firebaseSignOut(auth);
         router.push("/login");

@@ -66,6 +66,19 @@ export default function LoginPage() {
         return false;
     });
 
+    const [hasCachedAuth] = useState(() => {
+        if (typeof window === "undefined") return false;
+        try {
+            return (
+                localStorage.getItem("mesh_auth_persisted") === "true" ||
+                !!localStorage.getItem("mesh_user_uid") ||
+                !!localStorage.getItem("mesh_session_token")
+            );
+        } catch (_) {
+            return false;
+        }
+    });
+
     useEffect(() => {
         if (typeof window !== "undefined" && localStorage.getItem("mesh_signing_out") === "true") {
             localStorage.removeItem("mesh_signing_out");
@@ -92,6 +105,8 @@ export default function LoginPage() {
             localStorage.setItem("mesh_ignore_session_check", "true");
             localStorage.setItem("mesh_session_id", newSessionId);
             localStorage.setItem("mesh_session_token", btoa("phone:" + phoneNum));
+            localStorage.setItem("mesh_auth_persisted", "true");
+            localStorage.setItem("mesh_user_uid", uid);
         }
 
         const userDocRef = doc(db, "users", uid);
@@ -399,6 +414,8 @@ export default function LoginPage() {
                 const newSessionId = Math.random().toString(36).substring(2) + Date.now().toString(36);
                 if (typeof window !== "undefined") {
                     localStorage.setItem("mesh_session_token", newSessionId);
+                    localStorage.setItem("mesh_auth_persisted", "true");
+                    localStorage.setItem("mesh_user_uid", newUid);
                     localStorage.removeItem("mesh_onboarding_complete");
                     sessionStorage.removeItem("mesh_auth_in_progress");
                 }
@@ -599,7 +616,11 @@ export default function LoginPage() {
     // Suppress the Welcome page UI whenever sign-in is in progress or user is authenticated:
     // Render the App Icon spinning smoothly on a clean white/dark background.
     // This prevents any flash of the empty green body background, Welcome page, or onboarding screens!
-    if ((isSigningIn && !error) || (user && !isSigningOut)) {
+    if ((isSigningIn && !error) || ((user || hasCachedAuth) && !isSigningOut)) {
+        if (!isSigningIn) {
+            // When already authenticated, render a blank neutral background without any competing icons or welcome flash
+            return <div className="fixed inset-0 z-[9999] bg-white dark:bg-[#0b141a]" />;
+        }
         return (
             <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-white dark:bg-[#0b141a]">
                 <style>{`

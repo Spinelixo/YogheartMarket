@@ -179,6 +179,7 @@ export type Message = {
     createdAt?: string;
     senderId?: string;
     delivered?: boolean;
+    marketplaceItemId?: string;
 };
 
 export type Thread = {
@@ -2416,6 +2417,7 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
         if (finalExtra.fileSize) firestoreMessage.fileSize = finalExtra.fileSize;
         if (finalExtra.thumbnail) firestoreMessage.thumbnail = finalExtra.thumbnail;
         if (finalExtra.poll) firestoreMessage.poll = finalExtra.poll;
+        if ((finalExtra as any).marketplaceItemId) firestoreMessage.marketplaceItemId = (finalExtra as any).marketplaceItemId;
         if (finalExtra.replyTo) {
             firestoreMessage.replyTo = {
                 id: finalExtra.replyTo.id,
@@ -4524,6 +4526,30 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
 
         if (existingMktThread) {
             threadId = existingMktThread.id;
+            try {
+                const threadRef = doc(db, "threads", threadId);
+                await updateDoc(threadRef, {
+                    isMarketplace: true,
+                    marketplaceItemId: item.id,
+                    marketplaceItemIds: arrayUnion(item.id),
+                    updatedAt: new Date().toISOString()
+                }).catch(() => {});
+            } catch (_) {}
+            setThreadsList(prev => prev.map(t => {
+                if (t.id === threadId) {
+                    const existingIds = Array.isArray((t as any).marketplaceItemIds) 
+                        ? (t as any).marketplaceItemIds 
+                        : ((t as any).marketplaceItemId ? [(t as any).marketplaceItemId] : []);
+                    const nextIds = Array.from(new Set([...existingIds, item.id]));
+                    return {
+                        ...t,
+                        isMarketplace: true,
+                        marketplaceItemId: item.id,
+                        marketplaceItemIds: nextIds
+                    };
+                }
+                return t;
+            }));
         } else {
             // Check Firestore for dedicated marketplace thread
             try {
@@ -4539,6 +4565,30 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
                 });
                 if (existingDoc) {
                     threadId = existingDoc.id;
+                    try {
+                        const threadRef = doc(db, "threads", threadId);
+                        await updateDoc(threadRef, {
+                            isMarketplace: true,
+                            marketplaceItemId: item.id,
+                            marketplaceItemIds: arrayUnion(item.id),
+                            updatedAt: new Date().toISOString()
+                        }).catch(() => {});
+                    } catch (_) {}
+                    setThreadsList(prev => prev.map(t => {
+                        if (t.id === threadId) {
+                            const existingIds = Array.isArray((t as any).marketplaceItemIds) 
+                                ? (t as any).marketplaceItemIds 
+                                : ((t as any).marketplaceItemId ? [(t as any).marketplaceItemId] : []);
+                            const nextIds = Array.from(new Set([...existingIds, item.id]));
+                            return {
+                                ...t,
+                                isMarketplace: true,
+                                marketplaceItemId: item.id,
+                                marketplaceItemIds: nextIds
+                            };
+                        }
+                        return t;
+                    }));
                 } else {
                     threadId = `mkt_${currentUserId}_${sellerUser.id}_${item.id}`;
                     const threadRef = doc(db, "threads", threadId);
@@ -4546,6 +4596,7 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
                         id: threadId,
                         isMarketplace: true,
                         marketplaceItemId: item.id,
+                        marketplaceItemIds: [item.id],
                         participantIds: [currentUserId, sellerUser.id],
                         participants: {
                             [currentUserId]: {
@@ -4595,11 +4646,12 @@ export function MockDataProvider({ children }: { children: ReactNode }) {
         
         await sendMessage(threadId, messageText, "text", {
             imageUrl: item.images && item.images.length > 0 ? item.images[0] : undefined,
+            marketplaceItemId: item.id,
             replyTo: {
                 id: item.id,
                 sender: "them",
                 senderId: sellerUser.id,
-                text: `Marketplace Listing: ${item.title} (${item.price === 0 ? "FREE" : `$${item.price.toFixed(2)}`})`
+                text: `🛍️ Marketplace Listing: ${item.title} (${item.price === 0 ? "FREE" : `$${item.price.toFixed(2)}`})`
             }
         });
 

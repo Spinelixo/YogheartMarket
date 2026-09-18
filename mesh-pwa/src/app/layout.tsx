@@ -53,6 +53,8 @@ export default function RootLayout({
                 var hasAuth = false;
                 try {
                   hasAuth = !!(
+                    localStorage.getItem("mesh_auth_persisted") === "true" ||
+                    localStorage.getItem("mesh_user_uid") ||
                     localStorage.getItem("mesh_session_token") ||
                     localStorage.getItem("mesh_onboarding_complete") === "true" ||
                     Object.keys(localStorage).some(function(k) { return k.indexOf("firebase:authUser") === 0; })
