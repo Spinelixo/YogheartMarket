@@ -78,6 +78,12 @@ export default function HomePage() {
     return <LoginPage />;
   }
 
+  // During static SSR/export before client hydration, if not persisted, render LoginPage.
+  // This guarantees ZERO item feed flash before the Welcome page on initial launch!
+  if (!isMounted && !hasPersisted) {
+    return <LoginPage />;
+  }
+
   // When user is authenticated or has persisted session:
   // Render MainAppShell with the smooth lockscreen unlock animation transitioning from the splash
   return (
