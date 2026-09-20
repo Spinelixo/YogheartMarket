@@ -178,7 +178,7 @@ export default function MarketplaceView() {
     setShowEditMarketplaceProfileModal(false);
     setTimeout(() => {
       setClosingEditMarketplaceProfileModal(false);
-    }, 280);
+    }, 440);
   };
 
   const closeAllOverlays = useCallback((_immediateOrEvent?: boolean | Event) => {

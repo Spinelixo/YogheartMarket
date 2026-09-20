@@ -1522,6 +1522,18 @@ export default function ChatThreadView({ threadId, onClose }: { threadId: string
 
     const [selectedMarketplaceItem, setSelectedMarketplaceItem] = useState<MarketplaceItem | null>(null);
     const [closingMarketplaceItem, setClosingMarketplaceItem] = useState<MarketplaceItem | null>(null);
+    const [sellerStatusMenu, setSellerStatusMenu] = useState<{ itemId: string; top: number; right: number } | null>(null);
+
+    useEffect(() => {
+        if (!sellerStatusMenu) return;
+        const closeMenu = () => setSellerStatusMenu(null);
+        window.addEventListener("click", closeMenu);
+        window.addEventListener("scroll", closeMenu, true);
+        return () => {
+            window.removeEventListener("click", closeMenu);
+            window.removeEventListener("scroll", closeMenu, true);
+        };
+    }, [sellerStatusMenu]);
 
     const liveSelectedMarketplaceItem = useMemo(() => {
         if (!selectedMarketplaceItem) return null;
@@ -1538,7 +1550,7 @@ export default function ChatThreadView({ threadId, onClose }: { threadId: string
         setSelectedMarketplaceItem(null);
         setTimeout(() => {
             setClosingMarketplaceItem(null);
-        }, 280);
+        }, 440);
     };
 
     const checkPrivacy = (targetUser: any /* eslint-disable-line @typescript-eslint/no-explicit-any */, settingKey: 'profilePicture' | 'feeds' | 'datingDetails') => {
@@ -1578,7 +1590,7 @@ export default function ChatThreadView({ threadId, onClose }: { threadId: string
         setActiveSellerStore(null);
         setTimeout(() => {
             setClosingSellerStore(null);
-        }, 280);
+        }, 440);
     };
 
     const [showGroupProfile, setShowGroupProfile] = useState(false);
@@ -3985,76 +3997,48 @@ export default function ChatThreadView({ threadId, onClose }: { threadId: string
 
                                     <div className="flex items-center gap-2 shrink-0">
                                         {(currentUser?.id === threadMarketplaceItems[0].sellerId || threadMarketplaceItems[0].sellerId === "me" || (currentUser?.name && threadMarketplaceItems[0].sellerName?.toLowerCase() === currentUser.name.toLowerCase())) ? (
-                                            /* Seller: 3 direct status buttons */
+                                            /* Seller: Single status dropdown button */
                                             <div 
                                                 onClick={(e) => e.stopPropagation()} 
-                                                className="flex items-center gap-1 shrink-0"
+                                                className="flex items-center gap-1 shrink-0 relative"
                                             >
                                                 <button
                                                     type="button"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        updateMarketplaceListing(threadMarketplaceItems[0].id, { status: "active" });
+                                                        const rect = e.currentTarget.getBoundingClientRect();
+                                                        setSellerStatusMenu(prev => prev?.itemId === threadMarketplaceItems[0].id ? null : {
+                                                            itemId: threadMarketplaceItems[0].id,
+                                                            top: rect.bottom + 6,
+                                                            right: Math.max(12, window.innerWidth - rect.right)
+                                                        });
                                                     }}
                                                     className={clsx(
-                                                        "px-2 sm:px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer border relative",
-                                                        stackHasSold
-                                                            ? "bg-emerald-600 text-white border-red-500 ring-2 ring-red-500 shadow-[0_0_12px_rgba(239,68,68,0.85)] animate-pulse"
-                                                            : stackHasPending
-                                                            ? "bg-emerald-600 text-white border-amber-400 ring-2 ring-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.85)] animate-pulse"
-                                                            : threadMarketplaceItems[0].status === "active" || !threadMarketplaceItems[0].status
-                                                            ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
-                                                            : "bg-gray-100/90 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 border-gray-200/80 dark:border-zinc-700 hover:bg-gray-200 dark:hover:bg-zinc-700 hover:text-gray-900 dark:hover:text-white"
+                                                        "px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer border shadow-xs select-none",
+                                                        stackHasSold || threadMarketplaceItems[0].status === "sold"
+                                                            ? "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/40 hover:bg-red-500/20 shadow-[0_0_12px_rgba(239,68,68,0.22)]"
+                                                            : stackHasPending || threadMarketplaceItems[0].status === "pending" || threadMarketplaceItems[0].status === "reserved"
+                                                            ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/40 hover:bg-amber-500/20 shadow-[0_0_12px_rgba(245,158,11,0.25)]"
+                                                            : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/40 hover:bg-emerald-500/20 shadow-[0_0_12px_rgba(16,185,129,0.22)]"
                                                     )}
-                                                    title="Mark as Available"
+                                                    title="Click to update listing status"
                                                 >
                                                     <span className={clsx(
-                                                        "w-1.5 h-1.5 rounded-full shrink-0", 
-                                                        stackHasSold
-                                                            ? "bg-red-300 shadow-[0_0_6px_rgba(239,68,68,0.9)]"
-                                                            : stackHasPending
-                                                            ? "bg-amber-200 shadow-[0_0_6px_rgba(245,158,11,0.9)]"
-                                                            : (threadMarketplaceItems[0].status === "active" || !threadMarketplaceItems[0].status)
-                                                            ? "bg-white" 
-                                                            : "bg-emerald-500"
+                                                        "w-2 h-2 rounded-full shrink-0", 
+                                                        stackHasSold || threadMarketplaceItems[0].status === "sold"
+                                                            ? "bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.9)]"
+                                                            : stackHasPending || threadMarketplaceItems[0].status === "pending" || threadMarketplaceItems[0].status === "reserved"
+                                                            ? "bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.9)] animate-pulse"
+                                                            : "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.9)]"
                                                     )} />
-                                                    <span>Available</span>
-                                                </button>
-
-                                                <button
-                                                    type="button"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        updateMarketplaceListing(threadMarketplaceItems[0].id, { status: "pending" });
-                                                    }}
-                                                    className={clsx(
-                                                        "px-2 sm:px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer border",
-                                                        threadMarketplaceItems[0].status === "pending" || threadMarketplaceItems[0].status === "reserved"
-                                                            ? "bg-amber-600 text-white border-amber-600 shadow-xs"
-                                                            : "bg-gray-100/90 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 border-gray-200/80 dark:border-zinc-700 hover:bg-gray-200 dark:hover:bg-zinc-700 hover:text-gray-900 dark:hover:text-white"
-                                                    )}
-                                                    title="Mark as Pending"
-                                                >
-                                                    <span className={clsx("w-1.5 h-1.5 rounded-full shrink-0", (threadMarketplaceItems[0].status === "pending" || threadMarketplaceItems[0].status === "reserved") ? "bg-white" : "bg-amber-500")} />
-                                                    <span>Pending</span>
-                                                </button>
-
-                                                <button
-                                                    type="button"
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        updateMarketplaceListing(threadMarketplaceItems[0].id, { status: "sold" });
-                                                    }}
-                                                    className={clsx(
-                                                        "px-2 sm:px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer border",
-                                                        threadMarketplaceItems[0].status === "sold"
-                                                            ? "bg-red-600 text-white border-red-600 shadow-xs"
-                                                            : "bg-gray-100/90 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 border-gray-200/80 dark:border-zinc-700 hover:bg-gray-200 dark:hover:bg-zinc-700 hover:text-gray-900 dark:hover:text-white"
-                                                    )}
-                                                    title="Mark as Sold"
-                                                >
-                                                    <span className={clsx("w-1.5 h-1.5 rounded-full shrink-0", threadMarketplaceItems[0].status === "sold" ? "bg-white" : "bg-red-500")} />
-                                                    <span>Sold</span>
+                                                    <span>
+                                                        {threadMarketplaceItems[0].status === "sold"
+                                                            ? "Sold"
+                                                            : (threadMarketplaceItems[0].status === "pending" || threadMarketplaceItems[0].status === "reserved")
+                                                            ? "Pending"
+                                                            : "Available"}
+                                                    </span>
+                                                    <ChevronDown size={13} className={clsx("opacity-70 transition-transform duration-200", sellerStatusMenu?.itemId === threadMarketplaceItems[0].id && "rotate-180")} />
                                                 </button>
                                             </div>
                                         ) : (
@@ -4212,63 +4196,48 @@ export default function ChatThreadView({ threadId, onClose }: { threadId: string
 
                                                                     <div className="flex items-center gap-1.5 shrink-0 relative">
                                                                         {isItemSeller ? (
-                                                                            /* Seller: 3 direct status buttons */
+                                                                            /* Seller: Single status dropdown button */
                                                                             <div 
                                                                                 onClick={(e) => e.stopPropagation()} 
-                                                                                className="flex items-center gap-1 shrink-0"
+                                                                                className="flex items-center gap-1 shrink-0 relative"
                                                                             >
                                                                                 <button
                                                                                     type="button"
                                                                                     onClick={(e) => {
                                                                                         e.stopPropagation();
-                                                                                        updateMarketplaceListing(item.id, { status: "active" });
+                                                                                        const rect = e.currentTarget.getBoundingClientRect();
+                                                                                        setSellerStatusMenu(prev => prev?.itemId === item.id ? null : {
+                                                                                            itemId: item.id,
+                                                                                            top: rect.bottom + 6,
+                                                                                            right: Math.max(12, window.innerWidth - rect.right)
+                                                                                        });
                                                                                     }}
                                                                                     className={clsx(
-                                                                                        "px-2 sm:px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer border",
-                                                                                        item.status === "active" || !item.status
-                                                                                            ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
-                                                                                            : "bg-gray-100/90 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 border-gray-200/80 dark:border-zinc-700 hover:bg-gray-200 dark:hover:bg-zinc-700 hover:text-gray-900 dark:hover:text-white"
-                                                                                    )}
-                                                                                    title="Mark as Available"
-                                                                                >
-                                                                                    <span className={clsx("w-1.5 h-1.5 rounded-full shrink-0", (item.status === "active" || !item.status) ? "bg-white" : "bg-emerald-500")} />
-                                                                                    <span>Available</span>
-                                                                                </button>
-
-                                                                                <button
-                                                                                    type="button"
-                                                                                    onClick={(e) => {
-                                                                                        e.stopPropagation();
-                                                                                        updateMarketplaceListing(item.id, { status: "pending" });
-                                                                                    }}
-                                                                                    className={clsx(
-                                                                                        "px-2 sm:px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer border",
-                                                                                        item.status === "pending" || item.status === "reserved"
-                                                                                            ? "bg-amber-600 text-white border-amber-600 shadow-xs"
-                                                                                            : "bg-gray-100/90 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 border-gray-200/80 dark:border-zinc-700 hover:bg-gray-200 dark:hover:bg-zinc-700 hover:text-gray-900 dark:hover:text-white"
-                                                                                    )}
-                                                                                    title="Mark as Pending"
-                                                                                >
-                                                                                    <span className={clsx("w-1.5 h-1.5 rounded-full shrink-0", (item.status === "pending" || item.status === "reserved") ? "bg-white" : "bg-amber-500")} />
-                                                                                    <span>Pending</span>
-                                                                                </button>
-
-                                                                                <button
-                                                                                    type="button"
-                                                                                    onClick={(e) => {
-                                                                                        e.stopPropagation();
-                                                                                        updateMarketplaceListing(item.id, { status: "sold" });
-                                                                                    }}
-                                                                                    className={clsx(
-                                                                                        "px-2 sm:px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer border",
+                                                                                        "px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer border shadow-xs select-none",
                                                                                         item.status === "sold"
-                                                                                            ? "bg-red-600 text-white border-red-600 shadow-xs"
-                                                                                            : "bg-gray-100/90 dark:bg-zinc-800 text-gray-600 dark:text-zinc-400 border-gray-200/80 dark:border-zinc-700 hover:bg-gray-200 dark:hover:bg-zinc-700 hover:text-gray-900 dark:hover:text-white"
+                                                                                            ? "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/40 hover:bg-red-500/20 shadow-[0_0_12px_rgba(239,68,68,0.22)]"
+                                                                                            : item.status === "pending" || item.status === "reserved"
+                                                                                            ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/40 hover:bg-amber-500/20 shadow-[0_0_12px_rgba(245,158,11,0.25)]"
+                                                                                            : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/40 hover:bg-emerald-500/20 shadow-[0_0_12px_rgba(16,185,129,0.22)]"
                                                                                     )}
-                                                                                    title="Mark as Sold"
+                                                                                    title="Click to update listing status"
                                                                                 >
-                                                                                    <span className={clsx("w-1.5 h-1.5 rounded-full shrink-0", item.status === "sold" ? "bg-white" : "bg-red-500")} />
-                                                                                    <span>Sold</span>
+                                                                                    <span className={clsx(
+                                                                                        "w-2 h-2 rounded-full shrink-0", 
+                                                                                        item.status === "sold"
+                                                                                            ? "bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.9)]"
+                                                                                            : item.status === "pending" || item.status === "reserved"
+                                                                                            ? "bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.9)] animate-pulse"
+                                                                                            : "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.9)]"
+                                                                                    )} />
+                                                                                    <span>
+                                                                                        {item.status === "sold"
+                                                                                            ? "Sold"
+                                                                                            : (item.status === "pending" || item.status === "reserved")
+                                                                                            ? "Pending"
+                                                                                            : "Available"}
+                                                                                    </span>
+                                                                                    <ChevronDown size={13} className={clsx("opacity-70 transition-transform duration-200", sellerStatusMenu?.itemId === item.id && "rotate-180")} />
                                                                                 </button>
                                                                             </div>
                                                                         ) : (
@@ -4315,6 +4284,105 @@ export default function ChatThreadView({ threadId, onClose }: { threadId: string
                     )}
                 </div>
             )}
+
+            {/* Seller Status Dropdown Popup */}
+            {sellerStatusMenu && (() => {
+                const targetItem = (marketplaceItems || []).find(i => i.id === sellerStatusMenu.itemId) || threadMarketplaceItems.find(i => i.id === sellerStatusMenu.itemId);
+                if (!targetItem) return null;
+                const currentStatus = targetItem.status || "active";
+                return (
+                    <div
+                        className="fixed z-[200] w-48 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md rounded-2xl shadow-2xl border border-gray-200 dark:border-zinc-800 p-1.5 animate-in fade-in zoom-in-95 duration-150"
+                        style={{
+                            top: `${sellerStatusMenu.top}px`,
+                            right: `${sellerStatusMenu.right}px`
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-zinc-500 border-b border-gray-100 dark:border-zinc-800/80 mb-1">
+                            Listing Status
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                updateMarketplaceListing(targetItem.id, { status: "active" });
+                                setSellerStatusMenu(null);
+                            }}
+                            className={clsx(
+                                "w-full flex items-center justify-between px-3 py-2 text-xs font-semibold rounded-xl transition-colors cursor-pointer",
+                                currentStatus === "active"
+                                    ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300"
+                                    : "text-gray-700 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800"
+                            )}
+                        >
+                            <div className="flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                                <span>Available</span>
+                            </div>
+                            {currentStatus === "active" && <Check size={14} className="text-emerald-600 dark:text-emerald-400" />}
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                updateMarketplaceListing(targetItem.id, { status: "pending" });
+                                setSellerStatusMenu(null);
+                            }}
+                            className={clsx(
+                                "w-full flex items-center justify-between px-3 py-2 text-xs font-semibold rounded-xl transition-colors cursor-pointer",
+                                currentStatus === "pending" || currentStatus === "reserved"
+                                    ? "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300"
+                                    : "text-gray-700 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800"
+                            )}
+                        >
+                            <div className="flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+                                <span>Pending</span>
+                            </div>
+                            {(currentStatus === "pending" || currentStatus === "reserved") && <Check size={14} className="text-amber-600 dark:text-amber-400" />}
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                updateMarketplaceListing(targetItem.id, { status: "sold" });
+                                setSellerStatusMenu(null);
+                            }}
+                            className={clsx(
+                                "w-full flex items-center justify-between px-3 py-2 text-xs font-semibold rounded-xl transition-colors cursor-pointer",
+                                currentStatus === "sold"
+                                    ? "bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300"
+                                    : "text-gray-700 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800"
+                            )}
+                        >
+                            <div className="flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
+                                <span>Sold</span>
+                            </div>
+                            {currentStatus === "sold" && <Check size={14} className="text-red-600 dark:text-red-400" />}
+                        </button>
+
+                        <div className="my-1 border-t border-gray-100 dark:border-zinc-800/80" />
+
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setSellerStatusMenu(null);
+                                setSelectedMarketplaceItem(targetItem);
+                            }}
+                            className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-gray-700 dark:text-zinc-300 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-xl transition-colors cursor-pointer"
+                        >
+                            <span>View Listing Details</span>
+                            <ChevronRight size={14} className="text-gray-400 dark:text-zinc-500" />
+                        </button>
+                    </div>
+                );
+            })()}
 
             {/* Search Bar */}
             {showSearch && (

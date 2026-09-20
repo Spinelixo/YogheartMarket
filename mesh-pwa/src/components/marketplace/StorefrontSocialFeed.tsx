@@ -343,7 +343,7 @@ export function UnifiedPostModal({ initialType = "status", onClose }: UnifiedPos
     setIsClosing(true);
     setTimeout(() => {
       onClose();
-    }, 280);
+    }, 440);
   };
 
   useModalHistory("unifiedPostModal", !isClosing, handleClose);
@@ -695,7 +695,7 @@ export function StoreFeedView({ sellerUser, isMe, onOpenCreatePost }: StoreFeedV
     setSelectedPost(null);
     setTimeout(() => {
       setClosingPost(null);
-    }, 280);
+    }, 440);
   };
 
   return (

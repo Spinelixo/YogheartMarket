@@ -175,7 +175,7 @@ export function EditMarketplaceProfileModal({
     setInternalIsClosing(true);
     setTimeout(() => {
       onClose();
-    }, 280);
+    }, 440);
   };
 
   if (typeof document === "undefined") return null;

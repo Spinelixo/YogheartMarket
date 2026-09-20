@@ -236,7 +236,7 @@ export function SellerStorefrontModal({
     setShowEditStoreModal(false);
     setTimeout(() => {
       setClosingEditStoreModal(false);
-    }, 280);
+    }, 440);
   };
 
   const [showReviewsModal, setShowReviewsModal] = useState(false);
@@ -335,7 +335,7 @@ export function SellerStorefrontModal({
     setSelectedItem(null);
     setTimeout(() => {
       setClosingSelectedItem(null);
-    }, 280);
+    }, 440);
   };
 
   // History sync for seller storefront page itself (only when modal overlay)

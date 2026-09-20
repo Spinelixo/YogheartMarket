@@ -136,20 +136,40 @@ function MainAppShellContent() {
             const currentUserId = urlParams.get("userId") || urlParams.get("groupId");
             const isInboxPath = typeof window !== "undefined" && window.location.pathname.startsWith("/inbox");
 
-            // Only close overlays if we genuinely navigated away from them (not just closing a submodal)
+            // Gracefully animate overlays out instead of abruptly snapping
             if (!hasModalHash && !currentThreadId && !isInboxPath) {
-                setLastActiveThreadId(null);
-                setThreadAnimPhase(null);
+                if (lastActiveThreadId) {
+                    setThreadAnimPhase("exiting");
+                    setTimeout(() => {
+                        setLastActiveThreadId(null);
+                        setThreadAnimPhase(null);
+                    }, 460);
+                }
             }
             if (!hasModalHash && !currentUserId && !(typeof window !== "undefined" && window.location.pathname.startsWith("/profile"))) {
-                setLastActiveProfileId(null);
-                setProfileAnimPhase(null);
+                if (lastActiveProfileId) {
+                    setProfileAnimPhase("exiting");
+                    setTimeout(() => {
+                        setLastActiveProfileId(null);
+                        setProfileAnimPhase(null);
+                    }, 460);
+                }
             }
             if (!hasModalHash && urlParams.get("settings") !== "overlay") {
-                setLastActiveSettingsOpen(false);
+                if (lastActiveSettingsOpen) {
+                    setSettingsAnimPhase("exiting");
+                    setTimeout(() => {
+                        setLastActiveSettingsOpen(false);
+                        setSettingsAnimPhase(null);
+                    }, 460);
+                }
             }
             if (!hasModalHash && !(typeof window !== "undefined" && window.location.pathname.startsWith("/archived"))) {
-                setLastActiveArchivedOpen(false);
+                if (lastActiveArchivedOpen) {
+                    setTimeout(() => {
+                        setLastActiveArchivedOpen(false);
+                    }, 460);
+                }
             }
 
             if (document.activeElement instanceof HTMLElement) {
@@ -158,7 +178,7 @@ function MainAppShellContent() {
             forceResetViewportScroll();
             setTimeout(() => {
                 isSwipeBackRef.current = false;
-            }, 150);
+            }, 460);
         };
 
         const handleScroll = () => {
@@ -262,17 +282,12 @@ function MainAppShellContent() {
     // ── Thread overlay state transitions ──
     useEffect(() => {
         if (!activeThreadId) {
-            if (isSwipeBackRef.current) {
+            setThreadAnimPhase("exiting");
+            const timer = setTimeout(() => {
                 setLastActiveThreadId(null);
                 setThreadAnimPhase(null);
-            } else {
-                // Let onAnimationEnd handle unmount for smooth exit
-                const timer = setTimeout(() => {
-                    setLastActiveThreadId(null);
-                    setThreadAnimPhase(null);
-                }, 280);
-                return () => clearTimeout(timer);
-            }
+            }, 460);
+            return () => clearTimeout(timer);
         }
         forceResetViewportScroll();
     }, [activeThreadId]);
@@ -280,16 +295,12 @@ function MainAppShellContent() {
     // ── Profile overlay state transitions ──
     useEffect(() => {
         if (!activeProfileId) {
-            if (isSwipeBackRef.current) {
+            setProfileAnimPhase("exiting");
+            const timer = setTimeout(() => {
                 setLastActiveProfileId(null);
                 setProfileAnimPhase(null);
-            } else {
-                const timer = setTimeout(() => {
-                    setLastActiveProfileId(null);
-                    setProfileAnimPhase(null);
-                }, 280);
-                return () => clearTimeout(timer);
-            }
+            }, 460);
+            return () => clearTimeout(timer);
         }
     }, [activeProfileId]);
 
@@ -311,30 +322,21 @@ function MainAppShellContent() {
                     sessionStorage.removeItem("settings_overlay_open");
                 }
             }
-            if (isSwipeBackRef.current) {
-                setLastActiveSettingsOpen(false);
-                setSettingsAnimPhase(null);
-            } else {
-                setSettingsAnimPhase("exiting");
-            }
+            setSettingsAnimPhase("exiting");
         }
         forceResetViewportScroll();
     }
 
     useEffect(() => {
         if (!showSettingsOverlay && lastActiveSettingsOpen) {
-            if (isSwipeBackRef.current) {
+            setSettingsAnimPhase("exiting");
+            const timer = setTimeout(() => {
                 setLastActiveSettingsOpen(false);
                 setSettingsAnimPhase(null);
-            } else {
-                const timer = setTimeout(() => {
-                    setLastActiveSettingsOpen(false);
-                    setSettingsAnimPhase(null);
-                }, 280);
-                return () => clearTimeout(timer);
-            }
+            }, 460);
+            return () => clearTimeout(timer);
         }
-    }, [showSettingsOverlay]);
+    }, [showSettingsOverlay, lastActiveSettingsOpen]);
 
     // ── Visibilitychange handler: fix stuck overlays on wake/unlock/foreground ──
     const handleVisibilityChange = useCallback(() => {
@@ -441,6 +443,9 @@ function MainAppShellContent() {
                         if (e.target !== e.currentTarget) return;
                         if (threadAnimPhase === "entering") {
                             setThreadAnimPhase("stable");
+                        } else if (threadAnimPhase === "exiting") {
+                            setLastActiveThreadId(null);
+                            setThreadAnimPhase(null);
                         }
                     }}
                 >
@@ -485,6 +490,9 @@ function MainAppShellContent() {
                         if (e.target !== e.currentTarget) return;
                         if (profileAnimPhase === "entering") {
                             setProfileAnimPhase("stable");
+                        } else if (profileAnimPhase === "exiting") {
+                            setLastActiveProfileId(null);
+                            setProfileAnimPhase(null);
                         }
                     }}
                 >
@@ -544,6 +552,9 @@ function MainAppShellContent() {
                         if (e.target !== e.currentTarget) return;
                         if (settingsAnimPhase === "entering") {
                             setSettingsAnimPhase("stable");
+                        } else if (settingsAnimPhase === "exiting") {
+                            setLastActiveSettingsOpen(false);
+                            setSettingsAnimPhase(null);
                         }
                     }}
                 >
