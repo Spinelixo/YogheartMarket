@@ -134,7 +134,7 @@ export function SellerStorefrontModal({
       avatar: sellerAvatar || null,
       color: "bg-blue-200",
       location: sellerLocation || "Local",
-      bio: "Active seller on Yogheart Marketplace.",
+      bio: "Active seller on Isoko.",
       interests: [],
       onboardingComplete: true,
       marketplaceStore: {
@@ -286,8 +286,8 @@ export function SellerStorefrontModal({
 
   const handleShareStore = async () => {
     const res = await shareContent({
-      title: `${displayName}'s Storefront on Yogheart Market`,
-      text: `Check out ${displayName}'s storefront on Yogheart Market!`,
+      title: `${displayName}'s Storefront on Isoko`,
+      text: `Check out ${displayName}'s storefront on Isoko!`,
       dialogTitle: `Share ${displayName}'s Store`,
     });
     if (res === "copied") {
@@ -539,7 +539,7 @@ export function SellerStorefrontModal({
 
               {/* Tagline / Speciality Headline */}
               <p className="text-sm font-semibold text-gray-800 dark:text-zinc-200 pt-0.5">
-                {(isMe ? currentUser?.marketplaceStore?.headline : null) || storeProfile.headline || (storeProfile.bio && !storeProfile.bio.includes("Hey there") ? storeProfile.bio : "Active seller on Yogheart Marketplace.")}
+                {(isMe ? currentUser?.marketplaceStore?.headline : null) || storeProfile.headline || (storeProfile.bio && !storeProfile.bio.includes("Hey there") ? storeProfile.bio : "Active seller on Isoko.")}
               </p>
             </div>
 

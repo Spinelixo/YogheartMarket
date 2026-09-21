@@ -5,7 +5,10 @@
   "targets": {
     "yogheartmarket": {
       "hosting": {
-        "main": [
+        "isoko": [
+          "isokomarket"
+        ],
+        "legacy": [
           "yogheartmarket"
         ]
       }

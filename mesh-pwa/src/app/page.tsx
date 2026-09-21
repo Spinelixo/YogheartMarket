@@ -170,7 +170,7 @@ export default function HomePage() {
             >
               <img
                 src="/icon-192-v3.png"
-                alt="Yogheart Market"
+                alt="Isoko"
                 className="w-full h-full object-cover select-none pointer-events-none"
                 style={{
                   transform: "translateZ(0)",

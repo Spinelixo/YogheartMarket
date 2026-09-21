@@ -23,7 +23,42 @@
   ],
   "hosting": [
     {
-      "target": "main",
+      "target": "isoko",
+      "public": "out",
+      "cleanUrls": true,
+      "trailingSlash": false,
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**",
+        "**/*.apk",
+        "**/*.exe"
+      ],
+      "rewrites": [
+        {
+          "source": "/inbox/**",
+          "destination": "/index.html"
+        },
+        {
+          "source": "/profile/**",
+          "destination": "/index.html"
+        },
+        {
+          "source": "/api/createStripeSession",
+          "function": "createStripeSession"
+        },
+        {
+          "source": "/api/v1/admin/**",
+          "function": "adminApi"
+        },
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ]
+    },
+    {
+      "target": "legacy",
       "public": "out",
       "cleanUrls": true,
       "trailingSlash": false,

@@ -1970,7 +1970,7 @@ export default function ProfileView({ userId: propUserId, onClose }: { userId?: 
                                                 {memberUser.name} {isSelfMember && <span className="text-xs text-gray-400 font-normal ml-1">(You)</span>}
                                             </span>
                                             <span className="text-xs text-gray-400 dark:text-zinc-500 block truncate">
-                                                {memberUser.marketplaceStore?.headline || (memberUser.bio && !memberUser.bio.includes("Hey there") ? memberUser.bio : "Verified local seller on Yogheart Marketplace.")}
+                                                {memberUser.marketplaceStore?.headline || (memberUser.bio && !memberUser.bio.includes("Hey there") ? memberUser.bio : "Verified local seller on Isoko.")}
                                             </span>
                                         </div>
                                     </div>
@@ -2876,7 +2876,7 @@ export default function ProfileView({ userId: propUserId, onClose }: { userId?: 
                                                 )}
                                                 <div className="min-w-0">
                                                     <span className="font-semibold text-xs text-black dark:text-white block truncate">{cand.name}</span>
-                                                    <span className="text-[10px] text-zinc-450 dark:text-zinc-500 block truncate">{(cand as any).marketplaceStore?.headline || (cand.bio && !cand.bio.includes("Hey there") ? cand.bio : "Verified local seller on Yogheart Marketplace.")}</span>
+                                                    <span className="text-[10px] text-zinc-450 dark:text-zinc-500 block truncate">{(cand as any).marketplaceStore?.headline || (cand.bio && !cand.bio.includes("Hey there") ? cand.bio : "Verified local seller on Isoko.")}</span>
                                                 </div>
                                             </div>
                                             <input 
@@ -3880,7 +3880,7 @@ export default function ProfileView({ userId: propUserId, onClose }: { userId?: 
                             </div>
                             <div className="min-w-0 flex-1">
                                 <h4 className="font-bold text-base text-gray-900 dark:text-white truncate">{selectedMemberForMenu.name}</h4>
-                                <p className="text-xs text-gray-500 dark:text-zinc-400 truncate">{selectedMemberForMenu.marketplaceStore?.headline || (selectedMemberForMenu.bio && !selectedMemberForMenu.bio.includes("Hey there") ? selectedMemberForMenu.bio : "Verified local seller on Yogheart Marketplace.")}</p>
+                                <p className="text-xs text-gray-500 dark:text-zinc-400 truncate">{selectedMemberForMenu.marketplaceStore?.headline || (selectedMemberForMenu.bio && !selectedMemberForMenu.bio.includes("Hey there") ? selectedMemberForMenu.bio : "Verified local seller on Isoko.")}</p>
                             </div>
                             <button 
                                 onClick={() => setSelectedMemberForMenu(null)}

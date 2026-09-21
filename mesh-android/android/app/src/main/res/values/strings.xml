@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Yogheart Market</string>
-    <string name="title_activity_main">Yogheart Market</string>
+    <string name="app_name">Isoko</string>
+    <string name="title_activity_main">Isoko</string>
     <string name="package_name">com.yogheart.market</string>
     <string name="custom_url_scheme">com.yogheart.market</string>
 

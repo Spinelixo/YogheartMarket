@@ -5,7 +5,7 @@
 const BASE32 = "0123456789bcdefghjkmnpqrstuvwxyz";
 
 /**
- * Standard known coordinates for common cities / regions in Yogheart Marketplace
+ * Standard known coordinates for common cities / regions in Isoko
  */
 export const KNOWN_CITY_COORDINATES: Record<string, { lat: number; lng: number }> = {
   montreal: { lat: 45.5017, lng: -73.5673 },

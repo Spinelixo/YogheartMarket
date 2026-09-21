@@ -14,13 +14,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Yogheart Market - Marketplace",
-  description: "Buy, sell, and trade locally on Yogheart Market",
+  title: "Isoko - Marketplace",
+  description: "Buy, sell, and trade locally on Isoko Marketplace",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Yogheart Market",
+    title: "Isoko",
   },
   icons: {
     icon: "/favicon-v3.png",

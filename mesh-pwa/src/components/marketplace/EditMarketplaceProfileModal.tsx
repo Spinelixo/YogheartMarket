@@ -70,7 +70,7 @@ export function EditMarketplaceProfileModal({
   const [sellerType, setSellerType] = useState<MarketplaceSellerType>(currentStore.sellerType || "chef");
   const [customSellerType, setCustomSellerType] = useState(currentStore.customSellerType || "");
   const [headline, setHeadline] = useState(
-    currentStore.headline || (currentUser?.bio && !currentUser.bio.includes("Hey there") ? currentUser.bio : "Active seller on Yogheart Marketplace.")
+    currentStore.headline || (currentUser?.bio && !currentUser.bio.includes("Hey there") ? currentUser.bio : "Active seller on Isoko.")
   );
   const [bio, setBio] = useState(
     currentStore.bio || "We prepare delicious homemade meals using fresh ingredients and deliver right to your doorstep. Browse our menu listings or message for custom orders!"

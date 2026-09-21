@@ -213,8 +213,8 @@ export default function OnboardingPage() {
               ownerName: trimmedName,
               storeName: trimmedStoreName,
               avatar: mainAvatar,
-              headline: "Active seller on Yogheart Marketplace.",
-              bio: "Active seller on Yogheart Marketplace.",
+              headline: "Active seller on Isoko.",
+              bio: "Active seller on Isoko.",
               joinedYear: new Date().getFullYear().toString(),
               rating: 5.0,
               reviewCount: 0,
@@ -335,7 +335,7 @@ export default function OnboardingPage() {
                     What should we call you?
                   </h1>
                   <p className="text-sm text-gray-500 dark:text-gray-400 px-4">
-                    This is how you&apos;ll appear to buyers and sellers on Yogheart Market.
+                    This is how you&apos;ll appear to buyers and sellers on Isoko.
                   </p>
                 </div>
 

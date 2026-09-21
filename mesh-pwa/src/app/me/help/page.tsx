@@ -9,7 +9,7 @@ import { useMockData } from "@/context/MockContext";
 
 const FAQ_ITEMS = [
     {
-        question: "How do I browse and buy items on Yogheart Market?",
+        question: "How do I browse and buy items on Isoko?",
         answer: "Explore listings in the Marketplace tab or search by keyword and category. When you find an item you like, tap to view high-resolution photos, descriptions, condition, and fulfillment options. Tap 'Send Message' to chat directly with the seller and agree on details."
     },
     {
@@ -188,7 +188,7 @@ export default function HelpPage() {
 
                 {/* App Info */}
                 <div className="bg-white dark:bg-zinc-900 border border-[var(--border)] dark:border-zinc-800 rounded-xl p-4 md:p-5 text-center shadow-sm">
-                    <h3 className="font-bold text-lg text-[var(--primary)]">Yogheart Market</h3>
+                    <h3 className="font-bold text-lg text-[var(--primary)]">Isoko</h3>
                     <p className="text-sm text-[var(--secondary)] mt-1">Version 1.0.0</p>
                     <p className="text-xs text-[var(--secondary)] mt-2">Made with ❤️ for local buying, selling, and community trade</p>
                 </div>

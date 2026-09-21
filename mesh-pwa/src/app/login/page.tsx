@@ -237,7 +237,7 @@ export default function LoginPage() {
                     email: userEmail,
                     email_lowercase: userEmail.toLowerCase(),
                     photoURL: currentUser?.photoURL || null,
-                    bio: "Active seller on Yogheart Marketplace.",
+                    bio: "Active seller on Isoko.",
                     activeSessionId: newSessionId,
                     settings: {
                         privacy: { discoverableByPhone: true, lastSeen: true, readReceipts: true }
@@ -430,7 +430,7 @@ export default function LoginPage() {
                     email: trimmedEmail,
                     email_lowercase: trimmedEmail,
                     photoURL: null,
-                    bio: "Active seller on Yogheart Marketplace.",
+                    bio: "Active seller on Isoko.",
                     activeSessionId: newSessionId,
                     onboardingComplete: false,
                     settings: {
@@ -657,7 +657,7 @@ export default function LoginPage() {
                     >
                         <img
                             src="/icon-192-v3.png"
-                            alt="Yogheart Market"
+                            alt="Isoko"
                             className="w-full h-full object-cover select-none pointer-events-none"
                             style={{
                                 transform: "translateZ(0)",
@@ -770,10 +770,10 @@ export default function LoginPage() {
                                         
                                         <div className="border-t border-gray-100 dark:border-zinc-800/80 mt-4 pt-4 text-left">
                                             <h3 className="text-sm font-bold dark:text-white mb-3 text-[var(--primary)] flex items-center gap-1.5">
-                                                🛍️ Welcome to Yogheart Market
+                                                🛍️ Welcome to Isoko
                                             </h3>
                                             <p className="text-[11px] text-gray-500 dark:text-gray-400 mb-3 leading-relaxed">
-                                                Yogheart Market is your local marketplace and community commerce hub. Browse items, connect directly with local sellers, and share updates from your storefront:
+                                                Isoko is your local marketplace and community commerce hub. Browse items, connect directly with local sellers, and share updates from your storefront:
                                             </p>
                                             
                                             <div className="space-y-3 pr-1">

@@ -1936,9 +1936,13 @@ export default function ChatThreadView({ threadId, onClose }: { threadId: string
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [isPlayingPreview, setIsPlayingPreview] = useState(false);
     const [previewProgress, setPreviewProgress] = useState(0);
+    const [previewCurrentTime, setPreviewCurrentTime] = useState(0);
     const [audioAmplitudes, setAudioAmplitudes] = useState<number[]>(new Array(20).fill(3));
 
     const startTimeRef = useRef<number | null>(null);
+    const recordedDurationMsRef = useRef<number>(0);
+    const recordingSegmentStartRef = useRef<number | null>(null);
+    const previewAnimFrameRef = useRef<number | null>(null);
     const streamRef = useRef<MediaStream | null>(null);
     const audioContextRef = useRef<AudioContext | null>(null);
     const analyserRef = useRef<AnalyserNode | null>(null);
@@ -2722,7 +2726,10 @@ export default function ChatThreadView({ threadId, onClose }: { threadId: string
             setPreviewUrl(null);
             setIsPlayingPreview(false);
             setPreviewProgress(0);
+            setPreviewCurrentTime(0);
             setRecordingTime(0);
+            recordedDurationMsRef.current = 0;
+            recordingSegmentStartRef.current = Date.now();
 
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             streamRef.current = stream;
@@ -2809,155 +2816,250 @@ export default function ChatThreadView({ threadId, onClose }: { threadId: string
                         const avg = slice.reduce((sum: number, v: number) => sum + v, 0) / (slice.length || 1);
                         const height = Math.max(3, Math.min(32, (avg / 255) * 32));
                         amplitudes.push(height);
-                      }
-                      setAudioAmplitudes(amplitudes);
-                  }
-                  animationFrameRef.current = requestAnimationFrame(updateAmplitudes);
-              };
-              animationFrameRef.current = requestAnimationFrame(updateAmplitudes);
+                    }
+                    setAudioAmplitudes(amplitudes);
+                }
+                animationFrameRef.current = requestAnimationFrame(updateAmplitudes);
+            };
+            animationFrameRef.current = requestAnimationFrame(updateAmplitudes);
 
-              mediaRecorder.start(100);
-              setRecordingState("recording");
-              startTimeRef.current = Date.now();
-          } catch (err) {
-              console.error("Microphone access denied:", err);
-              alert("Please allow microphone access to record voice notes.");
-          }
-      };
+            mediaRecorder.start(100);
+            setRecordingState("recording");
+            startTimeRef.current = Date.now();
+        } catch (err) {
+            console.error("Microphone access denied:", err);
+            alert("Please allow microphone access to record voice notes.");
+        }
+    };
 
-      const pauseVoiceRecording = () => {
-          if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
-              mediaRecorderRef.current.pause();
-              setRecordingState("paused");
-              
-              if (animationFrameRef.current) {
-                  cancelAnimationFrame(animationFrameRef.current);
-                  animationFrameRef.current = null;
-              }
-              if (audioContextRef.current && audioContextRef.current.state === "running") {
-                  audioContextRef.current.suspend();
-              }
-          }
-      };
+    const pauseVoiceRecording = () => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+            if (recordingSegmentStartRef.current) {
+                recordedDurationMsRef.current += Date.now() - recordingSegmentStartRef.current;
+                recordingSegmentStartRef.current = null;
+            }
+            mediaRecorderRef.current.pause();
+            setRecordingState("paused");
+            
+            if (animationFrameRef.current) {
+                cancelAnimationFrame(animationFrameRef.current);
+                animationFrameRef.current = null;
+            }
+            if (audioContextRef.current && audioContextRef.current.state === "running") {
+                audioContextRef.current.suspend();
+            }
+        }
+    };
 
-      const resumeVoiceRecording = () => {
-          if (mediaRecorderRef.current && mediaRecorderRef.current.state === "paused") {
-              mediaRecorderRef.current.resume();
-              setRecordingState("recording");
-              
-              if (audioContextRef.current && audioContextRef.current.state === "suspended") {
-                  audioContextRef.current.resume();
-              }
-              
-              const updateAmplitudes = () => {
-                  if (analyserRef.current && dataArrayRef.current) {
-                      analyserRef.current.getByteFrequencyData(dataArrayRef.current);
-                      const rawData = Array.from(dataArrayRef.current) as number[];
-                      const numBars = 20;
-                      const step = Math.floor(rawData.length / numBars) || 1;
-                      const amplitudes = [];
-                      for (let i = 0; i < numBars; i++) {
-                          const slice = rawData.slice(i * step, (i + 1) * step);
-                          const avg = slice.reduce((sum: number, v: number) => sum + v, 0) / (slice.length || 1);
-                          const height = Math.max(3, Math.min(32, (avg / 255) * 32));
-                          amplitudes.push(height);
-                      }
-                      setAudioAmplitudes(amplitudes);
-                  }
-                  animationFrameRef.current = requestAnimationFrame(updateAmplitudes);
-              };
-              animationFrameRef.current = requestAnimationFrame(updateAmplitudes);
-          }
-      };
+    const resumeVoiceRecording = () => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state === "paused") {
+            recordingSegmentStartRef.current = Date.now();
+            mediaRecorderRef.current.resume();
+            setRecordingState("recording");
+            
+            if (audioContextRef.current && audioContextRef.current.state === "suspended") {
+                audioContextRef.current.resume();
+            }
+            
+            const updateAmplitudes = () => {
+                if (analyserRef.current && dataArrayRef.current) {
+                    analyserRef.current.getByteFrequencyData(dataArrayRef.current);
+                    const rawData = Array.from(dataArrayRef.current) as number[];
+                    const numBars = 20;
+                    const step = Math.floor(rawData.length / numBars) || 1;
+                    const amplitudes = [];
+                    for (let i = 0; i < numBars; i++) {
+                        const slice = rawData.slice(i * step, (i + 1) * step);
+                        const avg = slice.reduce((sum: number, v: number) => sum + v, 0) / (slice.length || 1);
+                        const height = Math.max(3, Math.min(32, (avg / 255) * 32));
+                        amplitudes.push(height);
+                    }
+                    setAudioAmplitudes(amplitudes);
+                }
+                animationFrameRef.current = requestAnimationFrame(updateAmplitudes);
+            };
+            animationFrameRef.current = requestAnimationFrame(updateAmplitudes);
+        }
+    };
 
-      const stopAndPreviewVoiceRecording = () => {
-          if (mediaRecorderRef.current && (mediaRecorderRef.current.state === "recording" || mediaRecorderRef.current.state === "paused")) {
-              cleanupAudioAnalyzer();
-              stopMicrophoneStream();
-              mediaRecorderRef.current.stop();
-              setRecordingState("preview");
-          }
-      };
+    const stopAndPreviewVoiceRecording = () => {
+        if (mediaRecorderRef.current && (mediaRecorderRef.current.state === "recording" || mediaRecorderRef.current.state === "paused")) {
+            if (recordingSegmentStartRef.current) {
+                recordedDurationMsRef.current += Date.now() - recordingSegmentStartRef.current;
+                recordingSegmentStartRef.current = null;
+            }
+            const totalSec = Math.max(1, Math.round(recordedDurationMsRef.current / 1000));
+            setRecordingTime(totalSec);
+            cleanupAudioAnalyzer();
+            stopMicrophoneStream();
+            mediaRecorderRef.current.stop();
+            setRecordingState("preview");
+        }
+    };
 
-      const cancelVoiceRecording = () => {
-          cleanupAudioAnalyzer();
-          stopMicrophoneStream();
-          if (mediaRecorderRef.current) {
-              mediaRecorderRef.current.onstop = null;
-              if (mediaRecorderRef.current.state !== "inactive") {
-                  mediaRecorderRef.current.stop();
-              }
-              mediaRecorderRef.current = null;
-          }
-          if (previewAudioRef.current) {
-              previewAudioRef.current.pause();
-              previewAudioRef.current = null;
-          }
-          setRecordingState("idle");
-          setRecordedBlob(null);
-          if (previewUrl) {
-              URL.revokeObjectURL(previewUrl);
-              setPreviewUrl(null);
-          }
-          setIsPlayingPreview(false);
-          setPreviewProgress(0);
-          setRecordingTime(0);
-      };
+    const cancelVoiceRecording = () => {
+        cleanupAudioAnalyzer();
+        stopMicrophoneStream();
+        if (previewAnimFrameRef.current) {
+            cancelAnimationFrame(previewAnimFrameRef.current);
+            previewAnimFrameRef.current = null;
+        }
+        if (mediaRecorderRef.current) {
+            mediaRecorderRef.current.onstop = null;
+            if (mediaRecorderRef.current.state !== "inactive") {
+                mediaRecorderRef.current.stop();
+            }
+            mediaRecorderRef.current = null;
+        }
+        if (previewAudioRef.current) {
+            previewAudioRef.current.pause();
+            previewAudioRef.current = null;
+        }
+        setRecordingState("idle");
+        setRecordedBlob(null);
+        if (previewUrl) {
+            URL.revokeObjectURL(previewUrl);
+            setPreviewUrl(null);
+        }
+        setIsPlayingPreview(false);
+        setPreviewProgress(0);
+        setPreviewCurrentTime(0);
+        recordedDurationMsRef.current = 0;
+        recordingSegmentStartRef.current = null;
+        setRecordingTime(0);
+    };
 
-      const sendVoiceRecording = () => {
-          if (recordedBlob && previewUrl) {
-              const reader = new FileReader();
-              reader.onloadend = () => {
-                  sendMessage(thread.id, "", "voice", {
-                      imageUrl: reader.result as string,
-                      duration: recordingTime
-                  });
-                  cancelVoiceRecording();
-              };
-              reader.readAsDataURL(recordedBlob);
-          }
-      };
+    const sendVoiceRecording = () => {
+        if (recordedBlob && previewUrl) {
+            if (previewAnimFrameRef.current) {
+                cancelAnimationFrame(previewAnimFrameRef.current);
+                previewAnimFrameRef.current = null;
+            }
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                sendMessage(thread.id, "", "voice", {
+                    imageUrl: reader.result as string,
+                    duration: recordingTime
+                });
+                cancelVoiceRecording();
+            };
+            reader.readAsDataURL(recordedBlob);
+        }
+    };
 
-      const playPausePreview = () => {
-          if (!previewUrl) return;
+    const getPreviewDuration = () => {
+        if (previewAudioRef.current && isFinite(previewAudioRef.current.duration) && previewAudioRef.current.duration > 0) {
+            return previewAudioRef.current.duration;
+        }
+        const fromMs = recordedDurationMsRef.current / 1000;
+        if (fromMs > 0) return fromMs;
+        if (recordingTime > 0) return recordingTime;
+        return 1;
+    };
 
-          // Stop active voice bubble playback if it's currently playing
-          if (audioPlayerRef.current && playingVoiceId) {
-              audioPlayerRef.current.pause();
-              setVoicePlaybackProgress(prev => ({ ...prev, [playingVoiceId]: 0 }));
-              setPlayingVoiceId(null);
-          }
+    const playPausePreview = () => {
+        if (!previewUrl) return;
 
-          if (!previewAudioRef.current) {
-              previewAudioRef.current = new Audio(previewUrl);
-              previewAudioRef.current.ontimeupdate = () => {
-                  if (previewAudioRef.current) {
-                      const progress = (previewAudioRef.current.currentTime / previewAudioRef.current.duration) * 100 || 0;
-                      setPreviewProgress(progress);
-                  }
-              };
-              previewAudioRef.current.onended = () => {
-                  setIsPlayingPreview(false);
-                  setPreviewProgress(0);
-              };
-          }
-          
-          if (isPlayingPreview) {
-              previewAudioRef.current.pause();
-              setIsPlayingPreview(false);
-          } else {
-              previewAudioRef.current.play();
-              setIsPlayingPreview(true);
-          }
-      };
+        // Stop active voice bubble playback if it's currently playing
+        if (audioPlayerRef.current && playingVoiceId) {
+            audioPlayerRef.current.pause();
+            setVoicePlaybackProgress(prev => ({ ...prev, [playingVoiceId]: 0 }));
+            setPlayingVoiceId(null);
+        }
 
-      const handleVoiceRecord = () => {
-          if (recordingState !== "idle") {
-              stopAndPreviewVoiceRecording();
-          } else {
-              startVoiceRecording();
-          }
-      };
+        const dur = getPreviewDuration();
+
+        if (!previewAudioRef.current) {
+            const audio = new Audio(previewUrl);
+            previewAudioRef.current = audio;
+
+            audio.ontimeupdate = () => {
+                if (audio) {
+                    const currentDur = (audio.duration && isFinite(audio.duration) && audio.duration > 0)
+                        ? audio.duration
+                        : dur;
+                    const cur = audio.currentTime;
+                    const progress = Math.min(100, Math.max(0, (cur / currentDur) * 100));
+                    setPreviewProgress(progress);
+                    setPreviewCurrentTime(cur);
+                }
+            };
+
+            audio.onended = () => {
+                if (previewAnimFrameRef.current) {
+                    cancelAnimationFrame(previewAnimFrameRef.current);
+                    previewAnimFrameRef.current = null;
+                }
+                setIsPlayingPreview(false);
+                setPreviewProgress(0);
+                setPreviewCurrentTime(0);
+            };
+        }
+
+        const audio = previewAudioRef.current;
+
+        const runProgressLoop = () => {
+            if (!audio || audio.paused || audio.ended) return;
+            const currentDur = (audio.duration && isFinite(audio.duration) && audio.duration > 0)
+                ? audio.duration
+                : dur;
+            const cur = audio.currentTime;
+            const progress = Math.min(100, Math.max(0, (cur / currentDur) * 100));
+            setPreviewProgress(progress);
+            setPreviewCurrentTime(cur);
+            previewAnimFrameRef.current = requestAnimationFrame(runProgressLoop);
+        };
+
+        if (isPlayingPreview) {
+            if (previewAnimFrameRef.current) {
+                cancelAnimationFrame(previewAnimFrameRef.current);
+                previewAnimFrameRef.current = null;
+            }
+            audio.pause();
+            setIsPlayingPreview(false);
+        } else {
+            if (audio.ended || audio.currentTime >= dur - 0.1) {
+                audio.currentTime = 0;
+                setPreviewProgress(0);
+                setPreviewCurrentTime(0);
+            }
+            audio.play().then(() => {
+                setIsPlayingPreview(true);
+                if (previewAnimFrameRef.current) {
+                    cancelAnimationFrame(previewAnimFrameRef.current);
+                }
+                previewAnimFrameRef.current = requestAnimationFrame(runProgressLoop);
+            }).catch(err => {
+                console.error("Preview playback error:", err);
+                setIsPlayingPreview(false);
+            });
+        }
+    };
+
+    const handlePreviewSeek = (e: React.MouseEvent<HTMLDivElement>) => {
+        if (!previewUrl) return;
+        const rect = e.currentTarget.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const ratio = Math.max(0, Math.min(1, clickX / rect.width));
+        const dur = getPreviewDuration();
+        
+        if (!previewAudioRef.current) {
+            playPausePreview();
+        }
+        if (previewAudioRef.current) {
+            previewAudioRef.current.currentTime = dur * ratio;
+            setPreviewProgress(ratio * 100);
+            setPreviewCurrentTime(dur * ratio);
+        }
+    };
+
+    const handleVoiceRecord = () => {
+        if (recordingState !== "idle") {
+            stopAndPreviewVoiceRecording();
+        } else {
+            startVoiceRecording();
+        }
+    };
 
     const openCamera = () => {
         setShowAttachMenu(false);
@@ -5155,18 +5257,25 @@ export default function ChatThreadView({ threadId, onClose }: { threadId: string
                                         <div className="w-full flex items-center gap-3 px-2">
                                             <button
                                                 onClick={playPausePreview}
-                                                className="p-2 bg-[var(--primary)] text-white rounded-full transition-all shrink-0 hover:scale-105 active:scale-95 flex items-center justify-center"
+                                                className="p-2 bg-[var(--primary)] text-white rounded-full transition-all shrink-0 hover:scale-105 active:scale-95 flex items-center justify-center cursor-pointer shadow-xs"
+                                                title={isPlayingPreview ? "Pause" : "Play Preview"}
                                             >
                                                 {isPlayingPreview ? <Pause size={14} /> : <Play size={14} className="ml-0.5" />}
                                             </button>
-                                            <div className="flex-1 h-1.5 bg-gray-200 dark:bg-zinc-700 rounded-full relative overflow-hidden">
-                                                <div 
-                                                    className="h-full bg-[var(--primary)] rounded-full transition-all duration-75" 
-                                                    style={{ width: `${previewProgress}%` }}
-                                                />
+                                            <div 
+                                                onClick={handlePreviewSeek}
+                                                className="flex-1 h-3.5 flex items-center cursor-pointer group"
+                                                title="Tap to scrub voice note"
+                                            >
+                                                <div className="w-full h-1.5 bg-gray-200 dark:bg-zinc-700 rounded-full relative overflow-hidden">
+                                                    <div 
+                                                        className="h-full bg-[var(--primary)] rounded-full transition-all duration-75 pointer-events-none" 
+                                                        style={{ width: `${previewProgress}%` }}
+                                                    />
+                                                </div>
                                             </div>
-                                            <span className="text-xs font-semibold text-gray-500 dark:text-zinc-400 shrink-0">
-                                                {formatTime(recordingTime)}
+                                            <span className="text-xs font-semibold text-gray-500 dark:text-zinc-400 shrink-0 select-none">
+                                                {formatTime(isPlayingPreview && previewCurrentTime > 0 ? Math.floor(previewCurrentTime) : recordingTime)}
                                             </span>
                                         </div>
                                     ) : (
@@ -5283,7 +5392,7 @@ export default function ChatThreadView({ threadId, onClose }: { threadId: string
                                                          )}
                                                          <div className="flex-1 min-w-0">
                                                              <span className="font-semibold text-xs text-black dark:text-white block truncate">{member.name}</span>
-                                                             <span className="text-[10px] text-zinc-400 dark:text-zinc-500 block truncate">{member.marketplaceStore?.headline || (member.bio && !member.bio.includes("Hey there") ? member.bio : "Verified local seller on Yogheart Marketplace.")}</span>
+                                                             <span className="text-[10px] text-zinc-400 dark:text-zinc-500 block truncate">{member.marketplaceStore?.headline || (member.bio && !member.bio.includes("Hey there") ? member.bio : "Verified local seller on Isoko.")}</span>
                                                          </div>
                                                      </button>
                                                  ))}
@@ -5555,7 +5664,7 @@ export default function ChatThreadView({ threadId, onClose }: { threadId: string
                                                 )}
                                                 <div className="min-w-0">
                                                     <span className="font-semibold text-xs text-black dark:text-white block truncate">{cand.name}</span>
-                                                    <span className="text-[10px] text-zinc-450 dark:text-zinc-500 block truncate">{(cand as any).marketplaceStore?.headline || (cand.bio && !cand.bio.includes("Hey there") ? cand.bio : "Verified local seller on Yogheart Marketplace.")}</span>
+                                                    <span className="text-[10px] text-zinc-450 dark:text-zinc-500 block truncate">{(cand as any).marketplaceStore?.headline || (cand.bio && !cand.bio.includes("Hey there") ? cand.bio : "Verified local seller on Isoko.")}</span>
                                                 </div>
                                             </div>
                                             <input 
@@ -6051,7 +6160,7 @@ export default function ChatThreadView({ threadId, onClose }: { threadId: string
                                                         {memberUser.name} {isSelfMember && <span className="text-xs text-zinc-400 font-normal ml-1">(You)</span>}
                                                     </span>
                                                     <span className="text-[11px] text-zinc-400 block truncate">
-                                                        {memberUser.marketplaceStore?.headline || (memberUser.bio && !memberUser.bio.includes("Hey there") ? memberUser.bio : "Verified local seller on Yogheart Marketplace.")}
+                                                        {memberUser.marketplaceStore?.headline || (memberUser.bio && !memberUser.bio.includes("Hey there") ? memberUser.bio : "Verified local seller on Isoko.")}
                                                     </span>
                                                 </div>
                                                 {isCreator && !isSelfMember && (

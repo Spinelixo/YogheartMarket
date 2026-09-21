@@ -38,7 +38,7 @@ export function ShareToChatModal({ item, onClose }: ShareToChatModalProps) {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [customNote, setCustomNote] = useState(
-    "Look at this item I found on Yogheart Marketplace! Can you get this for me? 😍✨"
+    "Look at this item I found on Isoko! Can you get this for me? 😍✨"
   );
   const [sentMap, setSentMap] = useState<Record<string, boolean>>({});
   const [isSendingToId, setIsSendingToId] = useState<string | null>(null);
@@ -136,7 +136,7 @@ export function ShareToChatModal({ item, onClose }: ShareToChatModalProps) {
   const handleNativeShare = async () => {
     const res = await shareContent({
       title: item.title,
-      text: `Look at this on Yogheart Marketplace: ${item.title} (${item.price === 0 ? "FREE" : `$${item.price}`})`,
+      text: `Look at this on Isoko: ${item.title} (${item.price === 0 ? "FREE" : `$${item.price}`})`,
       dialogTitle: `Share ${item.title}`,
     });
     if (res === "copied") {

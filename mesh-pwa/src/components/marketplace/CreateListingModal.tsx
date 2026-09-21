@@ -245,7 +245,7 @@ export function CreateListingModal({
               <span className="truncate">{initialItem ? "Edit Listing" : "List an Item for Sale"}</span>
             </h2>
             <p className="text-xs text-gray-500 dark:text-zinc-400 truncate">
-              Reach local buyers instantly on Yogheart Marketplace
+              Reach local buyers instantly on Isoko
             </p>
           </div>
         </div>

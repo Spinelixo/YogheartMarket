@@ -98,7 +98,7 @@ export function Sidebar() {
     <div className="sidebar">
       <div className="p-4 border-b border-[var(--border)] flex items-center justify-between">
         <h1 className="text-xl font-black bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
-          Yogheart Market
+          Isoko
         </h1>
       </div>
       <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto custom-scrollbar">

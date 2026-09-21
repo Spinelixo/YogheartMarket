@@ -655,7 +655,7 @@ export function ItemDetailModal({
                       </h4>
                       <p className="text-xs text-gray-500 dark:text-zinc-400 truncate">
                         {curItem.sellerOwnerName && curItem.sellerName && curItem.sellerName !== curItem.sellerOwnerName ? `${curItem.sellerName} • ` : ""}
-                        {curItem.sellerLocation || curItem.location} • Active on Yogheart Marketplace
+                        {curItem.sellerLocation || curItem.location} • Active on Isoko
                       </p>
                     </div>
                   </div>
@@ -751,7 +751,7 @@ export function ItemDetailModal({
               Delete this listing?
             </h4>
             <p className="text-xs text-gray-500 dark:text-zinc-400">
-              This item will be permanently removed from Yogheart Marketplace.
+              This item will be permanently removed from Isoko.
             </p>
             <div className="flex gap-2 pt-2">
               <button

@@ -1,7 +1,7 @@
 {
-    "name":  "Yogheart - Connect Meaningfully",
-    "short_name":  "Yogheart",
-    "description":  "A modern messaging and dating experience that builds real connections.",
+    "name":  "Isoko - Marketplace",
+    "short_name":  "Isoko",
+    "description":  "Buy, sell, and discover local marketplace storefronts on Isoko.",
     "start_url":  "/",
     "scope":  "/",
     "display":  "standalone",
