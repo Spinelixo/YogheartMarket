@@ -100,7 +100,7 @@ export function ItemDetailModal({
     setShowSellerStorefront(false);
     setTimeout(() => {
       setClosingSellerStorefront(false);
-    }, 290);
+    }, 440);
   };
 
   const [internalIsClosing, setInternalIsClosing] = useState(false);
@@ -111,7 +111,7 @@ export function ItemDetailModal({
   useEffect(() => {
     const timer = setTimeout(() => {
       setAnimPhase("stable");
-    }, 240);
+    }, 460);
     return () => clearTimeout(timer);
   }, []);
 
@@ -820,9 +820,15 @@ export function ItemDetailModal({
               : ""
           )}
           style={{
-            transform: !isClosing && dragY > 0 ? `translateY(${dragY}px)` : isClosing ? undefined : "none",
+            transform: !isClosing && dragY > 0 ? `translateY(${dragY}px)` : (isClosing || animPhase === "entering") ? undefined : "none",
             willChange: isClosing || animPhase === "entering" ? "transform" : "auto",
             transition: isDragging ? "none" : undefined
+          }}
+          onAnimationEnd={(e) => {
+            if (e.target !== e.currentTarget) return;
+            if (animPhase === "entering") {
+              setAnimPhase("stable");
+            }
           }}
           onTouchStart={handleDragStart}
           onTouchMove={handleDragMove}
@@ -900,8 +906,14 @@ export function ItemDetailModal({
           : ""
       )}
       style={{
-        transform: isClosing ? undefined : "none",
+        transform: (isClosing || animPhase === "entering") ? undefined : "none",
         willChange: isClosing || animPhase === "entering" ? "transform" : "auto"
+      }}
+      onAnimationEnd={(e) => {
+        if (e.target !== e.currentTarget) return;
+        if (animPhase === "entering") {
+          setAnimPhase("stable");
+        }
       }}
     >
       {/* Fixed Sticky Top Header */}

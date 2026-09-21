@@ -1117,7 +1117,7 @@ html.text-sz-large {
   }
 }
 .animate-slide-out-to-right-edge {
-  animation: slideOutToRightEdge 0.44s cubic-bezier(0.25, 1, 0.3, 1) both;
+  animation: slideOutToRightEdge 0.42s cubic-bezier(0.32, 0.72, 0, 1) both;
   will-change: transform;
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;

@@ -91,7 +91,7 @@ export function SellerStorefrontModal({
     setAnimPhase("entering");
     const timer = setTimeout(() => {
       setAnimPhase("stable");
-    }, 240);
+    }, 460);
     return () => clearTimeout(timer);
   }, [sellerId]);
 
@@ -251,7 +251,7 @@ export function SellerStorefrontModal({
     setShowReviewsModal(false);
     setTimeout(() => {
       setClosingReviewsModal(false);
-    }, 220);
+    }, 440);
   };
 
   // Filtered store items
@@ -373,6 +373,12 @@ export function SellerStorefrontModal({
         backfaceVisibility: "hidden",
         WebkitBackfaceVisibility: "hidden",
         transform: !isStandaloneView && animPhase === "stable" && !isClosing ? "translate3d(0, 0, 0)" : undefined,
+      }}
+      onAnimationEnd={(e) => {
+        if (e.target !== e.currentTarget) return;
+        if (animPhase === "entering") {
+          setAnimPhase("stable");
+        }
       }}
     >
       {/* Fixed Sticky Top Header */}

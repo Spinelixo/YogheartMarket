@@ -220,7 +220,7 @@ export default function MarketplaceView() {
     setSelectedItem(null);
     setTimeout(() => {
       setClosingItem(null);
-    }, 220);
+    }, 440);
   };
 
   const handleCloseCreateModal = () => {
@@ -233,7 +233,7 @@ export default function MarketplaceView() {
     setTimeout(() => {
       setClosingCreateModal(false);
       setEditingItem(null);
-    }, 220);
+    }, 440);
   };
 
   const handleCloseActiveSellerStore = () => {
@@ -246,7 +246,7 @@ export default function MarketplaceView() {
     setActiveSellerStore(null);
     setTimeout(() => {
       setClosingSellerStore(null);
-    }, 240);
+    }, 440);
   };
 
   // Filter Bottom Sheet State & Sub-screens
