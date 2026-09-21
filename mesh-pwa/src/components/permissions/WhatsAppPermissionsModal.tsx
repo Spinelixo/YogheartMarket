@@ -18,18 +18,18 @@ interface PermissionStep {
 const PERMISSION_STEPS: PermissionStep[] = [
   {
     id: "notifications",
-    title: "“Yogheart” Would Like to Send You Notifications",
+    title: "“Isoko” Would Like to Send You Notifications",
     description: "Notifications may include alerts, sounds, incoming calls, and icon badges. These can be configured in Settings."
   },
   {
     id: "location",
-    title: "Allow “Yogheart” to Access Your Location?",
+    title: "Allow “Isoko” to Access Your Location?",
     description: "Your location is used to show nearby marketplace listings, carpools, local stores, and distance calculations."
   },
   {
     id: "contacts",
-    title: "Allow “Yogheart” to Access Your Contacts?",
-    description: "Sync contacts to discover friends already on Yogheart, quickly start chats, and place calls with ease."
+    title: "Allow “Isoko” to Access Your Contacts?",
+    description: "Sync contacts to discover friends already on Isoko, quickly start chats, and place calls with ease."
   }
 ];
 

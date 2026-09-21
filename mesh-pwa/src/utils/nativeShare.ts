@@ -22,14 +22,14 @@ export async function shareContent(options: NativeShareOptions): Promise<"shared
   const isNative = typeof window !== "undefined" && !!(window as any).Capacitor?.isNativePlatform?.();
 
   // Normalize URL so recipients get a valid public web link
-  let shareUrl = options.url || (typeof window !== "undefined" ? window.location.href : "https://yoghearts.web.app");
+  let shareUrl = options.url || (typeof window !== "undefined" ? window.location.href : "https://isokomarket.web.app");
   if (
     shareUrl.includes("localhost") ||
     shareUrl.startsWith("capacitor://") ||
     shareUrl.startsWith("file://")
   ) {
     const path = typeof window !== "undefined" ? window.location.pathname + window.location.search : "";
-    shareUrl = `https://yoghearts.web.app${path}`;
+    shareUrl = `https://isokomarket.web.app${path}`;
   }
 
   // 1. Try Capacitor native share first (especially on APK)

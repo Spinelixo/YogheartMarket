@@ -765,8 +765,8 @@ export default function LoginPage() {
                                 {activeModal === "help" && (
                                     <div className="modal-text">
                                         <p><strong>Need help signing in?</strong></p>
-                                        <p>Yogheart supports Google Sign-In and anonymous registration on mobile devices, or secure device linking via QR code on desktop devices.</p>
-                                        <p>If you encounter issues, please clear your browser cache and try again, or contact support at support@yogheart.app.</p>
+                                        <p>Isoko supports Google Sign-In and anonymous registration on mobile devices, or secure device linking via QR code on desktop devices.</p>
+                                        <p>If you encounter issues, please clear your browser cache and try again, or contact support at support@isoko.app.</p>
                                         
                                         <div className="border-t border-gray-100 dark:border-zinc-800/80 mt-4 pt-4 text-left">
                                             <h3 className="text-sm font-bold dark:text-white mb-3 text-[var(--primary)] flex items-center gap-1.5">
@@ -880,10 +880,10 @@ export default function LoginPage() {
                                         </svg>
                                     </div>
 
-                                    <h1 className="title-welcome" style={{ marginBottom: "16px" }}>Hey Yoghearts,</h1>
+                                    <h1 className="title-welcome" style={{ marginBottom: "16px" }}>Welcome to Isoko,</h1>
 
                                     <p className="disclaimer-text">
-                                        By signing up, you agree to Yogheart&apos;s <a href="#" onClick={(e) => { e.preventDefault(); setActiveModal("privacy"); }}>Privacy Policies</a> and <a href="#" onClick={(e) => { e.preventDefault(); setActiveModal("terms"); }}>Terms of Service</a>.
+                                        By signing up, you agree to Isoko&apos;s <a href="#" onClick={(e) => { e.preventDefault(); setActiveModal("privacy"); }}>Privacy Policies</a> and <a href="#" onClick={(e) => { e.preventDefault(); setActiveModal("terms"); }}>Terms of Service</a>.
                                     </p>
                                 </div>
                                 {error && <div className="err-box" style={{ margin: "0 auto 10px auto", maxWidth: 300 }}>{error}</div>}
@@ -1030,7 +1030,7 @@ export default function LoginPage() {
                         <h1 className="title-phone" style={{ marginBottom: 8 }}>Link with QR Code</h1>
                         
                         <p className="disclaimer-text" style={{ padding: "0 16px", marginBottom: 24, fontSize: 13, lineHeight: 1.5 }}>
-                            {"Open Yogheart on your phone, go to Settings, select \"Link a Device\" and scan this QR code or enter the code below."}
+                            {"Open Isoko on your phone, go to Settings, select \"Link a Device\" and scan this QR code or enter the code below."}
                         </p>
 
                         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 20, width: "100%", maxWidth: 300, margin: "0 auto" }}>

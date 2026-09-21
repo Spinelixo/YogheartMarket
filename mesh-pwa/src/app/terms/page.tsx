@@ -19,16 +19,16 @@ export default function TermsOfServicePage() {
 
         <div className="space-y-6 text-sm text-gray-700 dark:text-zinc-300 leading-relaxed">
           <p className="font-semibold text-gray-900 dark:text-white">
-            Welcome to Yogheart. By accessing or using our services, you agree to be bound by these Terms.
+            Welcome to Isoko. By accessing or using our services, you agree to be bound by these Terms.
           </p>
 
           <p>
-            We use your information to create your account, deliver our services, and help keep Yogheart safe and secure. In settings, you can access, manage, and delete your account information.
+            We use your information to create your account, deliver our services, and help keep Isoko safe and secure. In settings, you can access, manage, and delete your account information.
           </p>
 
           <div>
             <h2 className="text-base font-bold text-gray-900 dark:text-white mb-2">1. Use of Service</h2>
-            <p>You must be at least 18 years old to use Yogheart. You agree to provide accurate, truthful, and complete registration information during account creation.</p>
+            <p>You must be at least 18 years old to use Isoko. You agree to provide accurate, truthful, and complete registration information during account creation.</p>
           </div>
 
           <div>
@@ -45,7 +45,7 @@ export default function TermsOfServicePage() {
         <div className="h-[1px] bg-gray-150 dark:bg-zinc-800 my-8" />
 
         <div className="flex justify-between items-center text-xs">
-          <span className="text-gray-400 dark:text-zinc-500">© 2026 Yogheart App</span>
+          <span className="text-gray-400 dark:text-zinc-500">© 2026 Isoko App</span>
           <Link href="/login" className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline">
             Go back to Login
           </Link>

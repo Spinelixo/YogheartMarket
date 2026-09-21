@@ -194,7 +194,7 @@ export default function OnboardingPage() {
       }
 
       const trimmedName = name.trim() || "User";
-      const trimmedStoreName = storeName.trim() || (trimmedName ? `${trimmedName}'s Store` : "Yogheart Store");
+      const trimmedStoreName = storeName.trim() || (trimmedName ? `${trimmedName}'s Store` : "Isoko Store");
 
       if (uid) {
         await setDoc(
@@ -402,7 +402,7 @@ export default function OnboardingPage() {
                     What&apos;s your phone number?
                   </h1>
                   <p className="text-sm text-gray-500 dark:text-gray-400 px-6 leading-relaxed">
-                    This helps friends and contacts on Yogheart find you and connect with you easily.
+                    This helps friends and contacts on Isoko find you and connect with you easily.
                   </p>
                 </div>
 

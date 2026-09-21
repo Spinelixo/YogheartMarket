@@ -19,7 +19,7 @@ export default function PrivacyPolicyPage() {
 
         <div className="space-y-6 text-sm text-gray-700 dark:text-zinc-300 leading-relaxed">
           <p className="font-semibold text-gray-900 dark:text-white">
-            At Yogheart, your privacy is our priority. We design our features with security in mind.
+            At Isoko, your privacy is our priority. We design our features with security in mind.
           </p>
 
           <div>
@@ -41,7 +41,7 @@ export default function PrivacyPolicyPage() {
         <div className="h-[1px] bg-gray-150 dark:bg-zinc-800 my-8" />
 
         <div className="flex justify-between items-center text-xs">
-          <span className="text-gray-400 dark:text-zinc-500">© 2026 Yogheart App</span>
+          <span className="text-gray-400 dark:text-zinc-500">© 2026 Isoko App</span>
           <Link href="/login" className="text-emerald-600 dark:text-emerald-400 font-bold hover:underline">
             Go back to Login
           </Link>

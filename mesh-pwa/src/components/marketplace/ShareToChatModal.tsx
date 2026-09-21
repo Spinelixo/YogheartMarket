@@ -123,9 +123,9 @@ export function ShareToChatModal({ item, onClose }: ShareToChatModalProps) {
   };
 
   const handleCopyLink = () => {
-    let url = typeof window !== "undefined" ? window.location.href : "https://yoghearts.web.app";
+    let url = typeof window !== "undefined" ? window.location.href : "https://isokomarket.web.app";
     if (url.includes("localhost") || url.startsWith("capacitor://") || url.startsWith("file://")) {
-      url = `https://yoghearts.web.app/marketplace?subpage=items`;
+      url = `https://isokomarket.web.app/marketplace?subpage=items`;
     }
     if (navigator.clipboard) {
       navigator.clipboard.writeText(url);

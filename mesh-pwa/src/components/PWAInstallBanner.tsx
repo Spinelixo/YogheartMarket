@@ -112,12 +112,12 @@ export default function PWAInstallBanner() {
                 {/* App Icon wrapper */}
                 <img 
                     src="/apple-touch-icon-v3.png" 
-                    alt="Yogheart" 
+                    alt="Isoko" 
                     className="w-12 h-12 rounded-2xl object-cover shrink-0 shadow-md"
                 />
                 
                 <div className="flex-1 min-w-0">
-                    <h4 className="font-bold text-sm text-black dark:text-white mb-1">Install Yogheart</h4>
+                    <h4 className="font-bold text-sm text-black dark:text-white mb-1">Install Isoko</h4>
                     <p className="text-xs text-[var(--secondary)] dark:text-zinc-400 leading-relaxed font-normal">
                         Tap the Share button{" "}
                         <span className="inline-flex align-middle p-1.5 bg-gray-100 dark:bg-zinc-800 rounded-lg mx-0.5">
